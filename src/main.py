@@ -141,7 +141,6 @@ class App(ctk.CTk):
         self.novo_usuario_window.focus_set()  # Foca na nova janela
         self.novo_usuario_window.grab_set()  # Bloqueia a janela principal enquanto esta estiver aberta
 
-
         # Campos para o novo usuário
         ctk.CTkLabel(self.novo_usuario_window, text="Nome:").grid(row=0, column=0)
         self.entry_nome = ctk.CTkEntry(self.novo_usuario_window)
@@ -151,18 +150,24 @@ class App(ctk.CTk):
         self.entry_senha = ctk.CTkEntry(self.novo_usuario_window, show="*")
         self.entry_senha.grid(row=1, column=1)
 
-        ctk.CTkLabel(self.novo_usuario_window, text="Admin:").grid(row=2, column=0)
-        self.check_admin = ctk.CTkCheckBox(self.novo_usuario_window, text="")
-        self.check_admin.grid(row=2, column=1)
+        # Só exibe a checkbox de admin se não existir um admin
+        self.check_admin = None
+        if not usuario.verificar_admin_existente():
+            ctk.CTkLabel(self.novo_usuario_window, text="Admin:").grid(row=2, column=0)
+            self.check_admin = ctk.CTkCheckBox(self.novo_usuario_window, text="")
+            self.check_admin.grid(row=2, column=1)
+            btn_row = 3
+        else:
+            btn_row = 2
 
         self.btn_salvar = ctk.CTkButton(self.novo_usuario_window, text="Salvar", command=self.salvar_novo_usuario)
-        self.btn_salvar.grid(row=3, column=0, columnspan=2)
+        self.btn_salvar.grid(row=btn_row, column=0, columnspan=2)
 
     def salvar_novo_usuario(self):
         """Salva o novo usuário no banco de dados."""
         nome = self.entry_nome.get()
         senha = self.entry_senha.get()
-        admin = self.check_admin.get()
+        admin = self.check_admin.get() if self.check_admin else False
 
         usuario.inserir_usuario(nome, senha, admin)
         self.novo_usuario_window.destroy()

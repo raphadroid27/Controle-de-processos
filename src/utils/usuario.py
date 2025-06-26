@@ -43,4 +43,21 @@ def inserir_usuario(nome, senha, admin=False):
         if conn:
             conn.close()
 
+def verificar_admin_existente():
+    """Verifica se já existe um usuário admin no banco de dados."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT COUNT(*) FROM usuario WHERE admin = 1")
+        count = cursor.fetchone()[0]
+        return count > 0
+    except sqlite3.Error as e:
+        print(f"Erro ao verificar admin: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
 criar_tabela_usuario()
