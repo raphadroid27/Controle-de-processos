@@ -53,8 +53,15 @@ Controle-de-processos/
 
 ### Executar o Aplicativo
 
+**Opção 1 - A partir da pasta `src`:**
 ```bash
-python run_app.py
+cd src
+python main.py
+```
+
+**Opção 2 - A partir da pasta raiz:**
+```bash
+python src/main.py
 ```
 
 ### Primeiro Acesso
