@@ -120,5 +120,111 @@ def listar_usuarios():
             conn.close()
 
 
+def resetar_senha_usuario(user_id, nova_senha="nova_senha"):
+    """Reseta a senha de um usuário específico."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        if nova_senha == "nova_senha":
+            # Senha padrão para reset
+            senha_hash = nova_senha
+        else:
+            # Nova senha personalizada
+            senha_hash = hash_senha(nova_senha)
+
+        cursor.execute("UPDATE usuario SET senha = ? WHERE id = ?",
+                       (senha_hash, user_id))
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            return "Sucesso: Senha resetada com sucesso."
+        else:
+            return "Erro: Usuário não encontrado."
+    except sqlite3.Error as e:
+        return f"Erro ao resetar senha: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+
+def excluir_usuario_por_id(user_id):
+    """Exclui um usuário pelo ID."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        # Verifica se o usuário existe e se é admin
+        cursor.execute("SELECT admin FROM usuario WHERE id = ?", (user_id,))
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            return "Erro: Usuário não encontrado."
+
+        if usuario[0]:  # Se for admin
+            return "Erro: Não é possível excluir um administrador."
+
+        cursor.execute("DELETE FROM usuario WHERE id = ?", (user_id,))
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            return "Sucesso: Usuário excluído com sucesso."
+        else:
+            return "Erro: Não foi possível excluir o usuário."
+    except sqlite3.Error as e:
+        return f"Erro ao excluir usuário: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+
+def alterar_senha_usuario(nome, senha_atual, nova_senha):
+    """Permite ao usuário alterar sua própria senha."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        # Verifica a senha atual
+        senha_atual_hash = hash_senha(senha_atual)
+        cursor.execute(
+            "SELECT id FROM usuario WHERE nome = ? AND senha = ?", (nome, senha_atual_hash))
+
+        if not cursor.fetchone():
+            return "Erro: Senha atual incorreta."
+
+        # Atualiza para a nova senha
+        nova_senha_hash = hash_senha(nova_senha)
+        cursor.execute(
+            "UPDATE usuario SET senha = ? WHERE nome = ?", (nova_senha_hash, nome))
+        conn.commit()
+
+        return "Sucesso: Senha alterada com sucesso."
+    except sqlite3.Error as e:
+        return f"Erro ao alterar senha: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+
+def verificar_senha_reset(nome):
+    """Verifica se o usuário precisa redefinir a senha."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT senha FROM usuario WHERE nome = ?", (nome,))
+        usuario = cursor.fetchone()
+
+        if usuario and usuario[0] == "nova_senha":
+            return True
+        return False
+    except sqlite3.Error as e:
+        print(f"Erro ao verificar senha de reset: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
 # Garante que a tabela seja criada na primeira vez que o módulo for importado
 criar_tabela_usuario()

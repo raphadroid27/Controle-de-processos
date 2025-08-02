@@ -52,6 +52,11 @@ class LoginDialog(QDialog):
             QMessageBox.warning(self, "Erro", "Preencha usuário e senha.")
             return
 
+        # Verificar se precisa redefinir senha
+        if usuario.verificar_senha_reset(nome):
+            self.solicitar_nova_senha(nome)
+            return
+
         resultado = usuario.verificar_login(nome, senha)
 
         if resultado['sucesso']:
@@ -61,6 +66,29 @@ class LoginDialog(QDialog):
         else:
             QMessageBox.warning(self, "Erro de Login", resultado['mensagem'])
             self.entry_senha.clear()
+
+    def solicitar_nova_senha(self, nome):
+        """Solicita nova senha quando o usuário tem senha de reset."""
+        from PySide6.QtWidgets import QInputDialog
+
+        nova_senha, ok = QInputDialog.getText(
+            self,
+            "Nova Senha Requerida",
+            "Sua senha foi resetada. Digite uma nova senha:",
+            QLineEdit.Password
+        )
+
+        if ok and nova_senha.strip():
+            resultado = usuario.alterar_senha_usuario(
+                nome, "nova_senha", nova_senha)
+            if "Sucesso" in resultado:
+                QMessageBox.information(
+                    self, "Sucesso", "Senha alterada com sucesso. Faça login novamente.")
+                self.entry_senha.clear()
+            else:
+                QMessageBox.warning(self, "Erro", resultado)
+        else:
+            QMessageBox.warning(self, "Erro", "Nova senha é obrigatória.")
 
     def abrir_novo_usuario(self):
         dialog = NovoUsuarioDialog()
@@ -467,8 +495,15 @@ class MainWindow(QMainWindow):
             admin_menu.addAction(usuarios_action)
 
     def abrir_gerenciar_usuarios(self):
-        QMessageBox.information(self, "Em Desenvolvimento",
-                                "Funcionalidade de gerenciamento de usuários será implementada em breve.")
+        try:
+            from gerenciar_usuarios import GerenciarUsuariosDialog
+            dialog = GerenciarUsuariosDialog(self)
+            dialog.exec()
+        except ImportError as e:
+            QMessageBox.warning(
+                self, "Erro", f"Erro ao carregar gerenciador de usuários: {e}")
+        except Exception as e:
+            QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
 
 
 class ControleProcessosApp:
