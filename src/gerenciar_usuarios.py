@@ -64,6 +64,7 @@ class GerenciarUsuariosDialog(QDialog):
         self.setLayout(layout)
 
     def criar_frame_busca(self):
+        """Cria o frame de busca e filtros de usuários."""
         self.frame_busca = QGroupBox("Filtrar Usuários")
         busca_layout = QGridLayout()
 
@@ -80,6 +81,7 @@ class GerenciarUsuariosDialog(QDialog):
         self.frame_busca.setLayout(busca_layout)
 
     def criar_botoes_acao(self):
+        """Cria os botões de ação para gerenciamento de usuários."""
         self.botoes_layout = QHBoxLayout()
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
@@ -99,6 +101,7 @@ class GerenciarUsuariosDialog(QDialog):
         self.botoes_layout.addWidget(self.btn_alterar_senha)
 
     def carregar_usuarios(self):
+        """Carrega e exibe a lista de usuários na interface."""
         self.tree_usuarios.clear()
         usuarios_lista = usuario.listar_usuarios()
 
@@ -110,6 +113,7 @@ class GerenciarUsuariosDialog(QDialog):
             self.tree_usuarios.addTopLevelItem(item)
 
     def filtrar_usuarios(self):
+        """Filtra os usuários exibidos baseado no texto de busca."""
         filtro = self.entry_busca.text().lower()
 
         for i in range(self.tree_usuarios.topLevelItemCount()):
@@ -120,6 +124,7 @@ class GerenciarUsuariosDialog(QDialog):
             item.setHidden(filtro not in nome)
 
     def limpar_busca(self):
+        """Limpa o campo de busca de usuários."""
         self.entry_busca.clear()
 
     def obter_usuario_selecionado(self):
@@ -136,6 +141,7 @@ class GerenciarUsuariosDialog(QDialog):
         return user_id, nome
 
     def resetar_senha(self):
+        """Reseta a senha do usuário selecionado para padrão."""
         user_id, nome = self.obter_usuario_selecionado()
         if user_id is None:
             return
@@ -162,6 +168,7 @@ class GerenciarUsuariosDialog(QDialog):
                 QMessageBox.warning(self, "Erro", resultado)
 
     def excluir_usuario(self):
+        """Exclui o usuário selecionado do sistema."""
         user_id, nome = self.obter_usuario_selecionado()
         if user_id is None:
             return

@@ -292,6 +292,7 @@ class ProcessosWidget(QWidget):
         self.btn_excluir.clicked.connect(self.excluir_processo)
 
     def criar_tabela(self):
+        """Cria a interface da tabela de processos com filtros."""
         self.tabela_layout = QVBoxLayout()
 
         # Filtros
@@ -334,6 +335,7 @@ class ProcessosWidget(QWidget):
         self.tabela_layout.addWidget(self.tabela)
 
     def criar_frame_totais(self):
+        """Cria o frame que exibe os totais de processos, itens e valores."""
         self.frame_totais = QFrame()
         self.frame_totais.setFrameStyle(QFrame.StyledPanel)
 
@@ -359,6 +361,7 @@ class ProcessosWidget(QWidget):
         self.frame_totais.setLayout(layout)
 
     def carregar_dados(self):
+        """Carrega os dados iniciais da aplicação."""
         # Carregar usuários no combo
         if self.is_admin:
             usuarios_list = db.buscar_usuarios_unicos()
@@ -368,6 +371,7 @@ class ProcessosWidget(QWidget):
         self.aplicar_filtro()
 
     def aplicar_filtro(self):
+        """Aplica filtros na tabela de processos baseado no usuário selecionado."""
         # Determinar qual usuário filtrar
         if self.is_admin and self.combo_usuario.currentText() != "Todos os usuários":
             usuario_filtro = self.combo_usuario.currentText()
@@ -439,6 +443,7 @@ class ProcessosWidget(QWidget):
         self.atualizar_totais(usuario_filtro)
 
     def atualizar_totais(self, usuario_filtro=None):
+        """Atualiza os totais exibidos no painel de estatísticas."""
         estatisticas = db.buscar_estatisticas(usuario_filtro)
 
         self.label_total_processos.setText(
