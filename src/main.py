@@ -1,16 +1,25 @@
+"""
+Sistema de Controle de Processos para Desenhistas
+
+Este módulo implementa uma interface gráfica completa para gerenciamento
+de processos realizados por desenhistas, incluindo sistema de autenticação,
+controle de usuários e gestão de dados com banco SQLite.
+"""
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QHBoxLayout, QTableWidget, QTableWidgetItem,
                                QLineEdit, QPushButton, QLabel, QMessageBox,
-                               QDialog, QFormLayout, QCheckBox, QTabWidget,
+                               QDialog, QFormLayout, QCheckBox,
                                QHeaderView, QDateEdit, QComboBox, QFrame)
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QFont, QAction
-import utils.database as db
-import utils.usuario as usuario
+from utils import database as db
+from utils import usuario
 
 
 class LoginDialog(QDialog):
+    """Dialog de login para autenticação de usuários."""
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login - Controle de Processos")
@@ -45,6 +54,7 @@ class LoginDialog(QDialog):
         self.entry_senha.returnPressed.connect(self.fazer_login)
 
     def fazer_login(self):
+        """Realiza a autenticação do usuário."""
         nome = self.entry_usuario.text().strip()
         senha = self.entry_senha.text().strip()
 
@@ -91,11 +101,14 @@ class LoginDialog(QDialog):
             QMessageBox.warning(self, "Erro", "Nova senha é obrigatória.")
 
     def abrir_novo_usuario(self):
+        """Abre o diálogo para criação de novo usuário."""
         dialog = NovoUsuarioDialog()
         dialog.exec()
 
 
 class NovoUsuarioDialog(QDialog):
+    """Dialog para criação de novos usuários."""
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Novo Usuário")
@@ -132,6 +145,7 @@ class NovoUsuarioDialog(QDialog):
         self.btn_cancelar.clicked.connect(self.reject)
 
     def salvar_usuario(self):
+        """Salva o novo usuário no banco de dados."""
         nome = self.entry_nome.text().strip()
         senha = self.entry_senha.text().strip()
         admin = self.check_admin.isChecked(
@@ -151,6 +165,8 @@ class NovoUsuarioDialog(QDialog):
 
 
 class ProcessosWidget(QWidget):
+    """Widget principal para gerenciamento de processos."""
+
     def __init__(self, usuario_logado, is_admin):
         super().__init__()
         self.usuario_logado = usuario_logado
@@ -160,27 +176,27 @@ class ProcessosWidget(QWidget):
         self.carregar_dados()
 
     def init_ui(self):
-        layout = QVBoxLayout()
+        """Inicializa a interface do usuário."""
+        main_layout = QVBoxLayout()
 
         # Frame de entrada de dados
         self.criar_frame_entrada()
-        layout.addWidget(self.frame_entrada)
+        main_layout.addWidget(self.frame_entrada)
 
         # Tabela
         self.criar_tabela()
-        layout.addLayout(self.tabela_layout)
+        main_layout.addLayout(self.tabela_layout)
 
         # Frame de totais
         self.criar_frame_totais()
-        layout.addWidget(self.frame_totais)
+        main_layout.addWidget(self.frame_totais)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
 
     def criar_frame_entrada(self):
+        """Cria o frame de entrada de dados."""
         self.frame_entrada = QFrame()
         self.frame_entrada.setFrameStyle(QFrame.StyledPanel)
-
-        layout = QFormLayout()
 
         # Campos de entrada
         self.entry_cliente = QLineEdit()
@@ -457,6 +473,8 @@ class ProcessosWidget(QWidget):
 
 
 class MainWindow(QMainWindow):
+    """Janela principal do aplicativo."""
+
     def __init__(self, usuario_logado, is_admin):
         super().__init__()
         self.usuario_logado = usuario_logado
@@ -477,6 +495,7 @@ class MainWindow(QMainWindow):
             f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}")
 
     def criar_menu(self):
+        """Cria o menu da aplicação."""
         menubar = self.menuBar()
 
         # Menu Arquivo
@@ -502,16 +521,19 @@ class MainWindow(QMainWindow):
         except ImportError as e:
             QMessageBox.warning(
                 self, "Erro", f"Erro ao carregar gerenciador de usuários: {e}")
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
 
 
 class ControleProcessosApp:
+    """Classe principal da aplicação."""
+
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Processos")
 
     def run(self):
+        """Executa a aplicação."""
         # Mostrar dialog de login
         login_dialog = LoginDialog()
 
@@ -522,9 +544,9 @@ class ControleProcessosApp:
             main_window.show()
 
             return self.app.exec()
-        else:
-            # Login cancelado
-            return 0
+
+        # Login cancelado
+        return 0
 
 
 if __name__ == "__main__":
