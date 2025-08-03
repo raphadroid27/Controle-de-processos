@@ -5,8 +5,10 @@ Este módulo fornece funcionalidades para autenticação, criação,
 edição e gerenciamento de usuários, incluindo hash de senhas
 e controle de permissões administrativas.
 """
-import sqlite3
+
 import hashlib
+import sqlite3
+
 from utils.database import conectar_db
 
 
@@ -16,14 +18,16 @@ def criar_tabela_usuario():
     cursor = conn.cursor()
 
     try:
-        cursor.execute("""
+        cursor.execute(
+            """
         CREATE TABLE IF NOT EXISTS usuario (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL UNIQUE,
             senha TEXT NOT NULL,
             admin BOOLEAN DEFAULT FALSE
         )
-        """)
+        """
+        )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Erro ao criar tabela: {e}")
@@ -54,10 +58,13 @@ def inserir_usuario(nome, senha, admin=False):
         # Hash da senha antes de salvar
         senha_hash = hash_senha(senha)
 
-        cursor.execute("""
+        cursor.execute(
+            """
         INSERT INTO usuario (nome, senha, admin)
         VALUES (?, ?, ?)
-        """, (nome, senha_hash, admin))
+        """,
+            (nome, senha_hash, admin),
+        )
         conn.commit()
         return "Sucesso: Usuário criado com sucesso."
     except sqlite3.Error as e:
@@ -75,18 +82,16 @@ def verificar_login(nome, senha):
     try:
         senha_hash = hash_senha(senha)
         cursor.execute(
-            "SELECT nome, admin FROM usuario WHERE nome = ? AND senha = ?", (nome, senha_hash))
+            "SELECT nome, admin FROM usuario WHERE nome = ? AND senha = ?",
+            (nome, senha_hash),
+        )
         usuario = cursor.fetchone()
 
         if usuario:
-            return {
-                'sucesso': True,
-                'nome': usuario[0],
-                'admin': bool(usuario[1])
-            }
-        return {'sucesso': False, 'mensagem': 'Usuário ou senha inválidos'}
+            return {"sucesso": True, "nome": usuario[0], "admin": bool(usuario[1])}
+        return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
     except sqlite3.Error as e:
-        return {'sucesso': False, 'mensagem': f'Erro no banco de dados: {e}'}
+        return {"sucesso": False, "mensagem": f"Erro no banco de dados: {e}"}
     finally:
         if conn:
             conn.close()
@@ -139,8 +144,9 @@ def resetar_senha_usuario(user_id, nova_senha="nova_senha"):
             # Nova senha personalizada
             senha_hash = hash_senha(nova_senha)
 
-        cursor.execute("UPDATE usuario SET senha = ? WHERE id = ?",
-                       (senha_hash, user_id))
+        cursor.execute(
+            "UPDATE usuario SET senha = ? WHERE id = ?", (senha_hash, user_id)
+        )
         conn.commit()
 
         if cursor.rowcount > 0:
@@ -191,7 +197,9 @@ def alterar_senha_usuario(nome, senha_atual, nova_senha):
         # Verifica a senha atual
         senha_atual_hash = hash_senha(senha_atual)
         cursor.execute(
-            "SELECT id FROM usuario WHERE nome = ? AND senha = ?", (nome, senha_atual_hash))
+            "SELECT id FROM usuario WHERE nome = ? AND senha = ?",
+            (nome, senha_atual_hash),
+        )
 
         if not cursor.fetchone():
             return "Erro: Senha atual incorreta."
@@ -199,7 +207,9 @@ def alterar_senha_usuario(nome, senha_atual, nova_senha):
         # Atualiza para a nova senha
         nova_senha_hash = hash_senha(nova_senha)
         cursor.execute(
-            "UPDATE usuario SET senha = ? WHERE nome = ?", (nova_senha_hash, nome))
+            "UPDATE usuario SET senha = ? WHERE nome = ?", (
+                nova_senha_hash, nome)
+        )
         conn.commit()
 
         return "Sucesso: Senha alterada com sucesso."

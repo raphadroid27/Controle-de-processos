@@ -5,9 +5,22 @@ Este módulo implementa uma interface gráfica para administradores
 gerenciarem usuários, incluindo reset de senhas, exclusão de usuários
 e alteração de senhas próprias.
 """
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                               QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
-                               QMessageBox, QGroupBox, QGridLayout, QInputDialog)
+
+from PySide6.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+)
+
 from utils import usuario
 
 
@@ -131,17 +144,20 @@ class GerenciarUsuariosDialog(QDialog):
             self,
             "Confirmar Reset",
             f"Resetar a senha do usuário '{nome}'?\nA senha será alterada para 'nova_senha'.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if resposta == QMessageBox.Yes:
             resultado = usuario.resetar_senha_usuario(user_id)
 
             if "Sucesso" in resultado:
-                QMessageBox.information(self, "Sucesso",
-                                        f"Senha do usuário '{nome}' foi resetada.\n"
-                                        "Nova senha temporária: 'nova_senha'\n"
-                                        "O usuário deverá alterar a senha no próximo login.")
+                QMessageBox.information(
+                    self,
+                    "Sucesso",
+                    f"Senha do usuário '{nome}' foi resetada.\n"
+                    "Nova senha temporária: 'nova_senha'\n"
+                    "O usuário deverá alterar a senha no próximo login.",
+                )
             else:
                 QMessageBox.warning(self, "Erro", resultado)
 
@@ -154,7 +170,7 @@ class GerenciarUsuariosDialog(QDialog):
             self,
             "Confirmar Exclusão",
             f"Tem certeza que deseja excluir o usuário '{nome}'?\nEsta ação não pode ser desfeita.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if resposta == QMessageBox.Yes:
@@ -171,19 +187,17 @@ class GerenciarUsuariosDialog(QDialog):
         # Pegar o usuário logado da janela principal (parent)
         main_window = self.parent()
 
-        if not main_window or not hasattr(main_window, 'usuario_logado'):
+        if not main_window or not hasattr(main_window, "usuario_logado"):
             QMessageBox.warning(
-                self, "Erro", "Não foi possível identificar o usuário logado.")
+                self, "Erro", "Não foi possível identificar o usuário logado."
+            )
             return
 
         usuario_logado = main_window.usuario_logado
 
         # Solicitar senha atual
         senha_atual, ok = QInputDialog.getText(
-            self,
-            "Senha Atual",
-            "Digite sua senha atual:",
-            QLineEdit.Password
+            self, "Senha Atual", "Digite sua senha atual:", QLineEdit.Password
         )
 
         if not ok or not senha_atual.strip():
@@ -191,10 +205,7 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Solicitar nova senha
         nova_senha, ok = QInputDialog.getText(
-            self,
-            "Nova Senha",
-            "Digite a nova senha:",
-            QLineEdit.Password
+            self, "Nova Senha", "Digite a nova senha:", QLineEdit.Password
         )
 
         if not ok or not nova_senha.strip():
@@ -202,10 +213,7 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Confirmar nova senha
         confirmar_senha, ok = QInputDialog.getText(
-            self,
-            "Confirmar Senha",
-            "Confirme a nova senha:",
-            QLineEdit.Password
+            self, "Confirmar Senha", "Confirme a nova senha:", QLineEdit.Password
         )
 
         if not ok or nova_senha != confirmar_senha:
@@ -214,7 +222,8 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Alterar senha
         resultado = usuario.alterar_senha_usuario(
-            usuario_logado, senha_atual, nova_senha)
+            usuario_logado, senha_atual, nova_senha
+        )
 
         if "Sucesso" in resultado:
             QMessageBox.information(

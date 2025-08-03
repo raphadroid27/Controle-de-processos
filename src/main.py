@@ -5,14 +5,32 @@ Este módulo implementa uma interface gráfica completa para gerenciamento
 de processos realizados por desenhistas, incluindo sistema de autenticação,
 controle de usuários e gestão de dados com banco SQLite.
 """
+
 import sys
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                               QHBoxLayout, QTableWidget, QTableWidgetItem,
-                               QLineEdit, QPushButton, QLabel, QMessageBox,
-                               QDialog, QFormLayout, QCheckBox,
-                               QHeaderView, QDateEdit, QComboBox, QFrame)
-from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QFont, QAction
+
+from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QAction, QFont
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDialog,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 from utils import database as db
 from utils import usuario
 
@@ -69,12 +87,12 @@ class LoginDialog(QDialog):
 
         resultado = usuario.verificar_login(nome, senha)
 
-        if resultado['sucesso']:
-            self.usuario_logado = resultado['nome']
-            self.is_admin = resultado['admin']
+        if resultado["sucesso"]:
+            self.usuario_logado = resultado["nome"]
+            self.is_admin = resultado["admin"]
             self.accept()
         else:
-            QMessageBox.warning(self, "Erro de Login", resultado['mensagem'])
+            QMessageBox.warning(self, "Erro de Login", resultado["mensagem"])
             self.entry_senha.clear()
 
     def solicitar_nova_senha(self, nome):
@@ -85,7 +103,7 @@ class LoginDialog(QDialog):
             self,
             "Nova Senha Requerida",
             "Sua senha foi resetada. Digite uma nova senha:",
-            QLineEdit.Password
+            QLineEdit.Password,
         )
 
         if ok and nova_senha.strip():
@@ -93,7 +111,8 @@ class LoginDialog(QDialog):
                 nome, "nova_senha", nova_senha)
             if "Sucesso" in resultado:
                 QMessageBox.information(
-                    self, "Sucesso", "Senha alterada com sucesso. Faça login novamente.")
+                    self, "Sucesso", "Senha alterada com sucesso. Faça login novamente."
+                )
                 self.entry_senha.clear()
             else:
                 QMessageBox.warning(self, "Erro", resultado)
@@ -148,8 +167,11 @@ class NovoUsuarioDialog(QDialog):
         """Salva o novo usuário no banco de dados."""
         nome = self.entry_nome.text().strip()
         senha = self.entry_senha.text().strip()
-        admin = self.check_admin.isChecked(
-        ) if not usuario.verificar_admin_existente() else False
+        admin = (
+            self.check_admin.isChecked()
+            if not usuario.verificar_admin_existente()
+            else False
+        )
 
         if not nome or not senha:
             QMessageBox.warning(self, "Erro", "Nome e senha são obrigatórios.")
@@ -289,8 +311,14 @@ class ProcessosWidget(QWidget):
 
         # Tabela
         self.tabela = QTableWidget()
-        colunas = ["Cliente", "Processo", "Qtd Itens",
-                   "Data Entrada", "Data Processo", "Valor (R$)"]
+        colunas = [
+            "Cliente",
+            "Processo",
+            "Qtd Itens",
+            "Data Entrada",
+            "Data Processo",
+            "Valor (R$)",
+        ]
 
         # Se for admin, mostra coluna usuário
         if self.is_admin:
@@ -359,26 +387,42 @@ class ProcessosWidget(QWidget):
 
             # Se for admin, primeira coluna é usuário
             if self.is_admin:
-                self.tabela.setItem(row, col, QTableWidgetItem(
-                    str(registro[1])))  # usuário
+                self.tabela.setItem(
+                    row, col, QTableWidgetItem(str(registro[1]))
+                )  # usuário
                 col += 1
 
             # Demais colunas
             self.tabela.setItem(row, col, QTableWidgetItem(
-                str(registro[2])))     # cliente
+                str(registro[2])))  # cliente
             self.tabela.setItem(
-                row, col+1, QTableWidgetItem(str(registro[3])))   # processo
+                row, col + 1, QTableWidgetItem(str(registro[3]))
+            )  # processo
             self.tabela.setItem(
-                row, col+2, QTableWidgetItem(str(registro[4])))   # qtde_itens
+                row, col + 2, QTableWidgetItem(str(registro[4]))
+            )  # qtde_itens
             self.tabela.setItem(
                 # data_entrada
-                row, col+3, QTableWidgetItem(str(registro[5])))
-            self.tabela.setItem(row, col+4, QTableWidgetItem(
-                # data_processo
-                str(registro[6]) if registro[6] else "Não processado"))
+                row,
+                col + 3,
+                QTableWidgetItem(str(registro[5])),
+            )
+            self.tabela.setItem(
+                row,
+                col + 4,
+                QTableWidgetItem(
+                    # data_processo
+                    str(registro[6])
+                    if registro[6]
+                    else "Não processado"
+                ),
+            )
             self.tabela.setItem(
                 # valor
-                row, col+5, QTableWidgetItem(f"R$ {registro[7]:.2f}".replace('.', ',')))
+                row,
+                col + 5,
+                QTableWidgetItem(f"R$ {registro[7]:.2f}".replace(".", ",")),
+            )
 
             # Guardar ID do registro (invisível para o usuário)
             item_id = QTableWidgetItem(str(registro[0]))
@@ -398,11 +442,14 @@ class ProcessosWidget(QWidget):
         estatisticas = db.buscar_estatisticas(usuario_filtro)
 
         self.label_total_processos.setText(
-            f"Total Processos: {estatisticas['total_processos']}")
+            f"Total Processos: {estatisticas['total_processos']}"
+        )
         self.label_total_itens.setText(
             f"Total Itens: {estatisticas['total_itens']}")
         self.label_total_valor.setText(
-            f"Total Valor: R$ {estatisticas['total_valor']:.2f}".replace('.', ','))
+            f"Total Valor: R$ {estatisticas['total_valor']:.2f}".replace(
+                ".", ",")
+        )
 
     def adicionar_processo(self):
         cliente = self.entry_cliente.text().strip()
@@ -419,8 +466,13 @@ class ProcessosWidget(QWidget):
         valor_pedido = self.entry_valor_pedido.text().strip()
 
         resultado = db.adicionar_lancamento(
-            self.usuario_logado, cliente, processo, qtde_itens,
-            data_entrada, data_processo, valor_pedido
+            self.usuario_logado,
+            cliente,
+            processo,
+            qtde_itens,
+            data_entrada,
+            data_processo,
+            valor_pedido,
         )
 
         if "Sucesso" in resultado:
@@ -449,9 +501,12 @@ class ProcessosWidget(QWidget):
             return
 
         # Confirmar exclusão
-        resposta = QMessageBox.question(self, "Confirmar Exclusão",
-                                        "Tem certeza que deseja excluir este processo?",
-                                        QMessageBox.Yes | QMessageBox.No)
+        resposta = QMessageBox.question(
+            self,
+            "Confirmar Exclusão",
+            "Tem certeza que deseja excluir este processo?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
 
         if resposta == QMessageBox.Yes:
             # Pegar ID do registro armazenado nos dados do item
@@ -492,35 +547,38 @@ class MainWindow(QMainWindow):
 
         # Status bar
         self.statusBar().showMessage(
-            f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}")
+            f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}"
+        )
 
     def criar_menu(self):
         """Cria o menu da aplicação."""
         menubar = self.menuBar()
 
         # Menu Arquivo
-        arquivo_menu = menubar.addMenu('Arquivo')
+        arquivo_menu = menubar.addMenu("Arquivo")
 
-        sair_action = QAction('Sair', self)
+        sair_action = QAction("Sair", self)
         sair_action.triggered.connect(self.close)
         arquivo_menu.addAction(sair_action)
 
         # Menu Admin (apenas para administradores)
         if self.is_admin:
-            admin_menu = menubar.addMenu('Admin')
+            admin_menu = menubar.addMenu("Admin")
 
-            usuarios_action = QAction('Gerenciar Usuários', self)
+            usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             admin_menu.addAction(usuarios_action)
 
     def abrir_gerenciar_usuarios(self):
         try:
             from gerenciar_usuarios import GerenciarUsuariosDialog
+
             dialog = GerenciarUsuariosDialog(self)
             dialog.exec()
         except ImportError as e:
             QMessageBox.warning(
-                self, "Erro", f"Erro ao carregar gerenciador de usuários: {e}")
+                self, "Erro", f"Erro ao carregar gerenciador de usuários: {e}"
+            )
         except (OSError, RuntimeError) as e:
             QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
 
