@@ -1,11 +1,19 @@
+"""
+Módulo para gerenciamento de usuários do sistema.
+
+Este módulo implementa uma interface gráfica para administradores
+gerenciarem usuários, incluindo reset de senhas, exclusão de usuários
+e alteração de senhas próprias.
+"""
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem,
                                QMessageBox, QGroupBox, QGridLayout, QInputDialog)
-from PySide6.QtCore import Qt
-import utils.usuario as usuario
+from utils import usuario
 
 
 class GerenciarUsuariosDialog(QDialog):
+    """Dialog para gerenciamento de usuários do sistema."""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gerenciar Usuários")
@@ -16,6 +24,7 @@ class GerenciarUsuariosDialog(QDialog):
         self.carregar_usuarios()
 
     def init_ui(self):
+        """Inicializa a interface do usuário."""
         layout = QVBoxLayout()
 
         # Frame de busca
