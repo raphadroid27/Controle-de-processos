@@ -29,10 +29,12 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QInputDialog,
 )
 
 from utils import database as db
 from utils import usuario
+from gerenciar_usuarios import GerenciarUsuariosDialog
 
 
 class LoginDialog(QDialog):
@@ -44,6 +46,12 @@ class LoginDialog(QDialog):
         self.setFixedSize(300, 150)
         self.usuario_logado = None
         self.is_admin = False
+
+        self.entry_data_processo = None
+        self.entry_cliente = None
+        self.entry_processo = None
+        self.entry_qtde_itens = None
+        self.entry_data_entrada = None
 
         layout = QFormLayout()
 
@@ -97,7 +105,6 @@ class LoginDialog(QDialog):
 
     def solicitar_nova_senha(self, nome):
         """Solicita nova senha quando o usuário tem senha de reset."""
-        from PySide6.QtWidgets import QInputDialog
 
         nova_senha, ok = QInputDialog.getText(
             self,
@@ -196,6 +203,25 @@ class ProcessosWidget(QWidget):
 
         self.init_ui()
         self.carregar_dados()
+
+        self.frame_entrada = None
+        self.botoes_layout = None
+        self.frame_totais = None
+        self.btn_adicionar = None
+        self.btn_excluir = None
+        self.combo_usuario = None
+        self.entry_cliente = None
+        self.entry_processo = None
+        self.entry_qtde_itens = None
+        self.entry_data_entrada = None
+        self.entry_data_processo = None
+        self.entry_valor_pedido = None
+        self.btn_filtrar = None
+        self.tabela_layout = None
+        self.tabela = None
+        self.label_total_processos = None
+        self.label_total_itens = None
+        self.label_total_valor = None
 
     def init_ui(self):
         """Inicializa a interface do usuário."""
@@ -457,6 +483,7 @@ class ProcessosWidget(QWidget):
         )
 
     def adicionar_processo(self):
+        """Adiciona um novo processo com os dados preenchidos."""
         cliente = self.entry_cliente.text().strip()
         processo = self.entry_processo.text().strip()
         qtde_itens = self.entry_qtde_itens.text().strip()
@@ -499,6 +526,7 @@ class ProcessosWidget(QWidget):
             QMessageBox.warning(self, "Erro", resultado)
 
     def excluir_processo(self):
+        """Exclui o processo selecionado na tabela."""
         row = self.tabela.currentRow()
         if row < 0:
             QMessageBox.warning(
@@ -575,8 +603,8 @@ class MainWindow(QMainWindow):
             admin_menu.addAction(usuarios_action)
 
     def abrir_gerenciar_usuarios(self):
+        """Abre o diálogo de gerenciamento de usuários."""
         try:
-            from gerenciar_usuarios import GerenciarUsuariosDialog
 
             dialog = GerenciarUsuariosDialog(self)
             dialog.exec()

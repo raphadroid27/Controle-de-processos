@@ -36,6 +36,14 @@ class GerenciarUsuariosDialog(QDialog):
         self.init_ui()
         self.carregar_usuarios()
 
+        # Inicializar atributos
+        self.frame_busca = None
+        self.entry_busca = None
+        self.botoes_layout = None
+        self.btn_resetar_senha = None
+        self.btn_excluir = None
+        self.btn_alterar_senha = None
+
     def init_ui(self):
         """Inicializa a interface do usuário."""
         layout = QVBoxLayout()
