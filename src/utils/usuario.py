@@ -1,3 +1,10 @@
+"""
+Módulo para gerenciamento de usuários do sistema.
+
+Este módulo fornece funcionalidades para autenticação, criação,
+edição e gerenciamento de usuários, incluindo hash de senhas
+e controle de permissões administrativas.
+"""
 import sqlite3
 import hashlib
 from utils.database import conectar_db
@@ -77,8 +84,7 @@ def verificar_login(nome, senha):
                 'nome': usuario[0],
                 'admin': bool(usuario[1])
             }
-        else:
-            return {'sucesso': False, 'mensagem': 'Usuário ou senha inválidos'}
+        return {'sucesso': False, 'mensagem': 'Usuário ou senha inválidos'}
     except sqlite3.Error as e:
         return {'sucesso': False, 'mensagem': f'Erro no banco de dados: {e}'}
     finally:
@@ -139,8 +145,7 @@ def resetar_senha_usuario(user_id, nova_senha="nova_senha"):
 
         if cursor.rowcount > 0:
             return "Sucesso: Senha resetada com sucesso."
-        else:
-            return "Erro: Usuário não encontrado."
+        return "Erro: Usuário não encontrado."
     except sqlite3.Error as e:
         return f"Erro ao resetar senha: {e}"
     finally:
@@ -169,8 +174,7 @@ def excluir_usuario_por_id(user_id):
 
         if cursor.rowcount > 0:
             return "Sucesso: Usuário excluído com sucesso."
-        else:
-            return "Erro: Não foi possível excluir o usuário."
+        return "Erro: Não foi possível excluir o usuário."
     except sqlite3.Error as e:
         return f"Erro ao excluir usuário: {e}"
     finally:
