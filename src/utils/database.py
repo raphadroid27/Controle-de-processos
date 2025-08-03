@@ -1,3 +1,10 @@
+"""
+Módulo para gerenciamento do banco de dados SQLite.
+
+Este módulo fornece funcionalidades para conexão com o banco,
+operações CRUD de processos, estatísticas e manutenção das
+tabelas de dados do sistema.
+"""
 # database.py
 import sqlite3
 
@@ -34,11 +41,18 @@ def criar_tabela_registro():
             conn.close()
 
 
-def adicionar_lancamento(usuario, cliente, processo, qtde_itens, data_entrada, data_processo, valor_pedido):
+def adicionar_lancamento(usuario, cliente, processo, qtde_itens,
+                         data_entrada, data_processo, valor_pedido):
     """Adiciona um novo registro de processo ao banco de dados."""
     # Validação dos dados de entrada
-    if not usuario.strip() or not cliente.strip() or not processo.strip() or not qtde_itens.strip() or not data_entrada.strip() or not valor_pedido.strip():
-        return "Erro: Campos obrigatórios: usuário, cliente, processo, qtd itens, data entrada, valor."
+    campos_obrigatorios = [
+        usuario.strip(), cliente.strip(), processo.strip(),
+        qtde_itens.strip(), data_entrada.strip(), valor_pedido.strip()
+    ]
+
+    if not all(campos_obrigatorios):
+        return ("Erro: Campos obrigatórios: usuário, cliente, processo, "
+                "qtd itens, data entrada, valor.")
 
     try:
         qtde = int(qtde_itens)
@@ -58,13 +72,17 @@ def adicionar_lancamento(usuario, cliente, processo, qtde_itens, data_entrada, d
     cursor = conn.cursor()
 
     # Se data_processo estiver vazia, deixa como NULL
-    data_proc = data_processo.strip() if data_processo and data_processo.strip() else None
+    data_proc = (data_processo.strip()
+                 if data_processo and data_processo.strip()
+                 else None)
 
     try:
         cursor.execute("""
-        INSERT INTO registro (usuario, cliente, processo, qtde_itens, data_entrada, data_processo, valor_pedido)
+        INSERT INTO registro (usuario, cliente, processo, qtde_itens, 
+                            data_entrada, data_processo, valor_pedido)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (usuario.strip(), cliente.strip(), processo.strip(), qtde, data_entrada.strip(), data_proc, valor))
+        """, (usuario.strip(), cliente.strip(), processo.strip(),
+              qtde, data_entrada.strip(), data_proc, valor))
         conn.commit()
         return "Sucesso: Processo adicionado!"
     except sqlite3.Error as e:
@@ -98,10 +116,14 @@ def buscar_lancamentos_filtros(usuario=None):
     cursor = conn.cursor()
 
     if usuario:
-        query = "SELECT id, usuario, cliente, processo, qtde_itens, data_entrada, data_processo, valor_pedido FROM registro WHERE usuario = ? ORDER BY data_entrada DESC"
+        query = ("SELECT id, usuario, cliente, processo, qtde_itens, "
+                 "data_entrada, data_processo, valor_pedido FROM registro "
+                 "WHERE usuario = ? ORDER BY data_entrada DESC")
         cursor.execute(query, (usuario,))
     else:
-        query = "SELECT id, usuario, cliente, processo, qtde_itens, data_entrada, data_processo, valor_pedido FROM registro ORDER BY data_entrada DESC"
+        query = ("SELECT id, usuario, cliente, processo, qtde_itens, "
+                 "data_entrada, data_processo, valor_pedido FROM registro "
+                 "ORDER BY data_entrada DESC")
         cursor.execute(query)
 
     registros = cursor.fetchall()
