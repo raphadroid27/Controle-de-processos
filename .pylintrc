@@ -1,0 +1,20 @@
+[MESSAGES CONTROL]
+# Disable the following messages:
+# E0611: no-name-in-module (PySide6 imports are incorrectly flagged)
+# C0415: import-outside-toplevel (some imports need to be local)
+# R0903: too-few-public-methods (some classes are meant to be simple)
+# R0902: too-many-instance-attributes (GUI classes often have many attributes)
+# R0913: too-many-arguments (some functions legitimately need many parameters)
+# R0917: too-many-positional-arguments (some functions legitimately need many parameters)
+# R0911: too-many-return-statements (some functions need multiple returns for validation)
+# R0801: duplicate-code (some code duplication is acceptable in utilities)
+# W0201: attribute-defined-outside-init (GUI attributes are often defined in helper methods)
+disable=E0611, R0911, R0902, R0903, R0913
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+[BASIC]
+# Good variable names which should always be accepted
+good-names=i,j,k,ex,Run,_,id,db,ui
