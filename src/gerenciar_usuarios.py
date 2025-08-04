@@ -64,11 +64,6 @@ class GerenciarUsuariosDialog(QDialog):
         self.criar_botoes_acao()
         layout.addLayout(self.botoes_layout)
 
-        # Botão fechar
-        btn_fechar = QPushButton("Fechar")
-        btn_fechar.clicked.connect(self.close)
-        layout.addWidget(btn_fechar)
-
         self.setLayout(layout)
 
     def criar_frame_busca(self):
