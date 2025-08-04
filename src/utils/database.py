@@ -139,14 +139,18 @@ def buscar_lancamentos_filtros(usuario=None):
         query = (
             "SELECT id, usuario, cliente, processo, qtde_itens, "
             "data_entrada, data_processo, valor_pedido FROM registro "
-            "WHERE usuario = ? ORDER BY data_entrada DESC"
+            "WHERE usuario = ? ORDER BY "
+            "CASE WHEN data_processo IS NULL THEN 1 ELSE 0 END, "
+            "data_processo ASC, data_entrada ASC"
         )
         cursor.execute(query, (usuario,))
     else:
         query = (
             "SELECT id, usuario, cliente, processo, qtde_itens, "
             "data_entrada, data_processo, valor_pedido FROM registro "
-            "ORDER BY data_entrada DESC"
+            "ORDER BY "
+            "CASE WHEN data_processo IS NULL THEN 1 ELSE 0 END, "
+            "data_processo ASC, data_entrada ASC"
         )
         cursor.execute(query)
 
