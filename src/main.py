@@ -257,7 +257,7 @@ class ProcessosWidget(QWidget):
         self.entry_data_processo = QDateEdit()
         self.entry_data_processo.setCalendarPopup(True)
         self.entry_data_processo.setSpecialValueText("Não processado")
-        self.entry_data_processo.setDate(QDate())  # Data nula
+        self.entry_data_processo.setDate(QDate.currentDate())  # Data nula
 
         self.entry_valor_pedido = QLineEdit()
         self.entry_valor_pedido.setPlaceholderText("0.00")
@@ -570,7 +570,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(
             f"Controle de Processos - Usuário: {usuario_logado}")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setMinimumSize(800, 600)
 
         # Widget central
         self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
