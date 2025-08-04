@@ -8,7 +8,7 @@ controle de usuários e gestão de dados com banco SQLite.
 
 import sys
 
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtCore import QDate, Qt, Signal
 from PySide6.QtGui import QAction, QFont
 from PySide6.QtWidgets import (
     QApplication,
@@ -563,6 +563,8 @@ class ProcessosWidget(QWidget):
 class MainWindow(QMainWindow):
     """Janela principal do aplicativo."""
 
+    logout_requested = Signal()
+
     def __init__(self, usuario_logado, is_admin):
         super().__init__()
         self.usuario_logado = usuario_logado
@@ -590,6 +592,12 @@ class MainWindow(QMainWindow):
         # Menu Arquivo
         arquivo_menu = menubar.addMenu("Arquivo")
 
+        logout_action = QAction("Logout", self)
+        logout_action.triggered.connect(self.fazer_logout)
+        arquivo_menu.addAction(logout_action)
+
+        arquivo_menu.addSeparator()  # Separador visual
+
         sair_action = QAction("Sair", self)
         sair_action.triggered.connect(self.close)
         arquivo_menu.addAction(sair_action)
@@ -615,6 +623,21 @@ class MainWindow(QMainWindow):
         except (OSError, RuntimeError) as e:
             QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
 
+    def fazer_logout(self):
+        """Realiza o logout do usuário atual e volta para a tela de login."""
+        resposta = QMessageBox.question(
+            self,
+            "Logout",
+            "Tem certeza que deseja fazer logout?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if resposta == QMessageBox.Yes:
+            # Emitir sinal de logout para a aplicação principal gerenciar
+            self.logout_requested.emit()
+            # Fechar a janela atual
+            self.close()
+
 
 class ControleProcessosApp:
     """Classe principal da aplicação."""
@@ -622,22 +645,32 @@ class ControleProcessosApp:
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Processos")
+        self.main_window = None
 
     def run(self):
         """Executa a aplicação."""
-        # Mostrar dialog de login
+        self.mostrar_login()
+        return self.app.exec()
+
+    def mostrar_login(self):
+        """Mostra a tela de login."""
         login_dialog = LoginDialog()
 
         if login_dialog.exec() == QDialog.Accepted:
             # Login bem-sucedido, abrir janela principal
-            main_window = MainWindow(
-                login_dialog.usuario_logado, login_dialog.is_admin)
-            main_window.show()
+            if self.main_window:
+                self.main_window.close()
 
-            return self.app.exec()
-
-        # Login cancelado
-        return 0
+            self.main_window = MainWindow(
+                login_dialog.usuario_logado,
+                login_dialog.is_admin
+            )
+            # Conectar o sinal de logout da janela principal
+            self.main_window.logout_requested.connect(self.mostrar_login)
+            self.main_window.show()
+        else:
+            # Login cancelado
+            QApplication.quit()
 
 
 if __name__ == "__main__":
