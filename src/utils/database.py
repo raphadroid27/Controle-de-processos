@@ -311,7 +311,7 @@ def buscar_processos_unicos_por_usuario(usuario=None):
     return processos
 
 
-def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=None):
+def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=None, mes=None, ano=None):
     """Busca lançamentos aplicando múltiplos filtros com busca parcial."""
     conn = conectar_db()
     cursor = conn.cursor()
@@ -332,6 +332,14 @@ def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=No
         conditions.append("UPPER(processo) LIKE ?")
         params.append(f"{processo.upper()}%")
 
+    if mes:
+        conditions.append("strftime('%m', data_entrada) = ?")
+        params.append(mes)
+
+    if ano:
+        conditions.append("strftime('%Y', data_entrada) = ?")
+        params.append(ano)
+
     query = "SELECT * FROM registro"
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
@@ -343,7 +351,7 @@ def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=No
     return registros
 
 
-def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None):
+def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None, mes=None, ano=None):
     """Calcula estatísticas aplicando múltiplos filtros com busca parcial."""
     conn = conectar_db()
     cursor = conn.cursor()
@@ -364,6 +372,14 @@ def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None):
         conditions.append("UPPER(processo) LIKE ?")
         params.append(f"{processo.upper()}%")
 
+    if mes:
+        conditions.append("strftime('%m', data_entrada) = ?")
+        params.append(mes)
+
+    if ano:
+        conditions.append("strftime('%Y', data_entrada) = ?")
+        params.append(ano)
+
     query = "SELECT COUNT(*) as total_processos, SUM(qtde_itens) as total_itens, SUM(valor_pedido) as total_valor FROM registro"
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
@@ -377,6 +393,56 @@ def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None):
         "total_itens": resultado[1] if resultado[1] else 0,
         "total_valor": resultado[2] if resultado[2] else 0.0,
     }
+
+
+def buscar_meses_unicos(usuario=None):
+    """Busca os meses únicos que possuem registros no banco de dados."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+    
+    conditions = []
+    params = []
+    
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+    
+    query = "SELECT DISTINCT strftime('%m', data_entrada) as mes FROM registro"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    query += " ORDER BY mes"
+    
+    cursor.execute(query, params)
+    meses = cursor.fetchall()
+    conn.close()
+    
+    # Retornar apenas os números dos meses (sem None)
+    return [mes[0] for mes in meses if mes[0] is not None]
+
+
+def buscar_anos_unicos(usuario=None):
+    """Busca os anos únicos que possuem registros no banco de dados."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+    
+    conditions = []
+    params = []
+    
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+    
+    query = "SELECT DISTINCT strftime('%Y', data_entrada) as ano FROM registro"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    query += " ORDER BY ano DESC"  # Anos em ordem decrescente (mais recente primeiro)
+    
+    cursor.execute(query, params)
+    anos = cursor.fetchall()
+    conn.close()
+    
+    # Retornar apenas os anos (sem None)
+    return [ano[0] for ano in anos if ano[0] is not None]
 
 
 # Garante que a tabela seja criada na primeira vez que o módulo foi importado

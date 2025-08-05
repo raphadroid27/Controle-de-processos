@@ -529,6 +529,71 @@ class ProcessosWidget(QWidget):
         except Exception as e:
             print(f"Erro ao atualizar autocompletar do filtro: {e}")
 
+    def configurar_filtros_mes_ano(self):
+        """Configura os combos de mês e ano com dados únicos do banco."""
+        try:
+            # Determinar qual usuário filtrar para meses e anos
+            if self.is_admin:
+                if hasattr(self, 'combo_usuario') and self.combo_usuario.currentText() != "Todos os usuários":
+                    usuario_filtro = self.combo_usuario.currentText()
+                else:
+                    usuario_filtro = None
+            else:
+                # Usuários normais só veem seus próprios dados
+                usuario_filtro = self.usuario_logado
+
+            # Bloquear sinais temporariamente
+            self.combo_filtro_mes.blockSignals(True)
+            self.combo_filtro_ano.blockSignals(True)
+
+            # Salvar seleções atuais
+            mes_selecionado = self.combo_filtro_mes.currentText()
+            ano_selecionado = self.combo_filtro_ano.currentText()
+
+            # Limpar e adicionar opção "Todos"
+            self.combo_filtro_mes.clear()
+            self.combo_filtro_mes.addItem("Todos os meses")
+
+            self.combo_filtro_ano.clear()
+            self.combo_filtro_ano.addItem("Todos os anos")
+
+            # Buscar meses únicos do banco
+            meses_db = db.buscar_meses_unicos(usuario_filtro)
+            nomes_meses = {
+                "01": "Janeiro", "02": "Fevereiro", "03": "Março",
+                "04": "Abril", "05": "Maio", "06": "Junho",
+                "07": "Julho", "08": "Agosto", "09": "Setembro",
+                "10": "Outubro", "11": "Novembro", "12": "Dezembro"
+            }
+
+            for mes in meses_db:
+                if mes in nomes_meses:
+                    self.combo_filtro_mes.addItem(f"{mes} - {nomes_meses[mes]}")
+
+            # Buscar anos únicos do banco
+            anos_db = db.buscar_anos_unicos(usuario_filtro)
+            for ano in anos_db:
+                self.combo_filtro_ano.addItem(ano)
+
+            # Restaurar seleções se ainda existirem
+            mes_index = self.combo_filtro_mes.findText(mes_selecionado)
+            if mes_index >= 0:
+                self.combo_filtro_mes.setCurrentIndex(mes_index)
+
+            ano_index = self.combo_filtro_ano.findText(ano_selecionado)
+            if ano_index >= 0:
+                self.combo_filtro_ano.setCurrentIndex(ano_index)
+
+            # Reativar sinais
+            self.combo_filtro_mes.blockSignals(False)
+            self.combo_filtro_ano.blockSignals(False)
+
+        except Exception as e:
+            print(f"Erro ao configurar filtros de mês/ano: {e}")
+            # Reativar sinais em caso de erro
+            self.combo_filtro_mes.blockSignals(False)
+            self.combo_filtro_ano.blockSignals(False)
+
     def converter_cliente_maiuscula(self, texto):
         """Converte automaticamente o texto do campo cliente para maiúscula."""
         # Bloquear temporariamente o sinal para evitar recursão
@@ -741,17 +806,12 @@ class ProcessosWidget(QWidget):
             # Espaçamento entre filtros
             filtro_completo_layout.addSpacing(15)
 
-        # Adicionar espaçamento flexível para empurrar os filtros comuns para a direita
-        filtro_completo_layout.addStretch()
-
         # Filtro por cliente
         filtro_completo_layout.addWidget(QLabel("Cliente:"))
         self.entry_filtro_cliente = QLineEdit()
         self.entry_filtro_cliente.setPlaceholderText(
             "Digite o nome do cliente")
-        self.entry_filtro_cliente.setMinimumWidth(100)  # Largura otimizada
-        self.entry_filtro_cliente.setMaximumWidth(
-            250)  # Largura máxima para manter proporção
+        self.entry_filtro_cliente.setMinimumWidth(200)
         filtro_completo_layout.addWidget(self.entry_filtro_cliente)
 
         # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
@@ -772,9 +832,7 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo = QLineEdit()
         self.entry_filtro_processo.setPlaceholderText(
             "Digite o nome do processo")
-        self.entry_filtro_processo.setMinimumWidth(100)  # Largura otimizada
-        self.entry_filtro_processo.setMaximumWidth(
-            250)  # Largura máxima para manter proporção
+        self.entry_filtro_processo.setMinimumWidth(200)
         filtro_completo_layout.addWidget(self.entry_filtro_processo)
 
         # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
@@ -784,9 +842,34 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo.textChanged.connect(
             lambda: self.timer_processo.start(500))
 
+        # Espaçamento entre filtros
+        filtro_completo_layout.addSpacing(15)
+
+        # Filtro por mês
+        filtro_completo_layout.addWidget(QLabel("Mês:"))
+        self.combo_filtro_mes = QComboBox()
+        self.combo_filtro_mes.addItem("Todos os meses")
+        self.combo_filtro_mes.setMinimumWidth(120)
+        filtro_completo_layout.addWidget(self.combo_filtro_mes)
+
+        # Conectar mudança no combo de mês
+        self.combo_filtro_mes.currentTextChanged.connect(self.aplicar_filtro)
+
+        # Espaçamento entre filtros
+        filtro_completo_layout.addSpacing(15)
+
+        # Filtro por ano
+        filtro_completo_layout.addWidget(QLabel("Ano:"))
+        self.combo_filtro_ano = QComboBox()
+        self.combo_filtro_ano.addItem("Todos os anos")
+        self.combo_filtro_ano.setMinimumWidth(100)
+        filtro_completo_layout.addWidget(self.combo_filtro_ano)
+
+        # Conectar mudança no combo de ano
+        self.combo_filtro_ano.currentTextChanged.connect(self.aplicar_filtro)
+
         # Espaçamento antes do botão
-        # Espaçamento aumentado antes do botão
-        filtro_completo_layout.addSpacing(20)
+        filtro_completo_layout.addSpacing(15)
 
         # Botão limpar filtros
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
@@ -814,10 +897,7 @@ class ProcessosWidget(QWidget):
         """)
 
         filtro_completo_layout.addWidget(self.btn_limpar_filtros)
-
-        # Remover o addStretch() que empurrava tudo para a esquerda
-        # filtro_completo_layout.addStretch()  # Comentado para manter alinhamento à direita
-
+        filtro_completo_layout.addStretch()  # Empurra tudo para a esquerda
         filtros_layout.addLayout(filtro_completo_layout)
 
         filtros_frame.setLayout(filtros_layout)
@@ -1059,12 +1139,24 @@ class ProcessosWidget(QWidget):
             self.entry_filtro_processo.clear()
             self.entry_filtro_processo.blockSignals(False)
 
+        if hasattr(self, 'combo_filtro_mes'):
+            self.combo_filtro_mes.blockSignals(True)
+            self.combo_filtro_mes.setCurrentText("Todos os meses")
+            self.combo_filtro_mes.blockSignals(False)
+
+        if hasattr(self, 'combo_filtro_ano'):
+            self.combo_filtro_ano.blockSignals(True)
+            self.combo_filtro_ano.setCurrentText("Todos os anos")
+            self.combo_filtro_ano.blockSignals(False)
+
         # Aplicar filtros limpos
         self.aplicar_filtro()
 
     def on_usuario_changed(self):
         """Chamado quando o filtro de usuário muda (apenas para admins)."""
-        # Apenas aplicar filtros (não precisa recarregar comboboxes)
+        # Reconfigurar filtros de mês e ano baseado no usuário selecionado
+        self.configurar_filtros_mes_ano()
+        # Aplicar filtros
         self.aplicar_filtro()
 
     def carregar_dados(self):
@@ -1074,6 +1166,9 @@ class ProcessosWidget(QWidget):
             usuarios_list = db.buscar_usuarios_unicos()
             for user in usuarios_list:
                 self.combo_usuario.addItem(user)
+
+        # Configurar filtros de mês e ano com dados únicos
+        self.configurar_filtros_mes_ano()
 
         self.aplicar_filtro()
 
@@ -1211,6 +1306,9 @@ class ProcessosWidget(QWidget):
             )
 
             if "Sucesso" in resultado:
+                # Reconfigurar filtros de mês e ano se a data de entrada foi alterada
+                if col_editada == 3:  # Se foi alterada a data de entrada
+                    self.configurar_filtros_mes_ano()
                 # Recarregar dados para garantir consistência e atualizar totais
                 self.aplicar_filtro(rolar_para_ultimo=False)
             else:
@@ -1286,9 +1384,19 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
             processo_filtro = self.entry_filtro_processo.text().strip()
 
+        # Determinar filtros de mês e ano
+        mes_filtro = None
+        if hasattr(self, 'combo_filtro_mes') and self.combo_filtro_mes.currentText() != "Todos os meses":
+            # Extrair número do mês (primeiros 2 caracteres)
+            mes_filtro = self.combo_filtro_mes.currentText()[:2]
+
+        ano_filtro = None
+        if hasattr(self, 'combo_filtro_ano') and self.combo_filtro_ano.currentText() != "Todos os anos":
+            ano_filtro = self.combo_filtro_ano.currentText()
+
         # Buscar dados com filtros aplicados
         registros = db.buscar_lancamentos_filtros_completos(
-            usuario_filtro, cliente_filtro, processo_filtro)
+            usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
 
         # Ordenar por critérios múltiplos para garantir que novos itens apareçam no final
         # Função para extrair critérios de ordenação
@@ -1409,7 +1517,15 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
             processo_filtro = self.entry_filtro_processo.text().strip()
 
-        self.atualizar_totais(usuario_filtro, cliente_filtro, processo_filtro)
+        mes_filtro = None
+        if hasattr(self, 'combo_filtro_mes') and self.combo_filtro_mes.currentText() != "Todos os meses":
+            mes_filtro = self.combo_filtro_mes.currentText()[:2]
+
+        ano_filtro = None
+        if hasattr(self, 'combo_filtro_ano') and self.combo_filtro_ano.currentText() != "Todos os anos":
+            ano_filtro = self.combo_filtro_ano.currentText()
+
+        self.atualizar_totais(usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
 
         # Rolar para o último item apenas quando solicitado
         if rolar_para_ultimo:
@@ -1424,10 +1540,10 @@ class ProcessosWidget(QWidget):
             # Também garantir que a linha seja selecionada visualmente
             self.tabela.selectRow(ultima_linha)
 
-    def atualizar_totais(self, usuario_filtro=None, cliente_filtro=None, processo_filtro=None):
+    def atualizar_totais(self, usuario_filtro=None, cliente_filtro=None, processo_filtro=None, mes_filtro=None, ano_filtro=None):
         """Atualiza os totais exibidos no painel de estatísticas."""
         estatisticas = db.buscar_estatisticas_completas(
-            usuario_filtro, cliente_filtro, processo_filtro)
+            usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
 
         self.label_total_processos.setText(
             f"Total Processos: {estatisticas['total_processos']}"
@@ -1489,6 +1605,9 @@ class ProcessosWidget(QWidget):
             self.atualizar_autocompletar_cliente()
             self.atualizar_autocompletar_filtro_cliente()
 
+            # Reconfigurar filtros de mês e ano (podem ter novos valores)
+            self.configurar_filtros_mes_ano()
+
             # Atualizar tabela
             self.aplicar_filtro()
 
@@ -1539,6 +1658,8 @@ class ProcessosWidget(QWidget):
 
                 if "Sucesso" in resultado:
                     QMessageBox.information(self, "Sucesso", resultado)
+                    # Reconfigurar filtros de mês e ano (podem ter perdido valores)
+                    self.configurar_filtros_mes_ano()
                     self.aplicar_filtro(rolar_para_ultimo=False)
                 else:
                     QMessageBox.warning(self, "Erro", resultado)
