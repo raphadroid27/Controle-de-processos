@@ -488,6 +488,42 @@ class ProcessosWidget(QWidget):
         except Exception as e:
             print(f"Erro ao atualizar autocompletar: {e}")
 
+    def configurar_autocompletar_filtro_cliente(self):
+        """Configura o autocompletar para o campo de filtro de cliente."""
+        try:
+            # Buscar clientes únicos do banco de dados
+            clientes_raw = db.buscar_clientes_unicos()
+            # Converter todos os clientes para maiúscula
+            clientes = [cliente.upper() for cliente in clientes_raw]
+
+            # Criar o completer para o filtro
+            self.completer_filtro_cliente = QCompleter(clientes, self)
+            self.completer_filtro_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+            self.completer_filtro_cliente.setFilterMode(Qt.MatchStartsWith)
+
+            # Aplicar o completer ao campo de filtro de cliente
+            self.entry_filtro_cliente.setCompleter(self.completer_filtro_cliente)
+        except Exception as e:
+            print(f"Erro ao configurar autocompletar do filtro: {e}")
+
+    def atualizar_autocompletar_filtro_cliente(self):
+        """Atualiza a lista de sugestões do autocompletar do filtro com clientes mais recentes."""
+        try:
+            # Buscar clientes únicos atualizados
+            clientes_raw = db.buscar_clientes_unicos()
+            # Converter todos os clientes para maiúscula
+            clientes = [cliente.upper() for cliente in clientes_raw]
+
+            # Atualizar o modelo do completer do filtro
+            if hasattr(self, 'completer_filtro_cliente'):
+                self.completer_filtro_cliente.setModel(None)
+                self.completer_filtro_cliente = QCompleter(clientes, self)
+                self.completer_filtro_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+                self.completer_filtro_cliente.setFilterMode(Qt.MatchStartsWith)
+                self.entry_filtro_cliente.setCompleter(self.completer_filtro_cliente)
+        except Exception as e:
+            print(f"Erro ao atualizar autocompletar do filtro: {e}")
+
     def converter_cliente_maiuscula(self, texto):
         """Converte automaticamente o texto do campo cliente para maiúscula."""
         # Bloquear temporariamente o sinal para evitar recursão
@@ -661,32 +697,31 @@ class ProcessosWidget(QWidget):
         filtros_frame.setFrameStyle(QFrame.StyledPanel)
         filtros_layout = QVBoxLayout()
 
-        # Primeira linha de filtros - Filtro por usuário (apenas para admins)
-        if self.is_admin:
-            filtro_usuario_layout = QHBoxLayout()
-            filtro_usuario_layout.addWidget(QLabel("Filtrar por usuário:"))
+        # Uma única linha com todos os filtros
+        filtro_completo_layout = QHBoxLayout()
 
+        # Filtro por usuário (apenas para admins)
+        if self.is_admin:
+            filtro_completo_layout.addWidget(QLabel("Usuário:"))
             self.combo_usuario = QComboBox()
             self.combo_usuario.addItem("Todos os usuários")
-            filtro_usuario_layout.addWidget(self.combo_usuario)
+            self.combo_usuario.setMinimumWidth(150)
+            filtro_completo_layout.addWidget(self.combo_usuario)
 
-            # Conectar mudança no combo para recarregar filtros e aplicar filtro automaticamente
+            # Conectar mudança no combo para aplicar filtro automaticamente
             self.combo_usuario.currentTextChanged.connect(
                 self.on_usuario_changed)
 
-            filtro_usuario_layout.addStretch()
-            filtros_layout.addLayout(filtro_usuario_layout)
-
-        # Segunda linha de filtros - Cliente e Processo (para todos os usuários)
-        filtro_dados_layout = QHBoxLayout()
+            # Espaçamento entre filtros
+            filtro_completo_layout.addSpacing(15)
 
         # Filtro por cliente
-        filtro_dados_layout.addWidget(QLabel("Cliente:"))
+        filtro_completo_layout.addWidget(QLabel("Cliente:"))
         self.entry_filtro_cliente = QLineEdit()
         self.entry_filtro_cliente.setPlaceholderText(
-            "Digite o nome do cliente ou deixe vazio para todos")
+            "Digite o nome do cliente")
         self.entry_filtro_cliente.setMinimumWidth(200)
-        filtro_dados_layout.addWidget(self.entry_filtro_cliente)
+        filtro_completo_layout.addWidget(self.entry_filtro_cliente)
 
         # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
         self.timer_cliente = QTimer()
@@ -695,16 +730,19 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_cliente.textChanged.connect(
             lambda: self.timer_cliente.start(500))
 
-        # Espaçamento
-        filtro_dados_layout.addSpacing(20)
+        # Configurar autocompletar para o filtro de cliente
+        self.configurar_autocompletar_filtro_cliente()
+
+        # Espaçamento entre filtros
+        filtro_completo_layout.addSpacing(15)
 
         # Filtro por processo
-        filtro_dados_layout.addWidget(QLabel("Processo:"))
+        filtro_completo_layout.addWidget(QLabel("Processo:"))
         self.entry_filtro_processo = QLineEdit()
         self.entry_filtro_processo.setPlaceholderText(
-            "Digite o nome do processo ou deixe vazio para todos")
+            "Digite o nome do processo")
         self.entry_filtro_processo.setMinimumWidth(200)
-        filtro_dados_layout.addWidget(self.entry_filtro_processo)
+        filtro_completo_layout.addWidget(self.entry_filtro_processo)
 
         # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
         self.timer_processo = QTimer()
@@ -713,8 +751,10 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo.textChanged.connect(
             lambda: self.timer_processo.start(500))
 
+        # Espaçamento antes do botão
+        filtro_completo_layout.addSpacing(15)
+
         # Botão limpar filtros
-        filtro_dados_layout.addSpacing(20)
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
 
@@ -739,9 +779,9 @@ class ProcessosWidget(QWidget):
             }}
         """)
 
-        filtro_dados_layout.addWidget(self.btn_limpar_filtros)
-        filtro_dados_layout.addStretch()
-        filtros_layout.addLayout(filtro_dados_layout)
+        filtro_completo_layout.addWidget(self.btn_limpar_filtros)
+        filtro_completo_layout.addStretch()  # Empurra tudo para a esquerda
+        filtros_layout.addLayout(filtro_completo_layout)
 
         filtros_frame.setLayout(filtros_layout)
         self.tabela_layout.addWidget(filtros_frame)
@@ -770,9 +810,24 @@ class ProcessosWidget(QWidget):
         # Apenas uma linha por vez
         self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        # Configurar redimensionamento das colunas
+        # Configurar redimensionamento das colunas com larguras fixas
         header = self.tabela.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Definir larguras fixas para cada coluna
+        if self.is_admin:
+            # Para admin: Usuário, Cliente, Processo, Qtd Itens, Data Entrada, Data Processo, Valor
+            larguras_colunas = [120, 250, 200, 100, 120, 120, 130]
+        else:
+            # Para usuário normal: Cliente, Processo, Qtd Itens, Data Entrada, Data Processo, Valor
+            larguras_colunas = [250, 200, 100, 120, 120, 130]
+        
+        # Aplicar larguras fixas
+        for i, largura in enumerate(larguras_colunas):
+            header.setSectionResizeMode(i, QHeaderView.Fixed)
+            self.tabela.setColumnWidth(i, largura)
+        
+        # Permitir que a última coluna se expanda se necessário
+        header.setStretchLastSection(True)
 
         # Configurar alinhamento dos cabeçalhos das colunas
         # Offset para admin (coluna usuário)
@@ -1343,6 +1398,7 @@ class ProcessosWidget(QWidget):
 
             # Atualizar autocompletar de clientes
             self.atualizar_autocompletar_cliente()
+            self.atualizar_autocompletar_filtro_cliente()
 
             # Atualizar tabela
             self.aplicar_filtro()
