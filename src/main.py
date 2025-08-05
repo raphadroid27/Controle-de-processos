@@ -52,11 +52,13 @@ def formatar_valor_monetario(valor):
     try:
         if isinstance(valor, str):
             # Limpar valor se for string
-            valor_limpo = valor.replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".")
+            valor_limpo = valor.replace("R$", "").replace(
+                " ", "").replace(".", "").replace(",", ".")
             valor = float(valor_limpo)
-        
+
         # Formatar com separador de milhares (ponto) e decimais (vírgula)
-        valor_formatado = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        valor_formatado = f"{valor:,.2f}".replace(
+            ",", "X").replace(".", ",").replace("X", ".")
         return f"R$ {valor_formatado}"
     except (ValueError, TypeError):
         return "R$ 0,00"
@@ -73,6 +75,9 @@ class DateEditDelegate(QStyledItemDelegate):
         editor = QDateEdit(parent)
         editor.setCalendarPopup(True)
         editor.setDisplayFormat("dd/MM/yyyy")
+
+        # Definir data máxima como hoje
+        editor.setMaximumDate(QDate.currentDate())
 
         # Verificar se é uma coluna de data processo (pode estar vazia)
         data_texto = index.data()
@@ -377,13 +382,18 @@ class ProcessosWidget(QWidget):
         self.entry_cliente = QLineEdit()
         self.entry_processo = QLineEdit()
         self.entry_qtde_itens = QLineEdit()
+
+        # Data de entrada com limite máximo de hoje
         self.entry_data_entrada = QDateEdit()
         self.entry_data_entrada.setDate(QDate.currentDate())
         self.entry_data_entrada.setCalendarPopup(True)
+        self.entry_data_entrada.setMaximumDate(QDate.currentDate())
 
+        # Data de processo com limite máximo de hoje
         self.entry_data_processo = QDateEdit()
         self.entry_data_processo.setCalendarPopup(True)
         self.entry_data_processo.setSpecialValueText("Não processado")
+        self.entry_data_processo.setMaximumDate(QDate.currentDate())
         self.entry_data_processo.setDate(QDate.currentDate())  # Data nula
 
         self.entry_valor_pedido = QLineEdit()
@@ -536,31 +546,37 @@ class ProcessosWidget(QWidget):
         header.setSectionResizeMode(QHeaderView.Stretch)
 
         # Configurar alinhamento dos cabeçalhos das colunas
-        offset = 1 if self.is_admin else 0  # Offset para admin (coluna usuário)
-        
+        # Offset para admin (coluna usuário)
+        offset = 1 if self.is_admin else 0
+
         # Processo alinhado ao centro
         processo_col_index = 1 + offset
         processo_header_item = QTableWidgetItem("Processo")
         processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.tabela.setHorizontalHeaderItem(processo_col_index, processo_header_item)
-        
+        self.tabela.setHorizontalHeaderItem(
+            processo_col_index, processo_header_item)
+
         # Quantidade alinhada ao centro
         qtd_col_index = 2 + offset
         qtd_header_item = QTableWidgetItem("Qtd Itens")
         qtd_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
         self.tabela.setHorizontalHeaderItem(qtd_col_index, qtd_header_item)
-        
+
         # Datas alinhadas ao centro
         data_entrada_col_index = 3 + offset
         data_entrada_header_item = QTableWidgetItem("Data Entrada")
-        data_entrada_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.tabela.setHorizontalHeaderItem(data_entrada_col_index, data_entrada_header_item)
-        
+        data_entrada_header_item.setTextAlignment(
+            Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(
+            data_entrada_col_index, data_entrada_header_item)
+
         data_processo_col_index = 4 + offset
         data_processo_header_item = QTableWidgetItem("Data Processo")
-        data_processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.tabela.setHorizontalHeaderItem(data_processo_col_index, data_processo_header_item)
-        
+        data_processo_header_item.setTextAlignment(
+            Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(
+            data_processo_col_index, data_processo_header_item)
+
         # Valor alinhado à direita
         valor_col_index = len(colunas) - 1  # Última coluna (Valor)
         valor_header_item = QTableWidgetItem("Valor (R$)")
@@ -582,8 +598,7 @@ class ProcessosWidget(QWidget):
 
         # Configurar tooltip para indicar que a tabela é editável
         self.tabela.setToolTip(
-            "Clique duas vezes em uma célula para editar diretamente na tabela\n"
-            "Atalhos: Enter = Adicionar novo processo | Delete = Excluir processo selecionado")
+            "Clique duas vezes em uma célula para editar diretamente na tabela")
 
         # Conectar evento de edição da tabela
         self.tabela.itemChanged.connect(self.on_item_changed)
@@ -707,6 +722,38 @@ class ProcessosWidget(QWidget):
                         self, "Erro", "Quantidade de itens deve ser um número inteiro positivo.")
                     self.aplicar_filtro()
                     return
+            elif col_editada == 3:  # Data de entrada
+                if valor_editado and valor_editado != "Não processado":
+                    try:
+                        # Validar formato e se não é data futura
+                        data_obj = datetime.strptime(valor_editado, "%d/%m/%Y")
+                        data_hoje = datetime.now().date()
+                        if data_obj.date() > data_hoje:
+                            QMessageBox.warning(
+                                self, "Erro", "Data de entrada não pode ser maior que a data atual.")
+                            self.aplicar_filtro()
+                            return
+                    except ValueError:
+                        QMessageBox.warning(
+                            self, "Erro", "Data de entrada deve estar no formato DD/MM/AAAA.")
+                        self.aplicar_filtro()
+                        return
+            elif col_editada == 4:  # Data de processo
+                if valor_editado and valor_editado != "Não processado":
+                    try:
+                        # Validar formato e se não é data futura
+                        data_obj = datetime.strptime(valor_editado, "%d/%m/%Y")
+                        data_hoje = datetime.now().date()
+                        if data_obj.date() > data_hoje:
+                            QMessageBox.warning(
+                                self, "Erro", "Data de processo não pode ser maior que a data atual.")
+                            self.aplicar_filtro()
+                            return
+                    except ValueError:
+                        QMessageBox.warning(
+                            self, "Erro", "Data de processo deve estar no formato DD/MM/AAAA.")
+                        self.aplicar_filtro()
+                        return
             elif col_editada == 5:  # Valor
                 try:
                     # Limpar formatação e testar conversão
@@ -744,7 +791,8 @@ class ProcessosWidget(QWidget):
                     data_processo_text)
 
             # Processar valor (remover R$, espaços e separadores, converter vírgula decimal para ponto)
-            valor_limpo = valor_text.replace("R$", "").replace(" ", "").replace(".", "")
+            valor_limpo = valor_text.replace(
+                "R$", "").replace(" ", "").replace(".", "")
             # Converter vírgula decimal para ponto
             if "," in valor_limpo:
                 # Se tem vírgula, é o separador decimal
@@ -841,9 +889,10 @@ class ProcessosWidget(QWidget):
             except ValueError:
                 # Se não conseguir converter, usar data muito antiga
                 return datetime.min
-        
+
         # Ordenar da maior data para a menor (reverse=True)
-        registros_ordenados = sorted(registros, key=obter_data_ordenacao, reverse=True)
+        registros_ordenados = sorted(
+            registros, key=obter_data_ordenacao, reverse=True)
 
         # Bloquear sinais temporariamente para evitar chamadas desnecessárias
         self.tabela.blockSignals(True)
@@ -880,18 +929,21 @@ class ProcessosWidget(QWidget):
             data_entrada_formatada = self.formatar_data_para_exibicao(
                 registro[5])
             item_data_entrada = QTableWidgetItem(data_entrada_formatada)
-            item_data_entrada.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_data_entrada.setTextAlignment(
+                Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 3, item_data_entrada)
 
             # Formatar data de processo DD/MM/AAAA e alinhar ao centro
             data_processo_formatada = self.formatar_data_para_exibicao(
                 registro[6]) if registro[6] else "Não processado"
             item_data_processo = QTableWidgetItem(data_processo_formatada)
-            item_data_processo.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_data_processo.setTextAlignment(
+                Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 4, item_data_processo)
 
             # Formatar valor monetário com separador de milhares e alinhar à direita
-            item_valor = QTableWidgetItem(formatar_valor_monetario(registro[7]))
+            item_valor = QTableWidgetItem(
+                formatar_valor_monetario(registro[7]))
             item_valor.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 5, item_valor)
 
@@ -927,11 +979,23 @@ class ProcessosWidget(QWidget):
         cliente = self.entry_cliente.text().strip()
         processo = self.entry_processo.text().strip()
         qtde_itens = self.entry_qtde_itens.text().strip()
-        data_entrada = self.entry_data_entrada.date().toString("yyyy-MM-dd")
 
-        # Verificar se a data de processo foi preenchida
-        if not self.entry_data_processo.date().isNull():
-            data_processo = self.entry_data_processo.date().toString("yyyy-MM-dd")
+        # Validar data de entrada
+        data_entrada_qdate = self.entry_data_entrada.date()
+        if data_entrada_qdate > QDate.currentDate():
+            QMessageBox.warning(
+                self, "Erro", "Data de entrada não pode ser maior que a data atual.")
+            return
+        data_entrada = data_entrada_qdate.toString("yyyy-MM-dd")
+
+        # Verificar se a data de processo foi preenchida e validar
+        data_processo_qdate = self.entry_data_processo.date()
+        if not data_processo_qdate.isNull():
+            if data_processo_qdate > QDate.currentDate():
+                QMessageBox.warning(
+                    self, "Erro", "Data de processo não pode ser maior que a data atual.")
+                return
+            data_processo = data_processo_qdate.toString("yyyy-MM-dd")
         else:
             data_processo = ""
 
