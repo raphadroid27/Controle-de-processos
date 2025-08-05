@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 from PySide6.QtCore import QDate, Qt, Signal
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtGui import QAction, QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -307,6 +307,45 @@ class ProcessosWidget(QWidget):
 
         self.setLayout(main_layout)
 
+        # Configurar atalhos de teclado
+        self.configurar_atalhos()
+
+    def configurar_atalhos(self):
+        """Configura os atalhos de teclado para a aplicação."""
+        # Atalho Enter para adicionar processo (com validação)
+        self.shortcut_enter = QShortcut(QKeySequence(Qt.Key_Return), self)
+        self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
+
+        # Atalho Enter (teclado numérico) para adicionar processo (com validação)
+        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key_Enter), self)
+        self.shortcut_enter_num.activated.connect(
+            self.atalho_adicionar_processo)
+
+        # Atalho Delete para excluir processo
+        self.shortcut_delete = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self.shortcut_delete.activated.connect(self.excluir_processo)
+
+    def atalho_adicionar_processo(self):
+        """Adiciona processo via atalho, mas apenas se campos obrigatórios estiverem preenchidos."""
+        # Verificar se os campos obrigatórios estão preenchidos
+        cliente = self.entry_cliente.text().strip()
+        processo = self.entry_processo.text().strip()
+        qtde_itens = self.entry_qtde_itens.text().strip()
+        valor_pedido = self.entry_valor_pedido.text().strip()
+
+        if cliente and processo and qtde_itens and valor_pedido:
+            self.adicionar_processo()
+        else:
+            # Focar no primeiro campo vazio
+            if not cliente:
+                self.entry_cliente.setFocus()
+            elif not processo:
+                self.entry_processo.setFocus()
+            elif not qtde_itens:
+                self.entry_qtde_itens.setFocus()
+            elif not valor_pedido:
+                self.entry_valor_pedido.setFocus()
+
     def criar_frame_entrada(self):
         """Cria o frame de entrada de dados."""
         self.frame_entrada = QFrame()
@@ -370,18 +409,17 @@ class ProcessosWidget(QWidget):
         # Botões
         col7 = QVBoxLayout()
         self.btn_adicionar = QPushButton("Adicionar")
-        self.btn_excluir = QPushButton("Excluir")
-        self.btn_excluir.setStyleSheet("background-color: #ff4444;")
+        self.btn_adicionar.setToolTip(
+            "Adicionar novo processo (Atalho: Enter)")
+        # Remover botão excluir daqui - será movido para baixo da tabela
 
         col7.addWidget(self.btn_adicionar)
-        col7.addWidget(self.btn_excluir)
         campos_layout.addLayout(col7)
 
         self.frame_entrada.setLayout(campos_layout)
 
         # Conectar eventos
         self.btn_adicionar.clicked.connect(self.adicionar_processo)
-        self.btn_excluir.clicked.connect(self.excluir_processo)
 
     def criar_tabela(self):
         """Cria a interface da tabela de processos com filtros."""
@@ -421,6 +459,12 @@ class ProcessosWidget(QWidget):
         self.tabela.setColumnCount(len(colunas))
         self.tabela.setHorizontalHeaderLabels(colunas)
 
+        # Configurar seleção da tabela
+        self.tabela.setSelectionBehavior(
+            QAbstractItemView.SelectRows)  # Selecionar linha inteira
+        # Apenas uma linha por vez
+        self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
+
         # Configurar redimensionamento das colunas
         header = self.tabela.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)
@@ -440,12 +484,27 @@ class ProcessosWidget(QWidget):
 
         # Configurar tooltip para indicar que a tabela é editável
         self.tabela.setToolTip(
-            "Clique duas vezes em uma célula para editar diretamente na tabela")
+            "Clique duas vezes em uma célula para editar diretamente na tabela\n"
+            "Atalhos: Enter = Adicionar novo processo | Delete = Excluir processo selecionado")
 
         # Conectar evento de edição da tabela
         self.tabela.itemChanged.connect(self.on_item_changed)
 
         self.tabela_layout.addWidget(self.tabela)
+
+        # Botão excluir abaixo da tabela
+        botao_layout = QHBoxLayout()
+        self.btn_excluir = QPushButton("Excluir Selecionado")
+        self.btn_excluir.setStyleSheet(
+            "background-color: #ff4444; color: white; font-weight: bold;")
+        self.btn_excluir.setToolTip(
+            "Excluir processo selecionado na tabela (Atalho: Delete)")
+        self.btn_excluir.clicked.connect(self.excluir_processo)
+
+        botao_layout.addStretch()  # Empurra o botão para a direita
+        botao_layout.addWidget(self.btn_excluir)
+
+        self.tabela_layout.addLayout(botao_layout)
 
     def criar_frame_totais(self):
         """Cria o frame que exibe os totais de processos, itens e valores."""
@@ -761,15 +820,24 @@ class ProcessosWidget(QWidget):
         """Exclui o processo selecionado na tabela."""
         row = self.tabela.currentRow()
         if row < 0:
-            QMessageBox.warning(
-                self, "Seleção", "Selecione um processo para excluir.")
+            QMessageBox.information(
+                self, "Seleção", "Selecione um processo na tabela para excluir.\n\nDica: Clique em uma linha da tabela e pressione Delete ou use o botão 'Excluir Selecionado'.")
             return
 
-        # Confirmar exclusão
+        # Obter dados do processo para mostrar na confirmação
+        if not self.is_admin:
+            cliente = self.tabela.item(row, 0).text()  # coluna cliente
+            processo = self.tabela.item(row, 1).text()  # coluna processo
+        else:
+            # coluna cliente (segunda para admin)
+            cliente = self.tabela.item(row, 1).text()
+            processo = self.tabela.item(row, 2).text()  # coluna processo
+
+        # Confirmar exclusão com informações do processo
         resposta = QMessageBox.question(
             self,
             "Confirmar Exclusão",
-            "Tem certeza que deseja excluir este processo?",
+            f"Tem certeza que deseja excluir este processo?\n\nCliente: {cliente}\nProcesso: {processo}",
             QMessageBox.Yes | QMessageBox.No,
         )
 
