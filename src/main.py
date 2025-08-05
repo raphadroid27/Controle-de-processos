@@ -40,6 +40,13 @@ from utils import usuario
 from gerenciar_usuarios import GerenciarUsuariosDialog
 
 
+ALTURA_BOTAO = 20
+LARGURA_BOTAO = 80
+TAMANHO_FONTE_BOTAO = 12
+RAIO_BORDA_BOTAO = 4
+PADDING_BOTAO = "2px 4px"
+
+
 class DateEditDelegate(QStyledItemDelegate):
     """Delegate personalizado para edição de datas com calendário."""
 
@@ -406,12 +413,34 @@ class ProcessosWidget(QWidget):
         col6.addWidget(self.entry_valor_pedido)
         campos_layout.addLayout(col6)
 
-        # Botões
+        # Botão Adicionar (alinhado com os campos)
         col7 = QVBoxLayout()
+        # Label vazio para alinhar com os outros campos
+        col7.addWidget(QLabel(""))
         self.btn_adicionar = QPushButton("Adicionar")
         self.btn_adicionar.setToolTip(
             "Adicionar novo processo (Atalho: Enter)")
-        # Remover botão excluir daqui - será movido para baixo da tabela
+
+        # Estilizar o botão adicionar
+        self.btn_adicionar.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: {PADDING_BOTAO};
+                border-radius: {RAIO_BORDA_BOTAO}px;
+                font-weight: bold;
+                font-size: {TAMANHO_FONTE_BOTAO}px;
+                height: {ALTURA_BOTAO}px;
+                width: {LARGURA_BOTAO}px;
+            }}
+            QPushButton:hover {{
+                background-color: #45a049;
+            }}
+            QPushButton:pressed {{
+                background-color: #3d8b40;
+            }}
+        """)
 
         col7.addWidget(self.btn_adicionar)
         campos_layout.addLayout(col7)
@@ -436,6 +465,28 @@ class ProcessosWidget(QWidget):
 
             self.btn_filtrar = QPushButton("Filtrar")
             self.btn_filtrar.clicked.connect(self.aplicar_filtro)
+
+            # Estilizar o botão filtrar
+            self.btn_filtrar.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: {PADDING_BOTAO};
+                    border-radius: {RAIO_BORDA_BOTAO}px;
+                    font-weight: bold;
+                    font-size: {TAMANHO_FONTE_BOTAO}px;
+                    height: {ALTURA_BOTAO}px;
+                    width: {LARGURA_BOTAO}px;
+                }}
+                QPushButton:hover {{
+                    background-color: #1976D2;
+                }}
+                QPushButton:pressed {{
+                    background-color: #1565C0;
+                }}
+            """)
+
             filtro_layout.addWidget(self.btn_filtrar)
 
             filtro_layout.addStretch()
@@ -494,12 +545,35 @@ class ProcessosWidget(QWidget):
 
         # Botão excluir abaixo da tabela
         botao_layout = QHBoxLayout()
-        self.btn_excluir = QPushButton("Excluir Selecionado")
-        self.btn_excluir.setStyleSheet(
-            "background-color: #ff4444; color: white; font-weight: bold;")
+        self.btn_excluir = QPushButton("Excluir")
         self.btn_excluir.setToolTip(
             "Excluir processo selecionado na tabela (Atalho: Delete)")
         self.btn_excluir.clicked.connect(self.excluir_processo)
+
+        # Estilizar o botão excluir
+        self.btn_excluir.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #f44336;
+                color: white;
+                border: none;
+                padding: {PADDING_BOTAO};
+                border-radius: {RAIO_BORDA_BOTAO}px;
+                font-weight: bold;
+                font-size: {TAMANHO_FONTE_BOTAO}px;
+                width: {LARGURA_BOTAO}px;
+                height: {ALTURA_BOTAO}px;
+            }}
+            QPushButton:hover {{
+                background-color: #da190b;
+            }}
+            QPushButton:pressed {{
+                background-color: #b71c1c;
+            }}
+            QPushButton:disabled {{
+                background-color: #cccccc;
+                color: #666666;
+            }}
+        """)
 
         botao_layout.addStretch()  # Empurra o botão para a direita
         botao_layout.addWidget(self.btn_excluir)
