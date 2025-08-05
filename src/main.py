@@ -46,6 +46,7 @@ LARGURA_BOTAO = 80
 TAMANHO_FONTE_BOTAO = 12
 RAIO_BORDA_BOTAO = 4
 PADDING_BOTAO = "2px 4px"
+ESPACAMENTO_PADRAO = 10
 
 
 def formatar_valor_monetario(valor):
@@ -703,7 +704,7 @@ class ProcessosWidget(QWidget):
 
         # Layout horizontal para os campos com espaçamento uniforme
         campos_layout = QHBoxLayout()
-        campos_layout.setSpacing(8)  # Espaçamento otimizado entre colunas
+        campos_layout.setSpacing(ESPACAMENTO_PADRAO)  # Espaçamento padrão entre colunas
         campos_layout.setContentsMargins(5, 5, 5, 5)  # Margens uniformes
 
         # Criar colunas com larguras proporcionais
@@ -788,31 +789,34 @@ class ProcessosWidget(QWidget):
         filtros_frame.setFrameStyle(QFrame.StyledPanel)
         filtros_layout = QVBoxLayout()
 
-        # Uma única linha com todos os filtros
+        # Layout principal dos filtros com widgets distribuídos
         filtro_completo_layout = QHBoxLayout()
+        filtro_completo_layout.setSpacing(ESPACAMENTO_PADRAO)  # Espaçamento padrão entre widgets
+        filtro_completo_layout.setContentsMargins(5, 5, 5, 5)  # Margens uniformes
 
         # Filtro por usuário (apenas para admins)
         if self.is_admin:
-            filtro_completo_layout.addWidget(QLabel("Usuário:"))
+            usuario_layout = QVBoxLayout()
+            usuario_layout.addWidget(QLabel("Usuário:"))
             self.combo_usuario = QComboBox()
             self.combo_usuario.addItem("Todos os usuários")
             self.combo_usuario.setMinimumWidth(150)
-            filtro_completo_layout.addWidget(self.combo_usuario)
+            usuario_layout.addWidget(self.combo_usuario)
+            filtro_completo_layout.addLayout(usuario_layout)
 
             # Conectar mudança no combo para aplicar filtro automaticamente
             self.combo_usuario.currentTextChanged.connect(
                 self.on_usuario_changed)
 
-            # Espaçamento entre filtros
-            filtro_completo_layout.addSpacing(15)
-
         # Filtro por cliente
-        filtro_completo_layout.addWidget(QLabel("Cliente:"))
+        cliente_layout = QVBoxLayout()
+        cliente_layout.addWidget(QLabel("Cliente:"))
         self.entry_filtro_cliente = QLineEdit()
         self.entry_filtro_cliente.setPlaceholderText(
             "Digite o nome do cliente")
-        self.entry_filtro_cliente.setMinimumWidth(200)
-        filtro_completo_layout.addWidget(self.entry_filtro_cliente)
+        self.entry_filtro_cliente.setMinimumWidth(180)
+        cliente_layout.addWidget(self.entry_filtro_cliente)
+        filtro_completo_layout.addLayout(cliente_layout)
 
         # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
         self.timer_cliente = QTimer()
@@ -824,16 +828,15 @@ class ProcessosWidget(QWidget):
         # Configurar autocompletar para o filtro de cliente
         self.configurar_autocompletar_filtro_cliente()
 
-        # Espaçamento entre filtros
-        filtro_completo_layout.addSpacing(15)
-
         # Filtro por processo
-        filtro_completo_layout.addWidget(QLabel("Processo:"))
+        processo_layout = QVBoxLayout()
+        processo_layout.addWidget(QLabel("Processo:"))
         self.entry_filtro_processo = QLineEdit()
         self.entry_filtro_processo.setPlaceholderText(
             "Digite o nome do processo")
-        self.entry_filtro_processo.setMinimumWidth(200)
-        filtro_completo_layout.addWidget(self.entry_filtro_processo)
+        self.entry_filtro_processo.setMinimumWidth(180)
+        processo_layout.addWidget(self.entry_filtro_processo)
+        filtro_completo_layout.addLayout(processo_layout)
 
         # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
         self.timer_processo = QTimer()
@@ -842,36 +845,33 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo.textChanged.connect(
             lambda: self.timer_processo.start(500))
 
-        # Espaçamento entre filtros
-        filtro_completo_layout.addSpacing(15)
-
         # Filtro por mês
-        filtro_completo_layout.addWidget(QLabel("Mês:"))
+        mes_layout = QVBoxLayout()
+        mes_layout.addWidget(QLabel("Mês:"))
         self.combo_filtro_mes = QComboBox()
         self.combo_filtro_mes.addItem("Todos os meses")
         self.combo_filtro_mes.setMinimumWidth(120)
-        filtro_completo_layout.addWidget(self.combo_filtro_mes)
+        mes_layout.addWidget(self.combo_filtro_mes)
+        filtro_completo_layout.addLayout(mes_layout)
 
         # Conectar mudança no combo de mês
         self.combo_filtro_mes.currentTextChanged.connect(self.aplicar_filtro)
 
-        # Espaçamento entre filtros
-        filtro_completo_layout.addSpacing(15)
-
         # Filtro por ano
-        filtro_completo_layout.addWidget(QLabel("Ano:"))
+        ano_layout = QVBoxLayout()
+        ano_layout.addWidget(QLabel("Ano:"))
         self.combo_filtro_ano = QComboBox()
         self.combo_filtro_ano.addItem("Todos os anos")
         self.combo_filtro_ano.setMinimumWidth(100)
-        filtro_completo_layout.addWidget(self.combo_filtro_ano)
+        ano_layout.addWidget(self.combo_filtro_ano)
+        filtro_completo_layout.addLayout(ano_layout)
 
         # Conectar mudança no combo de ano
         self.combo_filtro_ano.currentTextChanged.connect(self.aplicar_filtro)
 
-        # Espaçamento antes do botão
-        filtro_completo_layout.addSpacing(15)
-
         # Botão limpar filtros
+        botao_layout = QVBoxLayout()
+        botao_layout.addWidget(QLabel(""))  # Label vazio para alinhamento
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
 
@@ -896,8 +896,12 @@ class ProcessosWidget(QWidget):
             }}
         """)
 
-        filtro_completo_layout.addWidget(self.btn_limpar_filtros)
-        filtro_completo_layout.addStretch()  # Empurra tudo para a esquerda
+        botao_layout.addWidget(self.btn_limpar_filtros)
+        filtro_completo_layout.addLayout(botao_layout)
+
+        # Adicionar stretch para empurrar elementos para a esquerda
+        filtro_completo_layout.addStretch()
+
         filtros_layout.addLayout(filtro_completo_layout)
 
         filtros_frame.setLayout(filtros_layout)
@@ -1091,6 +1095,7 @@ class ProcessosWidget(QWidget):
         self.frame_totais.setFrameStyle(QFrame.StyledPanel)
 
         layout = QHBoxLayout()
+        layout.setSpacing(ESPACAMENTO_PADRAO)  # Usar espaçamento padrão
 
         # Labels para totais
         self.label_total_processos = QLabel("Total Processos: 0")
