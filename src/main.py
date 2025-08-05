@@ -463,7 +463,7 @@ class ProcessosWidget(QWidget):
             # Criar o completer
             self.completer_cliente = QCompleter(clientes, self)
             self.completer_cliente.setCaseSensitivity(Qt.CaseInsensitive)
-            self.completer_cliente.setFilterMode(Qt.MatchContains)
+            self.completer_cliente.setFilterMode(Qt.MatchStartsWith)
 
             # Aplicar o completer ao campo cliente
             self.entry_cliente.setCompleter(self.completer_cliente)
@@ -483,7 +483,7 @@ class ProcessosWidget(QWidget):
                 self.completer_cliente.setModel(None)
                 self.completer_cliente = QCompleter(clientes, self)
                 self.completer_cliente.setCaseSensitivity(Qt.CaseInsensitive)
-                self.completer_cliente.setFilterMode(Qt.MatchContains)
+                self.completer_cliente.setFilterMode(Qt.MatchStartsWith)
                 self.entry_cliente.setCompleter(self.completer_cliente)
         except Exception as e:
             print(f"Erro ao atualizar autocompletar: {e}")

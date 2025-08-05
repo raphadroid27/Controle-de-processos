@@ -326,11 +326,11 @@ def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=No
 
     if cliente:
         conditions.append("UPPER(cliente) LIKE ?")
-        params.append(f"%{cliente.upper()}%")
+        params.append(f"{cliente.upper()}%")
 
     if processo:
         conditions.append("UPPER(processo) LIKE ?")
-        params.append(f"%{processo.upper()}%")
+        params.append(f"{processo.upper()}%")
 
     query = "SELECT * FROM registro"
     if conditions:
@@ -358,11 +358,11 @@ def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None):
 
     if cliente:
         conditions.append("UPPER(cliente) LIKE ?")
-        params.append(f"%{cliente.upper()}%")
+        params.append(f"{cliente.upper()}%")
 
     if processo:
         conditions.append("UPPER(processo) LIKE ?")
-        params.append(f"%{processo.upper()}%")
+        params.append(f"{processo.upper()}%")
 
     query = "SELECT COUNT(*) as total_processos, SUM(qtde_itens) as total_itens, SUM(valor_pedido) as total_valor FROM registro"
     if conditions:
