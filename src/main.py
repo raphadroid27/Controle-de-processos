@@ -47,6 +47,21 @@ RAIO_BORDA_BOTAO = 4
 PADDING_BOTAO = "2px 4px"
 
 
+def formatar_valor_monetario(valor):
+    """Formata valor monetário com separador de milhares e vírgula decimal."""
+    try:
+        if isinstance(valor, str):
+            # Limpar valor se for string
+            valor_limpo = valor.replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".")
+            valor = float(valor_limpo)
+        
+        # Formatar com separador de milhares (ponto) e decimais (vírgula)
+        valor_formatado = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"R$ {valor_formatado}"
+    except (ValueError, TypeError):
+        return "R$ 0,00"
+
+
 class DateEditDelegate(QStyledItemDelegate):
     """Delegate personalizado para edição de datas com calendário."""
 
@@ -520,6 +535,38 @@ class ProcessosWidget(QWidget):
         header = self.tabela.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)
 
+        # Configurar alinhamento dos cabeçalhos das colunas
+        offset = 1 if self.is_admin else 0  # Offset para admin (coluna usuário)
+        
+        # Processo alinhado ao centro
+        processo_col_index = 1 + offset
+        processo_header_item = QTableWidgetItem("Processo")
+        processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(processo_col_index, processo_header_item)
+        
+        # Quantidade alinhada ao centro
+        qtd_col_index = 2 + offset
+        qtd_header_item = QTableWidgetItem("Qtd Itens")
+        qtd_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(qtd_col_index, qtd_header_item)
+        
+        # Datas alinhadas ao centro
+        data_entrada_col_index = 3 + offset
+        data_entrada_header_item = QTableWidgetItem("Data Entrada")
+        data_entrada_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(data_entrada_col_index, data_entrada_header_item)
+        
+        data_processo_col_index = 4 + offset
+        data_processo_header_item = QTableWidgetItem("Data Processo")
+        data_processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(data_processo_col_index, data_processo_header_item)
+        
+        # Valor alinhado à direita
+        valor_col_index = len(colunas) - 1  # Última coluna (Valor)
+        valor_header_item = QTableWidgetItem("Valor (R$)")
+        valor_header_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.tabela.setHorizontalHeaderItem(valor_col_index, valor_header_item)
+
         # Configurar delegates para edição de datas
         date_delegate = DateEditDelegate(self.tabela)
 
@@ -664,12 +711,12 @@ class ProcessosWidget(QWidget):
                 try:
                     # Limpar formatação e testar conversão
                     valor_limpo = valor_editado.replace(
-                        "R$", "").replace(" ", "").replace(",", ".")
+                        "R$", "").replace(" ", "").replace(".", "").replace(",", ".")
                     valor_test = float(valor_limpo)
                     if valor_test < 0:
                         raise ValueError("Valor não pode ser negativo")
-                    # Reformatar o valor na célula
-                    item.setText(f"R$ {valor_test:.2f}".replace(".", ","))
+                    # Reformatar o valor na célula com separador de milhares
+                    item.setText(formatar_valor_monetario(valor_test))
                 except ValueError:
                     QMessageBox.warning(
                         self, "Erro", "Valor deve ser um número válido e não negativo.")
@@ -696,9 +743,14 @@ class ProcessosWidget(QWidget):
                 data_processo = self.converter_data_para_banco(
                     data_processo_text)
 
-            # Processar valor (remover R$ e vírgulas)
-            valor_pedido = valor_text.replace(
-                "R$", "").replace(" ", "").replace(",", ".")
+            # Processar valor (remover R$, espaços e separadores, converter vírgula decimal para ponto)
+            valor_limpo = valor_text.replace("R$", "").replace(" ", "").replace(".", "")
+            # Converter vírgula decimal para ponto
+            if "," in valor_limpo:
+                # Se tem vírgula, é o separador decimal
+                valor_pedido = valor_limpo.replace(",", ".")
+            else:
+                valor_pedido = valor_limpo
 
             # Atualizar no banco de dados
             resultado = db.atualizar_lancamento(
@@ -797,26 +849,33 @@ class ProcessosWidget(QWidget):
             item_cliente = QTableWidgetItem(str(registro[2]))
             self.tabela.setItem(row, col, item_cliente)
 
+            # Processo alinhado ao centro
             item_processo = QTableWidgetItem(str(registro[3]))
+            item_processo.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 1, item_processo)
 
+            # Quantidade alinhada ao centro
             item_qtde = QTableWidgetItem(str(registro[4]))
+            item_qtde.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 2, item_qtde)
 
-            # Formatar data de entrada DD/MM/AAAA
+            # Formatar data de entrada DD/MM/AAAA e alinhar ao centro
             data_entrada_formatada = self.formatar_data_para_exibicao(
                 registro[5])
             item_data_entrada = QTableWidgetItem(data_entrada_formatada)
+            item_data_entrada.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 3, item_data_entrada)
 
-            # Formatar data de processo DD/MM/AAAA
+            # Formatar data de processo DD/MM/AAAA e alinhar ao centro
             data_processo_formatada = self.formatar_data_para_exibicao(
                 registro[6]) if registro[6] else "Não processado"
             item_data_processo = QTableWidgetItem(data_processo_formatada)
+            item_data_processo.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 4, item_data_processo)
 
-            item_valor = QTableWidgetItem(
-                f"R$ {registro[7]:.2f}".replace(".", ","))
+            # Formatar valor monetário com separador de milhares e alinhar à direita
+            item_valor = QTableWidgetItem(formatar_valor_monetario(registro[7]))
+            item_valor.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.tabela.setItem(row, col + 5, item_valor)
 
             # Guardar ID do registro (invisível para o usuário)
@@ -843,8 +902,7 @@ class ProcessosWidget(QWidget):
         self.label_total_itens.setText(
             f"Total Itens: {estatisticas['total_itens']}")
         self.label_total_valor.setText(
-            f"Total Valor: R$ {estatisticas['total_valor']:.2f}".replace(
-                ".", ",")
+            f"Total Valor: {formatar_valor_monetario(estatisticas['total_valor'])}"
         )
 
     def adicionar_processo(self):
