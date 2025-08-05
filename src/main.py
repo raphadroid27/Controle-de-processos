@@ -7,6 +7,7 @@ controle de usuários e gestão de dados com banco SQLite.
 """
 
 import sys
+from datetime import datetime
 
 from PySide6.QtCore import QDate, Qt, Signal
 from PySide6.QtGui import QAction, QFont
@@ -30,11 +31,76 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QInputDialog,
+    QStyledItemDelegate,
+    QAbstractItemView,
 )
 
 from utils import database as db
 from utils import usuario
 from gerenciar_usuarios import GerenciarUsuariosDialog
+
+
+class DateEditDelegate(QStyledItemDelegate):
+    """Delegate personalizado para edição de datas com calendário."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        """Cria o editor de data com calendário."""
+        editor = QDateEdit(parent)
+        editor.setCalendarPopup(True)
+        editor.setDisplayFormat("dd/MM/yyyy")
+
+        # Verificar se é uma coluna de data processo (pode estar vazia)
+        data_texto = index.data()
+        if data_texto == "Não processado" or not data_texto:
+            editor.setSpecialValueText("Não processado")
+            editor.setDate(QDate())  # Data nula
+        else:
+            # Tentar converter a data do formato DD/MM/AAAA
+            try:
+                if "/" in data_texto:
+                    data_obj = datetime.strptime(data_texto, "%d/%m/%Y")
+                else:
+                    # Formato AAAA-MM-DD do banco
+                    data_obj = datetime.strptime(data_texto, "%Y-%m-%d")
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
+            except (ValueError, AttributeError):
+                editor.setDate(QDate.currentDate())
+
+        return editor
+
+    def setEditorData(self, editor, index):
+        """Define os dados no editor."""
+        value = index.data()
+        if value == "Não processado" or not value:
+            editor.setDate(QDate())  # Data nula
+        else:
+            try:
+                if "/" in value:
+                    data_obj = datetime.strptime(value, "%d/%m/%Y")
+                else:
+                    data_obj = datetime.strptime(value, "%Y-%m-%d")
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
+            except (ValueError, AttributeError):
+                editor.setDate(QDate.currentDate())
+
+    def setModelData(self, editor, model, index):
+        """Define os dados do editor no modelo."""
+        date = editor.date()
+        if date.isNull() or not date.isValid():
+            model.setData(index, "Não processado")
+        else:
+            # Formatar como DD/MM/AAAA para exibição
+            formatted_date = date.toString("dd/MM/yyyy")
+            model.setData(index, formatted_date)
+
+    def updateEditorGeometry(self, editor, option, index):
+        """Atualiza a geometria do editor."""
+        editor.setGeometry(option.rect)
 
 
 class LoginDialog(QDialog):
@@ -359,8 +425,22 @@ class ProcessosWidget(QWidget):
         header = self.tabela.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)
 
+        # Configurar delegates para edição de datas
+        date_delegate = DateEditDelegate(self.tabela)
+
+        # Aplicar delegate nas colunas de data
+        if self.is_admin:
+            # Para admin: Data Entrada = coluna 4, Data Processo = coluna 5
+            self.tabela.setItemDelegateForColumn(4, date_delegate)
+            self.tabela.setItemDelegateForColumn(5, date_delegate)
+        else:
+            # Para usuário normal: Data Entrada = coluna 3, Data Processo = coluna 4
+            self.tabela.setItemDelegateForColumn(3, date_delegate)
+            self.tabela.setItemDelegateForColumn(4, date_delegate)
+
         # Configurar tooltip para indicar que a tabela é editável
-        self.tabela.setToolTip("Clique duas vezes em uma célula para editar diretamente na tabela")
+        self.tabela.setToolTip(
+            "Clique duas vezes em uma célula para editar diretamente na tabela")
 
         # Conectar evento de edição da tabela
         self.tabela.itemChanged.connect(self.on_item_changed)
@@ -407,35 +487,35 @@ class ProcessosWidget(QWidget):
         """Chamado quando um item da tabela é editado."""
         if not item:
             return
-            
+
         try:
             # Bloquear temporariamente o sinal para evitar recursão
             self.tabela.blockSignals(True)
-            
+
             row = item.row()
             col = item.column()
-            
+
             # Determinar qual coluna foi editada (considerando se é admin ou não)
             col_offset = 1 if self.is_admin else 0
-            
+
             # Colunas editáveis (ignorar coluna usuário se for admin)
             if self.is_admin and col == 0:  # Coluna usuário não é editável
                 self.aplicar_filtro()  # Restaurar valor original
                 return
-            
+
             # Obter ID do registro
             item_com_id = self.tabela.item(row, 1 if self.is_admin else 0)
             if not item_com_id:
                 return
-                
+
             registro_id = item_com_id.data(Qt.UserRole)
             if not registro_id:
                 return
-            
+
             # Validar e formatar o valor editado baseado na coluna
             col_editada = col - col_offset
             valor_editado = item.text().strip()
-            
+
             # Validações específicas por coluna
             if col_editada == 2:  # Quantidade de itens
                 try:
@@ -443,46 +523,56 @@ class ProcessosWidget(QWidget):
                     if qtde_test <= 0:
                         raise ValueError("Quantidade deve ser positiva")
                 except ValueError:
-                    QMessageBox.warning(self, "Erro", "Quantidade de itens deve ser um número inteiro positivo.")
+                    QMessageBox.warning(
+                        self, "Erro", "Quantidade de itens deve ser um número inteiro positivo.")
                     self.aplicar_filtro()
                     return
             elif col_editada == 5:  # Valor
                 try:
                     # Limpar formatação e testar conversão
-                    valor_limpo = valor_editado.replace("R$", "").replace(" ", "").replace(",", ".")
+                    valor_limpo = valor_editado.replace(
+                        "R$", "").replace(" ", "").replace(",", ".")
                     valor_test = float(valor_limpo)
                     if valor_test < 0:
                         raise ValueError("Valor não pode ser negativo")
                     # Reformatar o valor na célula
                     item.setText(f"R$ {valor_test:.2f}".replace(".", ","))
                 except ValueError:
-                    QMessageBox.warning(self, "Erro", "Valor deve ser um número válido e não negativo.")
+                    QMessageBox.warning(
+                        self, "Erro", "Valor deve ser um número válido e não negativo.")
                     self.aplicar_filtro()
                     return
-            
+
             # Coletar todos os dados da linha
             cliente = self.tabela.item(row, col_offset).text().strip()
             processo = self.tabela.item(row, col_offset + 1).text().strip()
             qtde_itens = self.tabela.item(row, col_offset + 2).text().strip()
-            data_entrada = self.tabela.item(row, col_offset + 3).text().strip()
-            data_processo_text = self.tabela.item(row, col_offset + 4).text().strip()
+            data_entrada_text = self.tabela.item(
+                row, col_offset + 3).text().strip()
+            data_processo_text = self.tabela.item(
+                row, col_offset + 4).text().strip()
             valor_text = self.tabela.item(row, col_offset + 5).text().strip()
-            
+
+            # Converter datas do formato DD/MM/AAAA para AAAA-MM-DD para o banco
+            data_entrada = self.converter_data_para_banco(data_entrada_text)
+
             # Processar data de processo
             if data_processo_text == "Não processado" or not data_processo_text:
                 data_processo = ""
             else:
-                data_processo = data_processo_text
-            
+                data_processo = self.converter_data_para_banco(
+                    data_processo_text)
+
             # Processar valor (remover R$ e vírgulas)
-            valor_pedido = valor_text.replace("R$", "").replace(" ", "").replace(",", ".")
-            
+            valor_pedido = valor_text.replace(
+                "R$", "").replace(" ", "").replace(",", ".")
+
             # Atualizar no banco de dados
             resultado = db.atualizar_lancamento(
-                registro_id, cliente, processo, qtde_itens, 
+                registro_id, cliente, processo, qtde_itens,
                 data_entrada, data_processo, valor_pedido
             )
-            
+
             if "Sucesso" in resultado:
                 # Recarregar dados para garantir consistência e atualizar totais
                 self.aplicar_filtro()
@@ -490,14 +580,53 @@ class ProcessosWidget(QWidget):
                 # Em caso de erro, restaurar dados originais
                 self.aplicar_filtro()
                 QMessageBox.warning(self, "Erro", resultado)
-                
+
         except (ValueError, AttributeError, TypeError) as e:
             # Em caso de erro, restaurar dados originais
             self.aplicar_filtro()
-            QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
+            QMessageBox.warning(
+                self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             # Reativar sinais
             self.tabela.blockSignals(False)
+
+    def converter_data_para_banco(self, data_str):
+        """Converte data do formato DD/MM/AAAA para AAAA-MM-DD para o banco."""
+        if not data_str or data_str == "Não processado":
+            return ""
+
+        try:
+            # Se já está no formato AAAA-MM-DD, retorna como está
+            if "-" in data_str and len(data_str) == 10:
+                # Validar se está no formato correto
+                datetime.strptime(data_str, "%Y-%m-%d")
+                return data_str
+
+            # Converter de DD/MM/AAAA para AAAA-MM-DD
+            data_obj = datetime.strptime(data_str, "%d/%m/%Y")
+            return data_obj.strftime("%Y-%m-%d")
+        except ValueError:
+            # Se não conseguir converter, retorna como veio
+            return str(data_str)
+
+    def formatar_data_para_exibicao(self, data_str):
+        """Converte data do formato AAAA-MM-DD para DD/MM/AAAA."""
+        if not data_str:
+            return ""
+
+        try:
+            # Se já está no formato DD/MM/AAAA, retorna como está
+            if "/" in data_str:
+                # Validar se está no formato correto
+                datetime.strptime(data_str, "%d/%m/%Y")
+                return data_str
+
+            # Converter de AAAA-MM-DD para DD/MM/AAAA
+            data_obj = datetime.strptime(data_str, "%Y-%m-%d")
+            return data_obj.strftime("%d/%m/%Y")
+        except ValueError:
+            # Se não conseguir converter, retorna como veio
+            return str(data_str)
 
     def aplicar_filtro(self):
         """Aplica filtros na tabela de processos baseado no usuário selecionado."""
@@ -526,29 +655,35 @@ class ProcessosWidget(QWidget):
             # Se for admin, primeira coluna é usuário (não editável)
             if self.is_admin:
                 item_usuario = QTableWidgetItem(str(registro[1]))
-                item_usuario.setFlags(item_usuario.flags() & ~Qt.ItemIsEditable)  # Não editável
+                item_usuario.setFlags(
+                    item_usuario.flags() & ~Qt.ItemIsEditable)  # Não editável
                 self.tabela.setItem(row, col, item_usuario)
                 col += 1
 
             # Demais colunas (editáveis)
             item_cliente = QTableWidgetItem(str(registro[2]))
             self.tabela.setItem(row, col, item_cliente)
-            
+
             item_processo = QTableWidgetItem(str(registro[3]))
             self.tabela.setItem(row, col + 1, item_processo)
-            
+
             item_qtde = QTableWidgetItem(str(registro[4]))
             self.tabela.setItem(row, col + 2, item_qtde)
-            
-            item_data_entrada = QTableWidgetItem(str(registro[5]))
+
+            # Formatar data de entrada DD/MM/AAAA
+            data_entrada_formatada = self.formatar_data_para_exibicao(
+                registro[5])
+            item_data_entrada = QTableWidgetItem(data_entrada_formatada)
             self.tabela.setItem(row, col + 3, item_data_entrada)
-            
-            item_data_processo = QTableWidgetItem(
-                str(registro[6]) if registro[6] else "Não processado"
-            )
+
+            # Formatar data de processo DD/MM/AAAA
+            data_processo_formatada = self.formatar_data_para_exibicao(
+                registro[6]) if registro[6] else "Não processado"
+            item_data_processo = QTableWidgetItem(data_processo_formatada)
             self.tabela.setItem(row, col + 4, item_data_processo)
-            
-            item_valor = QTableWidgetItem(f"R$ {registro[7]:.2f}".replace(".", ","))
+
+            item_valor = QTableWidgetItem(
+                f"R$ {registro[7]:.2f}".replace(".", ","))
             self.tabela.setItem(row, col + 5, item_valor)
 
             # Guardar ID do registro (invisível para o usuário)
