@@ -1050,21 +1050,44 @@ class ProcessosWidget(QWidget):
         # Buscar dados
         registros = db.buscar_lancamentos_filtros(usuario_filtro)
 
-        # Ordenar por data de processo (maior para menor)
-        # Função para extrair data de processo para ordenação
+        # Ordenar por critérios múltiplos para garantir que novos itens apareçam primeiro
+        # Função para extrair critérios de ordenação
         def obter_data_ordenacao(registro):
             data_processo = registro[6]  # Coluna data_processo
-            if not data_processo:
-                # Se não há data de processo, usar uma data muito antiga para ficar no final
-                return datetime.min
+            data_lancamento = registro[8]  # Coluna data_lancamento (timestamp)
+            
+            # Converter data_lancamento para datetime
             try:
-                # Converter AAAA-MM-DD para datetime
-                return datetime.strptime(data_processo, "%Y-%m-%d")
-            except ValueError:
-                # Se não conseguir converter, usar data muito antiga
-                return datetime.min
+                if data_lancamento:
+                    # Tentar diferentes formatos de timestamp
+                    if 'T' in str(data_lancamento):
+                        # Formato ISO com T (ex: 2025-08-05T14:30:15)
+                        timestamp_obj = datetime.fromisoformat(str(data_lancamento).replace('Z', ''))
+                    else:
+                        # Formato padrão do SQLite (ex: 2025-08-05 14:30:15)
+                        timestamp_obj = datetime.strptime(str(data_lancamento), "%Y-%m-%d %H:%M:%S")
+                else:
+                    timestamp_obj = datetime.min
+            except (ValueError, AttributeError) as e:
+                print(f"Erro ao converter timestamp '{data_lancamento}': {e}")
+                timestamp_obj = datetime.min
+            
+            if not data_processo:
+                # Se não há data de processo, usar timestamp como critério principal
+                # Itens sem data de processo aparecem ordenados por data de criação (mais recente primeiro)
+                return (datetime(9999, 12, 31), timestamp_obj)
+            else:
+                try:
+                    # Se há data de processo, ordenar por data de processo, depois por timestamp
+                    data_processo_obj = datetime.strptime(data_processo, "%Y-%m-%d")
+                    # Combinar data de processo com timestamp para ordenação mais precisa
+                    # Isso garante que dentro de um mesmo dia, a ordem seja pela hora de criação
+                    return (data_processo_obj, timestamp_obj)
+                except ValueError:
+                    # Se não conseguir converter data de processo, usar timestamp
+                    return (datetime.min, timestamp_obj)
 
-        # Ordenar da maior data para a menor (reverse=True)
+        # Ordenar: primeiro por data de processo (maior para menor), depois por timestamp (mais recente primeiro)
         registros_ordenados = sorted(
             registros, key=obter_data_ordenacao, reverse=True)
 
