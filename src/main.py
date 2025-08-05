@@ -9,7 +9,7 @@ controle de usuários e gestão de dados com banco SQLite.
 import sys
 from datetime import datetime
 
-from PySide6.QtCore import QDate, Qt, Signal
+from PySide6.QtCore import QDate, Qt, Signal, QTimer
 from PySide6.QtGui import QAction, QFont, QKeySequence, QShortcut, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -402,7 +402,6 @@ class ProcessosWidget(QWidget):
         self.entry_data_entrada = None
         self.entry_data_processo = None
         self.entry_valor_pedido = None
-        self.btn_filtrar = None
         self.tabela_layout = None
         self.tabela = None
         self.label_total_processos = None
@@ -661,31 +660,8 @@ class ProcessosWidget(QWidget):
             self.combo_usuario.addItem("Todos os usuários")
             filtro_layout.addWidget(self.combo_usuario)
 
-            self.btn_filtrar = QPushButton("Filtrar")
-            self.btn_filtrar.clicked.connect(self.aplicar_filtro)
-
-            # Estilizar o botão filtrar
-            self.btn_filtrar.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: #2196F3;
-                    color: white;
-                    border: none;
-                    padding: {PADDING_BOTAO};
-                    border-radius: {RAIO_BORDA_BOTAO}px;
-                    font-weight: bold;
-                    font-size: {TAMANHO_FONTE_BOTAO}px;
-                    height: {ALTURA_BOTAO}px;
-                    width: {LARGURA_BOTAO}px;
-                }}
-                QPushButton:hover {{
-                    background-color: #1976D2;
-                }}
-                QPushButton:pressed {{
-                    background-color: #1565C0;
-                }}
-            """)
-
-            filtro_layout.addWidget(self.btn_filtrar)
+            # Conectar mudança no combo para aplicar filtro automaticamente
+            self.combo_usuario.currentTextChanged.connect(self.aplicar_filtro)
 
             filtro_layout.addStretch()
             self.tabela_layout.addLayout(filtro_layout)
@@ -851,6 +827,9 @@ class ProcessosWidget(QWidget):
 
         self.aplicar_filtro()
 
+        # Usar timer para garantir que a rolagem aconteça após os dados serem carregados
+        QTimer.singleShot(100, self.rolar_para_ultimo_item)
+
     def on_item_changed(self, item):
         """Chamado quando um item da tabela é editado."""
         if not item:
@@ -868,7 +847,8 @@ class ProcessosWidget(QWidget):
 
             # Colunas editáveis (ignorar coluna usuário se for admin)
             if self.is_admin and col == 0:  # Coluna usuário não é editável
-                self.aplicar_filtro()  # Restaurar valor original
+                # Restaurar valor original
+                self.aplicar_filtro(rolar_para_ultimo=False)
                 return
 
             # Obter ID do registro
@@ -893,7 +873,7 @@ class ProcessosWidget(QWidget):
                 except ValueError:
                     QMessageBox.warning(
                         self, "Erro", "Quantidade de itens deve ser um número inteiro positivo.")
-                    self.aplicar_filtro()
+                    self.aplicar_filtro(rolar_para_ultimo=False)
                     return
             elif col_editada == 3:  # Data de entrada
                 if valor_editado and valor_editado != "Não processado":
@@ -904,12 +884,12 @@ class ProcessosWidget(QWidget):
                         if data_obj.date() > data_hoje:
                             QMessageBox.warning(
                                 self, "Erro", "Data de entrada não pode ser maior que a data atual.")
-                            self.aplicar_filtro()
+                            self.aplicar_filtro(rolar_para_ultimo=False)
                             return
                     except ValueError:
                         QMessageBox.warning(
                             self, "Erro", "Data de entrada deve estar no formato DD/MM/AAAA.")
-                        self.aplicar_filtro()
+                        self.aplicar_filtro(rolar_para_ultimo=False)
                         return
             elif col_editada == 4:  # Data de processo
                 if valor_editado and valor_editado != "Não processado":
@@ -920,12 +900,12 @@ class ProcessosWidget(QWidget):
                         if data_obj.date() > data_hoje:
                             QMessageBox.warning(
                                 self, "Erro", "Data de processo não pode ser maior que a data atual.")
-                            self.aplicar_filtro()
+                            self.aplicar_filtro(rolar_para_ultimo=False)
                             return
                     except ValueError:
                         QMessageBox.warning(
                             self, "Erro", "Data de processo deve estar no formato DD/MM/AAAA.")
-                        self.aplicar_filtro()
+                        self.aplicar_filtro(rolar_para_ultimo=False)
                         return
             elif col_editada == 5:  # Valor
                 try:
@@ -940,7 +920,7 @@ class ProcessosWidget(QWidget):
                 except ValueError:
                     QMessageBox.warning(
                         self, "Erro", "Valor deve ser um número válido e não negativo.")
-                    self.aplicar_filtro()
+                    self.aplicar_filtro(rolar_para_ultimo=False)
                     return
 
             # Coletar todos os dados da linha
@@ -982,15 +962,15 @@ class ProcessosWidget(QWidget):
 
             if "Sucesso" in resultado:
                 # Recarregar dados para garantir consistência e atualizar totais
-                self.aplicar_filtro()
+                self.aplicar_filtro(rolar_para_ultimo=False)
             else:
                 # Em caso de erro, restaurar dados originais
-                self.aplicar_filtro()
+                self.aplicar_filtro(rolar_para_ultimo=False)
                 QMessageBox.warning(self, "Erro", resultado)
 
         except (ValueError, AttributeError, TypeError) as e:
             # Em caso de erro, restaurar dados originais
-            self.aplicar_filtro()
+            self.aplicar_filtro(rolar_para_ultimo=False)
             QMessageBox.warning(
                 self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
@@ -1035,7 +1015,7 @@ class ProcessosWidget(QWidget):
             # Se não conseguir converter, retorna como veio
             return str(data_str)
 
-    def aplicar_filtro(self):
+    def aplicar_filtro(self, rolar_para_ultimo=True):
         """Aplica filtros na tabela de processos baseado no usuário selecionado."""
         # Determinar qual usuário filtrar
         if self.is_admin:
@@ -1050,36 +1030,40 @@ class ProcessosWidget(QWidget):
         # Buscar dados
         registros = db.buscar_lancamentos_filtros(usuario_filtro)
 
-        # Ordenar por critérios múltiplos para garantir que novos itens apareçam primeiro
+        # Ordenar por critérios múltiplos para garantir que novos itens apareçam no final
         # Função para extrair critérios de ordenação
+
         def obter_data_ordenacao(registro):
             data_processo = registro[6]  # Coluna data_processo
             data_lancamento = registro[8]  # Coluna data_lancamento (timestamp)
-            
+
             # Converter data_lancamento para datetime
             try:
                 if data_lancamento:
                     # Tentar diferentes formatos de timestamp
                     if 'T' in str(data_lancamento):
                         # Formato ISO com T (ex: 2025-08-05T14:30:15)
-                        timestamp_obj = datetime.fromisoformat(str(data_lancamento).replace('Z', ''))
+                        timestamp_obj = datetime.fromisoformat(
+                            str(data_lancamento).replace('Z', ''))
                     else:
                         # Formato padrão do SQLite (ex: 2025-08-05 14:30:15)
-                        timestamp_obj = datetime.strptime(str(data_lancamento), "%Y-%m-%d %H:%M:%S")
+                        timestamp_obj = datetime.strptime(
+                            str(data_lancamento), "%Y-%m-%d %H:%M:%S")
                 else:
                     timestamp_obj = datetime.min
             except (ValueError, AttributeError) as e:
                 print(f"Erro ao converter timestamp '{data_lancamento}': {e}")
                 timestamp_obj = datetime.min
-            
+
             if not data_processo:
                 # Se não há data de processo, usar timestamp como critério principal
-                # Itens sem data de processo aparecem ordenados por data de criação (mais recente primeiro)
-                return (datetime(9999, 12, 31), timestamp_obj)
+                # Itens sem data de processo aparecem ordenados por data de criação (mais antigo primeiro)
+                return (datetime.min, timestamp_obj)
             else:
                 try:
                     # Se há data de processo, ordenar por data de processo, depois por timestamp
-                    data_processo_obj = datetime.strptime(data_processo, "%Y-%m-%d")
+                    data_processo_obj = datetime.strptime(
+                        data_processo, "%Y-%m-%d")
                     # Combinar data de processo com timestamp para ordenação mais precisa
                     # Isso garante que dentro de um mesmo dia, a ordem seja pela hora de criação
                     return (data_processo_obj, timestamp_obj)
@@ -1087,9 +1071,9 @@ class ProcessosWidget(QWidget):
                     # Se não conseguir converter data de processo, usar timestamp
                     return (datetime.min, timestamp_obj)
 
-        # Ordenar: primeiro por data de processo (maior para menor), depois por timestamp (mais recente primeiro)
+        # Ordenar: primeiro por data de processo (menor para maior), depois por timestamp (mais antigo primeiro)
         registros_ordenados = sorted(
-            registros, key=obter_data_ordenacao, reverse=True)
+            registros, key=obter_data_ordenacao, reverse=False)
 
         # Bloquear sinais temporariamente para evitar chamadas desnecessárias
         self.tabela.blockSignals(True)
@@ -1159,6 +1143,19 @@ class ProcessosWidget(QWidget):
         # Atualizar totais
         self.atualizar_totais(usuario_filtro)
 
+        # Rolar para o último item apenas quando solicitado
+        if rolar_para_ultimo:
+            self.rolar_para_ultimo_item()
+
+    def rolar_para_ultimo_item(self):
+        """Rola a tabela para mostrar o último item (mais recente)."""
+        if self.tabela.rowCount() > 0:
+            # Rolar para a última linha
+            ultima_linha = self.tabela.rowCount() - 1
+            self.tabela.scrollToBottom()
+            # Também garantir que a linha seja selecionada visualmente
+            self.tabela.selectRow(ultima_linha)
+
     def atualizar_totais(self, usuario_filtro=None):
         """Atualiza os totais exibidos no painel de estatísticas."""
         estatisticas = db.buscar_estatisticas(usuario_filtro)
@@ -1225,6 +1222,9 @@ class ProcessosWidget(QWidget):
             # Atualizar tabela
             self.aplicar_filtro()
 
+            # Rolar para o último item (novo processo adicionado)
+            self.rolar_para_ultimo_item()
+
             # Focar no primeiro campo
             self.entry_cliente.setFocus()
         else:
@@ -1269,7 +1269,7 @@ class ProcessosWidget(QWidget):
 
                 if "Sucesso" in resultado:
                     QMessageBox.information(self, "Sucesso", resultado)
-                    self.aplicar_filtro()
+                    self.aplicar_filtro(rolar_para_ultimo=False)
                 else:
                     QMessageBox.warning(self, "Erro", resultado)
 
