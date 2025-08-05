@@ -498,11 +498,13 @@ class ProcessosWidget(QWidget):
 
             # Criar o completer para o filtro
             self.completer_filtro_cliente = QCompleter(clientes, self)
-            self.completer_filtro_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+            self.completer_filtro_cliente.setCaseSensitivity(
+                Qt.CaseInsensitive)
             self.completer_filtro_cliente.setFilterMode(Qt.MatchStartsWith)
 
             # Aplicar o completer ao campo de filtro de cliente
-            self.entry_filtro_cliente.setCompleter(self.completer_filtro_cliente)
+            self.entry_filtro_cliente.setCompleter(
+                self.completer_filtro_cliente)
         except Exception as e:
             print(f"Erro ao configurar autocompletar do filtro: {e}")
 
@@ -518,9 +520,11 @@ class ProcessosWidget(QWidget):
             if hasattr(self, 'completer_filtro_cliente'):
                 self.completer_filtro_cliente.setModel(None)
                 self.completer_filtro_cliente = QCompleter(clientes, self)
-                self.completer_filtro_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+                self.completer_filtro_cliente.setCaseSensitivity(
+                    Qt.CaseInsensitive)
                 self.completer_filtro_cliente.setFilterMode(Qt.MatchStartsWith)
-                self.entry_filtro_cliente.setCompleter(self.completer_filtro_cliente)
+                self.entry_filtro_cliente.setCompleter(
+                    self.completer_filtro_cliente)
         except Exception as e:
             print(f"Erro ao atualizar autocompletar do filtro: {e}")
 
@@ -810,26 +814,65 @@ class ProcessosWidget(QWidget):
         # Apenas uma linha por vez
         self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        # Configurar redimensionamento das colunas com larguras fixas
+        # Configurar redimensionamento das colunas com larguras baseadas em porcentagens
         header = self.tabela.horizontalHeader()
-        
-        # Definir larguras fixas para cada coluna
+
+        # Definir porcentagens para cada coluna (total deve somar 100%)
         if self.is_admin:
             # Para admin: Usuário, Cliente, Processo, Qtd Itens, Data Entrada, Data Processo, Valor
-            larguras_colunas = [120, 250, 200, 100, 120, 120, 130]
+            # Total: 100% (sem scroll horizontal)
+            porcentagens_colunas = [10, 25, 20, 8, 13, 13, 11]  # Total: 100%
         else:
             # Para usuário normal: Cliente, Processo, Qtd Itens, Data Entrada, Data Processo, Valor
-            larguras_colunas = [250, 200, 100, 120, 120, 130]
-        
-        # Aplicar larguras fixas
-        for i, largura in enumerate(larguras_colunas):
-            header.setSectionResizeMode(i, QHeaderView.Fixed)
-            self.tabela.setColumnWidth(i, largura)
-        
-        # Permitir que a última coluna se expanda se necessário
-        header.setStretchLastSection(True)
+            # Total: 100% (sem scroll horizontal)
+            porcentagens_colunas = [30, 22, 10, 13, 13, 12]  # Total: 100%
 
+        # Calcular largura total disponível da tabela
+        def calcular_larguras_colunas():
+            # Obter largura disponível da viewport da tabela
+            largura_disponivel = self.tabela.viewport().width()
+
+            # Se a largura ainda não foi calculada (primeira vez), usar largura mínima
+            if largura_disponivel <= 0:
+                largura_disponivel = 800  # Largura padrão
+
+            # Calcular larguras baseadas nas porcentagens
+            larguras_calculadas = []
+            largura_total_calculada = 0
+
+            # Calcular todas as larguras exceto a última
+            for i, porcentagem in enumerate(porcentagens_colunas[:-1]):
+                largura = int((largura_disponivel * porcentagem) / 100)
+                largura = max(largura, 50)  # Largura mínima de 50px
+                larguras_calculadas.append(largura)
+                largura_total_calculada += largura
+
+            # A última coluna recebe o espaço restante para garantir 100% de uso
+            largura_ultima_coluna = largura_disponivel - largura_total_calculada
+            largura_ultima_coluna = max(
+                largura_ultima_coluna, 50)  # Largura mínima de 50px
+            larguras_calculadas.append(largura_ultima_coluna)
+
+            return larguras_calculadas
+
+        # Aplicar larguras calculadas
+        def aplicar_larguras():
+            larguras = calcular_larguras_colunas()
+            for i, largura in enumerate(larguras):
+                if i < self.tabela.columnCount():
+                    header.setSectionResizeMode(i, QHeaderView.Fixed)
+                    self.tabela.setColumnWidth(i, largura)
+
+        # Aplicar larguras iniciais
+        aplicar_larguras()
+
+        # Conectar redimensionamento da tabela para recalcular larguras
+        def on_resize():
+            aplicar_larguras()
+
+        # Armazenar função para uso posterior
         # Configurar alinhamento dos cabeçalhos das colunas
+        self.aplicar_larguras_colunas = aplicar_larguras
         # Offset para admin (coluna usuário)
         offset = 1 if self.is_admin else 0
 
@@ -886,6 +929,9 @@ class ProcessosWidget(QWidget):
 
         # Conectar evento de edição da tabela
         self.tabela.itemChanged.connect(self.on_item_changed)
+
+        # Conectar evento de redimensionamento para recalcular larguras das colunas
+        self.tabela.resizeEvent = self.on_tabela_resize
 
         self.tabela_layout.addWidget(self.tabela)
 
@@ -951,6 +997,16 @@ class ProcessosWidget(QWidget):
         layout.addStretch()
 
         self.frame_totais.setLayout(layout)
+
+    def on_tabela_resize(self, event):
+        """Chamado quando a tabela é redimensionada para recalcular larguras das colunas."""
+        # Chamar o evento original de redimensionamento
+        QTableWidget.resizeEvent(self.tabela, event)
+
+        # Recalcular larguras das colunas baseadas nas porcentagens
+        if hasattr(self, 'aplicar_larguras_colunas'):
+            # Usar QTimer para atrasar o cálculo e evitar múltiplas chamadas
+            QTimer.singleShot(50, self.aplicar_larguras_colunas)
 
     def limpar_filtros(self):
         """Limpa todos os filtros aplicados."""
