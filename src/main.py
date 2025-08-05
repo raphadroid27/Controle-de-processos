@@ -142,6 +142,7 @@ class LoginDialog(QDialog):
         self.is_admin = False
 
         self.entry_data_processo = None
+
         self.entry_cliente = None
         self.entry_processo = None
         self.entry_qtde_itens = None
@@ -595,6 +596,25 @@ class ProcessosWidget(QWidget):
         self.entry_valor_pedido = NavigableLineEdit()
         self.entry_valor_pedido.setPlaceholderText("0.00")
 
+        # Configurar tamanho uniforme e política de redimensionamento para todos os campos
+        campos_entrada = [
+            self.entry_cliente,
+            self.entry_processo,
+            self.entry_qtde_itens,
+            self.entry_data_entrada,
+            self.entry_data_processo,
+            self.entry_valor_pedido
+        ]
+
+        # Definir tamanho mínimo e política de expansão uniformes
+        from PySide6.QtWidgets import QSizePolicy
+        for campo in campos_entrada:
+            # Largura mínima reduzida para melhor adaptação
+            campo.setMinimumWidth(100)
+            campo.setMaximumHeight(30)  # Altura máxima para uniformidade
+            campo.setMinimumHeight(25)  # Altura mínima consistente
+            campo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         # Configurar navegação entre campos
         campos_navegacao = [
             self.entry_cliente,
@@ -616,52 +636,52 @@ class ProcessosWidget(QWidget):
         # Configurar autocompletar para cliente
         self.configurar_autocompletar_cliente()
 
-        # Layout horizontal para os campos
+        # Layout horizontal para os campos com espaçamento uniforme
         campos_layout = QHBoxLayout()
+        campos_layout.setSpacing(8)  # Espaçamento otimizado entre colunas
+        campos_layout.setContentsMargins(5, 5, 5, 5)  # Margens uniformes
 
-        # Coluna 1
-        col1 = QVBoxLayout()
-        col1.addWidget(QLabel("Cliente:"))
-        col1.addWidget(self.entry_cliente)
-        campos_layout.addLayout(col1)
+        # Criar colunas com larguras proporcionais
+        colunas_info = [
+            ("Cliente:", self.entry_cliente, 2),  # Peso 2 (mais largo)
+            ("Processo:", self.entry_processo, 2),  # Peso 2 (mais largo)
+            ("Qtd. Itens:", self.entry_qtde_itens, 1),  # Peso 1 (mais estreito)
+            ("Data Entrada:", self.entry_data_entrada, 1),  # Peso 1
+            ("Data Processo:", self.entry_data_processo, 1),  # Peso 1
+            ("Valor (R$):", self.entry_valor_pedido, 1)  # Peso 1
+        ]
 
-        # Coluna 2
-        col2 = QVBoxLayout()
-        col2.addWidget(QLabel("Processo:"))
-        col2.addWidget(self.entry_processo)
-        campos_layout.addLayout(col2)
+        for label_text, widget, peso in colunas_info:
+            col_layout = QVBoxLayout()
+            col_layout.setSpacing(2)  # Espaçamento pequeno entre label e campo
 
-        # Coluna 3
-        col3 = QVBoxLayout()
-        col3.addWidget(QLabel("Qtd. Itens:"))
-        col3.addWidget(self.entry_qtde_itens)
-        campos_layout.addLayout(col3)
+            label = QLabel(label_text)
+            label.setAlignment(Qt.AlignLeft)
 
-        # Coluna 4
-        col4 = QVBoxLayout()
-        col4.addWidget(QLabel("Data Entrada:"))
-        col4.addWidget(self.entry_data_entrada)
-        campos_layout.addLayout(col4)
+            col_layout.addWidget(label)
+            col_layout.addWidget(widget)
 
-        # Coluna 5
-        col5 = QVBoxLayout()
-        col5.addWidget(QLabel("Data Processo:"))
-        col5.addWidget(self.entry_data_processo)
-        campos_layout.addLayout(col5)
-
-        # Coluna 6
-        col6 = QVBoxLayout()
-        col6.addWidget(QLabel("Valor (R$):"))
-        col6.addWidget(self.entry_valor_pedido)
-        campos_layout.addLayout(col6)
+            # Adicionar ao layout principal com peso específico
+            campos_layout.addLayout(col_layout, peso)
 
         # Botão Adicionar (alinhado com os campos)
-        col7 = QVBoxLayout()
+        btn_layout = QVBoxLayout()
+        btn_layout.setSpacing(2)
+
         # Label vazio para alinhar com os outros campos
-        col7.addWidget(QLabel(""))
+        btn_layout.addWidget(QLabel(""))
         self.btn_adicionar = QPushButton("Adicionar")
         self.btn_adicionar.setToolTip(
             "Adicionar novo processo (Atalho: Enter)")
+
+        # Configurar tamanho do botão para se adaptar melhor
+        self.btn_adicionar.setMinimumWidth(80)
+        # Altura máxima consistente com os campos
+        self.btn_adicionar.setMaximumHeight(30)
+        self.btn_adicionar.setMinimumHeight(25)
+        from PySide6.QtWidgets import QSizePolicy
+        self.btn_adicionar.setSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # Estilizar o botão adicionar
         self.btn_adicionar.setStyleSheet(f"""
@@ -674,7 +694,7 @@ class ProcessosWidget(QWidget):
                 font-weight: bold;
                 font-size: {TAMANHO_FONTE_BOTAO}px;
                 height: {ALTURA_BOTAO}px;
-                width: {LARGURA_BOTAO}px;
+                min-width: 80px;
             }}
             QPushButton:hover {{
                 background-color: #45a049;
@@ -684,8 +704,10 @@ class ProcessosWidget(QWidget):
             }}
         """)
 
-        col7.addWidget(self.btn_adicionar)
-        campos_layout.addLayout(col7)
+        btn_layout.addWidget(self.btn_adicionar)
+
+        # Adicionar layout do botão ao layout principal
+        campos_layout.addLayout(btn_layout)
 
         self.frame_entrada.setLayout(campos_layout)
 
@@ -719,12 +741,17 @@ class ProcessosWidget(QWidget):
             # Espaçamento entre filtros
             filtro_completo_layout.addSpacing(15)
 
+        # Adicionar espaçamento flexível para empurrar os filtros comuns para a direita
+        filtro_completo_layout.addStretch()
+
         # Filtro por cliente
         filtro_completo_layout.addWidget(QLabel("Cliente:"))
         self.entry_filtro_cliente = QLineEdit()
         self.entry_filtro_cliente.setPlaceholderText(
             "Digite o nome do cliente")
-        self.entry_filtro_cliente.setMinimumWidth(200)
+        self.entry_filtro_cliente.setMinimumWidth(100)  # Largura otimizada
+        self.entry_filtro_cliente.setMaximumWidth(
+            250)  # Largura máxima para manter proporção
         filtro_completo_layout.addWidget(self.entry_filtro_cliente)
 
         # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
@@ -745,7 +772,9 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo = QLineEdit()
         self.entry_filtro_processo.setPlaceholderText(
             "Digite o nome do processo")
-        self.entry_filtro_processo.setMinimumWidth(200)
+        self.entry_filtro_processo.setMinimumWidth(100)  # Largura otimizada
+        self.entry_filtro_processo.setMaximumWidth(
+            250)  # Largura máxima para manter proporção
         filtro_completo_layout.addWidget(self.entry_filtro_processo)
 
         # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
@@ -756,7 +785,8 @@ class ProcessosWidget(QWidget):
             lambda: self.timer_processo.start(500))
 
         # Espaçamento antes do botão
-        filtro_completo_layout.addSpacing(15)
+        # Espaçamento aumentado antes do botão
+        filtro_completo_layout.addSpacing(20)
 
         # Botão limpar filtros
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
@@ -784,7 +814,10 @@ class ProcessosWidget(QWidget):
         """)
 
         filtro_completo_layout.addWidget(self.btn_limpar_filtros)
-        filtro_completo_layout.addStretch()  # Empurra tudo para a esquerda
+
+        # Remover o addStretch() que empurrava tudo para a esquerda
+        # filtro_completo_layout.addStretch()  # Comentado para manter alinhamento à direita
+
         filtros_layout.addLayout(filtro_completo_layout)
 
         filtros_frame.setLayout(filtros_layout)
