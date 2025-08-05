@@ -404,6 +404,11 @@ class ProcessosWidget(QWidget):
         self.entry_valor_pedido = None
         self.tabela_layout = None
         self.tabela = None
+        self.entry_filtro_cliente = None
+        self.entry_filtro_processo = None
+        self.timer_cliente = None
+        self.timer_processo = None
+        self.btn_limpar_filtros = None
         self.label_total_processos = None
         self.label_total_itens = None
         self.label_total_valor = None
@@ -651,20 +656,95 @@ class ProcessosWidget(QWidget):
         """Cria a interface da tabela de processos com filtros."""
         self.tabela_layout = QVBoxLayout()
 
-        # Filtros (apenas para admins)
+        # Área de filtros (para todos os usuários)
+        filtros_frame = QFrame()
+        filtros_frame.setFrameStyle(QFrame.StyledPanel)
+        filtros_layout = QVBoxLayout()
+
+        # Primeira linha de filtros - Filtro por usuário (apenas para admins)
         if self.is_admin:
-            filtro_layout = QHBoxLayout()
-            filtro_layout.addWidget(QLabel("Filtrar por usuário:"))
+            filtro_usuario_layout = QHBoxLayout()
+            filtro_usuario_layout.addWidget(QLabel("Filtrar por usuário:"))
 
             self.combo_usuario = QComboBox()
             self.combo_usuario.addItem("Todos os usuários")
-            filtro_layout.addWidget(self.combo_usuario)
+            filtro_usuario_layout.addWidget(self.combo_usuario)
 
-            # Conectar mudança no combo para aplicar filtro automaticamente
-            self.combo_usuario.currentTextChanged.connect(self.aplicar_filtro)
+            # Conectar mudança no combo para recarregar filtros e aplicar filtro automaticamente
+            self.combo_usuario.currentTextChanged.connect(
+                self.on_usuario_changed)
 
-            filtro_layout.addStretch()
-            self.tabela_layout.addLayout(filtro_layout)
+            filtro_usuario_layout.addStretch()
+            filtros_layout.addLayout(filtro_usuario_layout)
+
+        # Segunda linha de filtros - Cliente e Processo (para todos os usuários)
+        filtro_dados_layout = QHBoxLayout()
+
+        # Filtro por cliente
+        filtro_dados_layout.addWidget(QLabel("Cliente:"))
+        self.entry_filtro_cliente = QLineEdit()
+        self.entry_filtro_cliente.setPlaceholderText(
+            "Digite o nome do cliente ou deixe vazio para todos")
+        self.entry_filtro_cliente.setMinimumWidth(200)
+        filtro_dados_layout.addWidget(self.entry_filtro_cliente)
+
+        # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
+        self.timer_cliente = QTimer()
+        self.timer_cliente.setSingleShot(True)
+        self.timer_cliente.timeout.connect(self.aplicar_filtro)
+        self.entry_filtro_cliente.textChanged.connect(
+            lambda: self.timer_cliente.start(500))
+
+        # Espaçamento
+        filtro_dados_layout.addSpacing(20)
+
+        # Filtro por processo
+        filtro_dados_layout.addWidget(QLabel("Processo:"))
+        self.entry_filtro_processo = QLineEdit()
+        self.entry_filtro_processo.setPlaceholderText(
+            "Digite o nome do processo ou deixe vazio para todos")
+        self.entry_filtro_processo.setMinimumWidth(200)
+        filtro_dados_layout.addWidget(self.entry_filtro_processo)
+
+        # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
+        self.timer_processo = QTimer()
+        self.timer_processo.setSingleShot(True)
+        self.timer_processo.timeout.connect(self.aplicar_filtro)
+        self.entry_filtro_processo.textChanged.connect(
+            lambda: self.timer_processo.start(500))
+
+        # Botão limpar filtros
+        filtro_dados_layout.addSpacing(20)
+        self.btn_limpar_filtros = QPushButton("Limpar Filtros")
+        self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
+
+        # Estilizar o botão limpar filtros
+        self.btn_limpar_filtros.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #FF9800;
+                color: white;
+                border: none;
+                padding: {PADDING_BOTAO};
+                border-radius: {RAIO_BORDA_BOTAO}px;
+                font-weight: bold;
+                font-size: {TAMANHO_FONTE_BOTAO}px;
+                height: {ALTURA_BOTAO}px;
+                width: {LARGURA_BOTAO + 20}px;
+            }}
+            QPushButton:hover {{
+                background-color: #F57C00;
+            }}
+            QPushButton:pressed {{
+                background-color: #E65100;
+            }}
+        """)
+
+        filtro_dados_layout.addWidget(self.btn_limpar_filtros)
+        filtro_dados_layout.addStretch()
+        filtros_layout.addLayout(filtro_dados_layout)
+
+        filtros_frame.setLayout(filtros_layout)
+        self.tabela_layout.addWidget(filtros_frame)
 
         # Tabela
         self.tabela = QTableWidget()
@@ -816,6 +896,32 @@ class ProcessosWidget(QWidget):
         layout.addStretch()
 
         self.frame_totais.setLayout(layout)
+
+    def limpar_filtros(self):
+        """Limpa todos os filtros aplicados."""
+        # Bloquear sinais temporariamente para evitar múltiplas chamadas
+        if self.is_admin and hasattr(self, 'combo_usuario'):
+            self.combo_usuario.blockSignals(True)
+            self.combo_usuario.setCurrentText("Todos os usuários")
+            self.combo_usuario.blockSignals(False)
+
+        if hasattr(self, 'entry_filtro_cliente'):
+            self.entry_filtro_cliente.blockSignals(True)
+            self.entry_filtro_cliente.clear()
+            self.entry_filtro_cliente.blockSignals(False)
+
+        if hasattr(self, 'entry_filtro_processo'):
+            self.entry_filtro_processo.blockSignals(True)
+            self.entry_filtro_processo.clear()
+            self.entry_filtro_processo.blockSignals(False)
+
+        # Aplicar filtros limpos
+        self.aplicar_filtro()
+
+    def on_usuario_changed(self):
+        """Chamado quando o filtro de usuário muda (apenas para admins)."""
+        # Apenas aplicar filtros (não precisa recarregar comboboxes)
+        self.aplicar_filtro()
 
     def carregar_dados(self):
         """Carrega os dados iniciais da aplicação."""
@@ -1016,7 +1122,7 @@ class ProcessosWidget(QWidget):
             return str(data_str)
 
     def aplicar_filtro(self, rolar_para_ultimo=True):
-        """Aplica filtros na tabela de processos baseado no usuário selecionado."""
+        """Aplica filtros na tabela de processos baseado nos filtros selecionados."""
         # Determinar qual usuário filtrar
         if self.is_admin:
             if hasattr(self, 'combo_usuario') and self.combo_usuario.currentText() != "Todos os usuários":
@@ -1027,8 +1133,18 @@ class ProcessosWidget(QWidget):
             # Usuários normais só veem seus próprios dados
             usuario_filtro = self.usuario_logado
 
-        # Buscar dados
-        registros = db.buscar_lancamentos_filtros(usuario_filtro)
+        # Determinar filtros de cliente e processo
+        cliente_filtro = None
+        if hasattr(self, 'entry_filtro_cliente') and self.entry_filtro_cliente.text().strip():
+            cliente_filtro = self.entry_filtro_cliente.text().strip().upper()
+
+        processo_filtro = None
+        if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
+            processo_filtro = self.entry_filtro_processo.text().strip()
+
+        # Buscar dados com filtros aplicados
+        registros = db.buscar_lancamentos_filtros_completos(
+            usuario_filtro, cliente_filtro, processo_filtro)
 
         # Ordenar por critérios múltiplos para garantir que novos itens apareçam no final
         # Função para extrair critérios de ordenação
@@ -1140,8 +1256,16 @@ class ProcessosWidget(QWidget):
         # Reativar sinais
         self.tabela.blockSignals(False)
 
-        # Atualizar totais
-        self.atualizar_totais(usuario_filtro)
+        # Atualizar totais com todos os filtros
+        cliente_filtro = None
+        if hasattr(self, 'entry_filtro_cliente') and self.entry_filtro_cliente.text().strip():
+            cliente_filtro = self.entry_filtro_cliente.text().strip().upper()
+
+        processo_filtro = None
+        if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
+            processo_filtro = self.entry_filtro_processo.text().strip()
+
+        self.atualizar_totais(usuario_filtro, cliente_filtro, processo_filtro)
 
         # Rolar para o último item apenas quando solicitado
         if rolar_para_ultimo:
@@ -1156,9 +1280,10 @@ class ProcessosWidget(QWidget):
             # Também garantir que a linha seja selecionada visualmente
             self.tabela.selectRow(ultima_linha)
 
-    def atualizar_totais(self, usuario_filtro=None):
+    def atualizar_totais(self, usuario_filtro=None, cliente_filtro=None, processo_filtro=None):
         """Atualiza os totais exibidos no painel de estatísticas."""
-        estatisticas = db.buscar_estatisticas(usuario_filtro)
+        estatisticas = db.buscar_estatisticas_completas(
+            usuario_filtro, cliente_filtro, processo_filtro)
 
         self.label_total_processos.setText(
             f"Total Processos: {estatisticas['total_processos']}"

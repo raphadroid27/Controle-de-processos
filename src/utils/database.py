@@ -273,5 +273,111 @@ def buscar_clientes_unicos():
     return clientes
 
 
+def buscar_clientes_unicos_por_usuario(usuario=None):
+    """Retorna uma lista de clientes únicos filtrados por usuário."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    if usuario:
+        cursor.execute(
+            "SELECT DISTINCT cliente FROM registro WHERE usuario = ? ORDER BY cliente",
+            (usuario,)
+        )
+    else:
+        cursor.execute(
+            "SELECT DISTINCT cliente FROM registro ORDER BY cliente")
+
+    clientes = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return clientes
+
+
+def buscar_processos_unicos_por_usuario(usuario=None):
+    """Retorna uma lista de processos únicos filtrados por usuário."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    if usuario:
+        cursor.execute(
+            "SELECT DISTINCT processo FROM registro WHERE usuario = ? ORDER BY processo",
+            (usuario,)
+        )
+    else:
+        cursor.execute(
+            "SELECT DISTINCT processo FROM registro ORDER BY processo")
+
+    processos = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return processos
+
+
+def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=None):
+    """Busca lançamentos aplicando múltiplos filtros com busca parcial."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    # Montar query dinamicamente baseado nos filtros
+    conditions = []
+    params = []
+
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+
+    if cliente:
+        conditions.append("UPPER(cliente) LIKE ?")
+        params.append(f"%{cliente.upper()}%")
+
+    if processo:
+        conditions.append("UPPER(processo) LIKE ?")
+        params.append(f"%{processo.upper()}%")
+
+    query = "SELECT * FROM registro"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    query += " ORDER BY data_lancamento"
+
+    cursor.execute(query, params)
+    registros = cursor.fetchall()
+    conn.close()
+    return registros
+
+
+def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None):
+    """Calcula estatísticas aplicando múltiplos filtros com busca parcial."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    # Montar query dinamicamente baseado nos filtros
+    conditions = []
+    params = []
+
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+
+    if cliente:
+        conditions.append("UPPER(cliente) LIKE ?")
+        params.append(f"%{cliente.upper()}%")
+
+    if processo:
+        conditions.append("UPPER(processo) LIKE ?")
+        params.append(f"%{processo.upper()}%")
+
+    query = "SELECT COUNT(*) as total_processos, SUM(qtde_itens) as total_itens, SUM(valor_pedido) as total_valor FROM registro"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    cursor.execute(query, params)
+    resultado = cursor.fetchone()
+    conn.close()
+
+    return {
+        "total_processos": resultado[0] if resultado[0] else 0,
+        "total_itens": resultado[1] if resultado[1] else 0,
+        "total_valor": resultado[2] if resultado[2] else 0.0,
+    }
+
+
 # Garante que a tabela seja criada na primeira vez que o módulo foi importado
 criar_tabela_registro()
