@@ -828,13 +828,30 @@ class ProcessosWidget(QWidget):
         # Buscar dados
         registros = db.buscar_lancamentos_filtros(usuario_filtro)
 
+        # Ordenar por data de processo (maior para menor)
+        # Função para extrair data de processo para ordenação
+        def obter_data_ordenacao(registro):
+            data_processo = registro[6]  # Coluna data_processo
+            if not data_processo:
+                # Se não há data de processo, usar uma data muito antiga para ficar no final
+                return datetime.min
+            try:
+                # Converter AAAA-MM-DD para datetime
+                return datetime.strptime(data_processo, "%Y-%m-%d")
+            except ValueError:
+                # Se não conseguir converter, usar data muito antiga
+                return datetime.min
+        
+        # Ordenar da maior data para a menor (reverse=True)
+        registros_ordenados = sorted(registros, key=obter_data_ordenacao, reverse=True)
+
         # Bloquear sinais temporariamente para evitar chamadas desnecessárias
         self.tabela.blockSignals(True)
 
-        # Preencher tabela
-        self.tabela.setRowCount(len(registros))
+        # Preencher tabela com registros ordenados
+        self.tabela.setRowCount(len(registros_ordenados))
 
-        for row, registro in enumerate(registros):
+        for row, registro in enumerate(registros_ordenados):
             col = 0
 
             # Se for admin, primeira coluna é usuário (não editável)
