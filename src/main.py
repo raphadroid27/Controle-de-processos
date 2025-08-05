@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 from PySide6.QtCore import QDate, Qt, Signal
-from PySide6.QtGui import QAction, QFont, QKeySequence, QShortcut
+from PySide6.QtGui import QAction, QFont, QKeySequence, QShortcut, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -287,6 +287,101 @@ class NovoUsuarioDialog(QDialog):
             QMessageBox.warning(self, "Erro", resultado)
 
 
+class NavigableLineEdit(QLineEdit):
+    """QLineEdit personalizado que permite navegação entre campos com setas."""
+
+    def __init__(self, campos_navegacao=None, parent=None):
+        super().__init__(parent)
+        self.campos_navegacao = campos_navegacao or []
+
+    def set_campos_navegacao(self, campos):
+        """Define a lista de campos para navegação."""
+        self.campos_navegacao = campos
+
+    def keyPressEvent(self, event):
+        """Intercepta eventos de teclado para navegação."""
+        if event.key() == Qt.Key_Left:
+            # Navegar para campo anterior se cursor estiver no início
+            if self.cursorPosition() == 0 and self.campos_navegacao:
+                try:
+                    indice_atual = self.campos_navegacao.index(self)
+                    indice_anterior = (
+                        indice_atual - 1) % len(self.campos_navegacao)
+                    self.campos_navegacao[indice_anterior].setFocus()
+                    # Posicionar cursor no final do campo anterior
+                    if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
+                        self.campos_navegacao[indice_anterior].setCursorPosition(
+                            len(self.campos_navegacao[indice_anterior].text())
+                        )
+                    return
+                except ValueError:
+                    pass
+
+        elif event.key() == Qt.Key_Right:
+            # Navegar para próximo campo se cursor estiver no final
+            if self.cursorPosition() == len(self.text()) and self.campos_navegacao:
+                try:
+                    indice_atual = self.campos_navegacao.index(self)
+                    proximo_indice = (
+                        indice_atual + 1) % len(self.campos_navegacao)
+                    self.campos_navegacao[proximo_indice].setFocus()
+                    # Posicionar cursor no início do próximo campo
+                    if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
+                        self.campos_navegacao[proximo_indice].setCursorPosition(
+                            0)
+                    return
+                except ValueError:
+                    pass
+
+        # Passar o evento para o comportamento padrão
+        super().keyPressEvent(event)
+
+
+class NavigableDateEdit(QDateEdit):
+    """QDateEdit personalizado que permite navegação entre campos com setas."""
+
+    def __init__(self, campos_navegacao=None, parent=None):
+        super().__init__(parent)
+        self.campos_navegacao = campos_navegacao or []
+
+    def set_campos_navegacao(self, campos):
+        """Define a lista de campos para navegação."""
+        self.campos_navegacao = campos
+
+    def keyPressEvent(self, event):
+        """Intercepta eventos de teclado para navegação."""
+        if event.key() == Qt.Key_Left and self.campos_navegacao:
+            try:
+                indice_atual = self.campos_navegacao.index(self)
+                indice_anterior = (
+                    indice_atual - 1) % len(self.campos_navegacao)
+                self.campos_navegacao[indice_anterior].setFocus()
+                # Posicionar cursor no final do campo anterior
+                if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
+                    self.campos_navegacao[indice_anterior].setCursorPosition(
+                        len(self.campos_navegacao[indice_anterior].text())
+                    )
+                return
+            except ValueError:
+                pass
+
+        elif event.key() == Qt.Key_Right and self.campos_navegacao:
+            try:
+                indice_atual = self.campos_navegacao.index(self)
+                proximo_indice = (
+                    indice_atual + 1) % len(self.campos_navegacao)
+                self.campos_navegacao[proximo_indice].setFocus()
+                # Posicionar cursor no início do próximo campo
+                if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
+                    self.campos_navegacao[proximo_indice].setCursorPosition(0)
+                return
+            except ValueError:
+                pass
+
+        # Passar o evento para o comportamento padrão
+        super().keyPressEvent(event)
+
+
 class ProcessosWidget(QWidget):
     """Widget principal para gerenciamento de processos."""
 
@@ -435,8 +530,40 @@ class ProcessosWidget(QWidget):
         self.frame_entrada = QFrame()
         self.frame_entrada.setFrameStyle(QFrame.StyledPanel)
 
-        # Campos de entrada
-        self.entry_cliente = QLineEdit()
+        # Campos de entrada com navegação
+        self.entry_cliente = NavigableLineEdit()
+        self.entry_processo = NavigableLineEdit()
+        self.entry_qtde_itens = NavigableLineEdit()
+
+        # Data de entrada com limite máximo de hoje
+        self.entry_data_entrada = NavigableDateEdit()
+        self.entry_data_entrada.setDate(QDate.currentDate())
+        self.entry_data_entrada.setCalendarPopup(True)
+        self.entry_data_entrada.setMaximumDate(QDate.currentDate())
+
+        # Data de processo com limite máximo de hoje
+        self.entry_data_processo = NavigableDateEdit()
+        self.entry_data_processo.setCalendarPopup(True)
+        self.entry_data_processo.setSpecialValueText("Não processado")
+        self.entry_data_processo.setMaximumDate(QDate.currentDate())
+        self.entry_data_processo.setDate(QDate.currentDate())  # Data nula
+
+        self.entry_valor_pedido = NavigableLineEdit()
+        self.entry_valor_pedido.setPlaceholderText("0.00")
+
+        # Configurar navegação entre campos
+        campos_navegacao = [
+            self.entry_cliente,
+            self.entry_processo,
+            self.entry_qtde_itens,
+            self.entry_data_entrada,
+            self.entry_data_processo,
+            self.entry_valor_pedido
+        ]
+
+        # Aplicar lista de navegação a todos os campos
+        for campo in campos_navegacao:
+            campo.set_campos_navegacao(campos_navegacao)
 
         # Conectar sinal para converter automaticamente para maiúscula
         self.entry_cliente.textChanged.connect(
@@ -444,25 +571,6 @@ class ProcessosWidget(QWidget):
 
         # Configurar autocompletar para cliente
         self.configurar_autocompletar_cliente()
-
-        self.entry_processo = QLineEdit()
-        self.entry_qtde_itens = QLineEdit()
-
-        # Data de entrada com limite máximo de hoje
-        self.entry_data_entrada = QDateEdit()
-        self.entry_data_entrada.setDate(QDate.currentDate())
-        self.entry_data_entrada.setCalendarPopup(True)
-        self.entry_data_entrada.setMaximumDate(QDate.currentDate())
-
-        # Data de processo com limite máximo de hoje
-        self.entry_data_processo = QDateEdit()
-        self.entry_data_processo.setCalendarPopup(True)
-        self.entry_data_processo.setSpecialValueText("Não processado")
-        self.entry_data_processo.setMaximumDate(QDate.currentDate())
-        self.entry_data_processo.setDate(QDate.currentDate())  # Data nula
-
-        self.entry_valor_pedido = QLineEdit()
-        self.entry_valor_pedido.setPlaceholderText("0.00")
 
         # Layout horizontal para os campos
         campos_layout = QHBoxLayout()
