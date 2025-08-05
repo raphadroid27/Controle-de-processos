@@ -201,15 +201,12 @@ class ProcessosWidget(QWidget):
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin
 
-        self.init_ui()
-        self.carregar_dados()
-
+        # Inicializar atributos antes de criar a UI
         self.frame_entrada = None
         self.botoes_layout = None
         self.frame_totais = None
         self.btn_adicionar = None
         self.btn_excluir = None
-        self.combo_usuario = None
         self.entry_cliente = None
         self.entry_processo = None
         self.entry_qtde_itens = None
@@ -222,6 +219,9 @@ class ProcessosWidget(QWidget):
         self.label_total_processos = None
         self.label_total_itens = None
         self.label_total_valor = None
+
+        self.init_ui()
+        self.carregar_dados()
 
     def init_ui(self):
         """Inicializa a interface do usuário."""
@@ -321,20 +321,21 @@ class ProcessosWidget(QWidget):
         """Cria a interface da tabela de processos com filtros."""
         self.tabela_layout = QVBoxLayout()
 
-        # Filtros
-        filtro_layout = QHBoxLayout()
-        filtro_layout.addWidget(QLabel("Filtrar por usuário:"))
+        # Filtros (apenas para admins)
+        if self.is_admin:
+            filtro_layout = QHBoxLayout()
+            filtro_layout.addWidget(QLabel("Filtrar por usuário:"))
 
-        self.combo_usuario = QComboBox()
-        self.combo_usuario.addItem("Todos os usuários")
-        filtro_layout.addWidget(self.combo_usuario)
+            self.combo_usuario = QComboBox()
+            self.combo_usuario.addItem("Todos os usuários")
+            filtro_layout.addWidget(self.combo_usuario)
 
-        self.btn_filtrar = QPushButton("Filtrar")
-        self.btn_filtrar.clicked.connect(self.aplicar_filtro)
-        filtro_layout.addWidget(self.btn_filtrar)
+            self.btn_filtrar = QPushButton("Filtrar")
+            self.btn_filtrar.clicked.connect(self.aplicar_filtro)
+            filtro_layout.addWidget(self.btn_filtrar)
 
-        filtro_layout.addStretch()
-        self.tabela_layout.addLayout(filtro_layout)
+            filtro_layout.addStretch()
+            self.tabela_layout.addLayout(filtro_layout)
 
         # Tabela
         self.tabela = QTableWidget()
@@ -388,8 +389,8 @@ class ProcessosWidget(QWidget):
 
     def carregar_dados(self):
         """Carrega os dados iniciais da aplicação."""
-        # Carregar usuários no combo
-        if self.is_admin:
+        # Carregar usuários no combo (apenas para admins)
+        if self.is_admin and hasattr(self, 'combo_usuario'):
             usuarios_list = db.buscar_usuarios_unicos()
             for user in usuarios_list:
                 self.combo_usuario.addItem(user)
@@ -399,12 +400,14 @@ class ProcessosWidget(QWidget):
     def aplicar_filtro(self):
         """Aplica filtros na tabela de processos baseado no usuário selecionado."""
         # Determinar qual usuário filtrar
-        if self.is_admin and self.combo_usuario.currentText() != "Todos os usuários":
-            usuario_filtro = self.combo_usuario.currentText()
-        elif not self.is_admin:
-            usuario_filtro = self.usuario_logado
+        if self.is_admin:
+            if hasattr(self, 'combo_usuario') and self.combo_usuario.currentText() != "Todos os usuários":
+                usuario_filtro = self.combo_usuario.currentText()
+            else:
+                usuario_filtro = None
         else:
-            usuario_filtro = None
+            # Usuários normais só veem seus próprios dados
+            usuario_filtro = self.usuario_logado
 
         # Buscar dados
         registros = db.buscar_lancamentos_filtros(usuario_filtro)

@@ -8,11 +8,16 @@ tabelas de dados do sistema.
 
 # database.py
 import sqlite3
+import os
 
 
 def conectar_db():
     """Conecta ao banco de dados SQLite e o retorna."""
-    conn = sqlite3.connect("processos.db")
+    # Caminho para o banco de dados no diretório raiz do projeto
+    # database.py está em src/utils/, então precisamos subir 2 níveis
+    db_path = os.path.join(os.path.dirname(
+        os.path.dirname(os.path.dirname(__file__))), "processos.db")
+    conn = sqlite3.connect(db_path)
     return conn
 
 
