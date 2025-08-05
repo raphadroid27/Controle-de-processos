@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QCompleter,
     QDateEdit,
     QDialog,
     QFormLayout,
@@ -352,6 +353,62 @@ class ProcessosWidget(QWidget):
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key_Delete), self)
         self.shortcut_delete.activated.connect(self.excluir_processo)
 
+    def configurar_autocompletar_cliente(self):
+        """Configura o autocompletar para o campo cliente."""
+        try:
+            # Buscar clientes únicos do banco de dados
+            clientes_raw = db.buscar_clientes_unicos()
+            # Converter todos os clientes para maiúscula
+            clientes = [cliente.upper() for cliente in clientes_raw]
+
+            # Criar o completer
+            self.completer_cliente = QCompleter(clientes, self)
+            self.completer_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+            self.completer_cliente.setFilterMode(Qt.MatchContains)
+
+            # Aplicar o completer ao campo cliente
+            self.entry_cliente.setCompleter(self.completer_cliente)
+        except Exception as e:
+            print(f"Erro ao configurar autocompletar: {e}")
+
+    def atualizar_autocompletar_cliente(self):
+        """Atualiza a lista de sugestões do autocompletar com clientes mais recentes."""
+        try:
+            # Buscar clientes únicos atualizados
+            clientes_raw = db.buscar_clientes_unicos()
+            # Converter todos os clientes para maiúscula
+            clientes = [cliente.upper() for cliente in clientes_raw]
+
+            # Atualizar o modelo do completer
+            if hasattr(self, 'completer_cliente'):
+                self.completer_cliente.setModel(None)
+                self.completer_cliente = QCompleter(clientes, self)
+                self.completer_cliente.setCaseSensitivity(Qt.CaseInsensitive)
+                self.completer_cliente.setFilterMode(Qt.MatchContains)
+                self.entry_cliente.setCompleter(self.completer_cliente)
+        except Exception as e:
+            print(f"Erro ao atualizar autocompletar: {e}")
+
+    def converter_cliente_maiuscula(self, texto):
+        """Converte automaticamente o texto do campo cliente para maiúscula."""
+        # Bloquear temporariamente o sinal para evitar recursão
+        self.entry_cliente.blockSignals(True)
+
+        # Obter posição atual do cursor
+        posicao_cursor = self.entry_cliente.cursorPosition()
+
+        # Converter para maiúscula
+        texto_maiusculo = texto.upper()
+
+        # Definir o texto em maiúscula
+        self.entry_cliente.setText(texto_maiusculo)
+
+        # Restaurar posição do cursor
+        self.entry_cliente.setCursorPosition(posicao_cursor)
+
+        # Reativar sinais
+        self.entry_cliente.blockSignals(False)
+
     def atalho_adicionar_processo(self):
         """Adiciona processo via atalho, mas apenas se campos obrigatórios estiverem preenchidos."""
         # Verificar se os campos obrigatórios estão preenchidos
@@ -380,6 +437,14 @@ class ProcessosWidget(QWidget):
 
         # Campos de entrada
         self.entry_cliente = QLineEdit()
+
+        # Conectar sinal para converter automaticamente para maiúscula
+        self.entry_cliente.textChanged.connect(
+            self.converter_cliente_maiuscula)
+
+        # Configurar autocompletar para cliente
+        self.configurar_autocompletar_cliente()
+
         self.entry_processo = QLineEdit()
         self.entry_qtde_itens = QLineEdit()
 
@@ -771,7 +836,8 @@ class ProcessosWidget(QWidget):
                     return
 
             # Coletar todos os dados da linha
-            cliente = self.tabela.item(row, col_offset).text().strip()
+            cliente = self.tabela.item(row, col_offset).text(
+            ).strip().upper()  # Garantir maiúscula
             processo = self.tabela.item(row, col_offset + 1).text().strip()
             qtde_itens = self.tabela.item(row, col_offset + 2).text().strip()
             data_entrada_text = self.tabela.item(
@@ -912,7 +978,8 @@ class ProcessosWidget(QWidget):
                 col += 1
 
             # Demais colunas (editáveis)
-            item_cliente = QTableWidgetItem(str(registro[2]))
+            item_cliente = QTableWidgetItem(
+                str(registro[2]).upper())  # Exibir em maiúscula
             self.tabela.setItem(row, col, item_cliente)
 
             # Processo alinhado ao centro
@@ -976,7 +1043,7 @@ class ProcessosWidget(QWidget):
 
     def adicionar_processo(self):
         """Adiciona um novo processo com os dados preenchidos."""
-        cliente = self.entry_cliente.text().strip()
+        cliente = self.entry_cliente.text().strip().upper()  # Garantir maiúscula
         processo = self.entry_processo.text().strip()
         qtde_itens = self.entry_qtde_itens.text().strip()
 
@@ -1020,6 +1087,9 @@ class ProcessosWidget(QWidget):
             self.entry_data_entrada.setDate(QDate.currentDate())
             self.entry_data_processo.clear()
             self.entry_valor_pedido.clear()
+
+            # Atualizar autocompletar de clientes
+            self.atualizar_autocompletar_cliente()
 
             # Atualizar tabela
             self.aplicar_filtro()

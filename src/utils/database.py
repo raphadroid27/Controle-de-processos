@@ -207,28 +207,28 @@ def atualizar_lancamento(id_registro, cliente, processo, qtde_itens, data_entrad
         # Validações
         if not cliente or not processo:
             return "Erro: Cliente e processo são obrigatórios."
-        
+
         try:
             qtde_itens = int(qtde_itens)
             if qtde_itens <= 0:
                 return "Erro: Quantidade de itens deve ser um número positivo."
         except ValueError:
             return "Erro: Quantidade de itens deve ser um número válido."
-        
+
         try:
             valor_pedido = float(valor_pedido.replace(",", "."))
             if valor_pedido < 0:
                 return "Erro: Valor do pedido não pode ser negativo."
         except ValueError:
             return "Erro: Valor do pedido deve ser um número válido."
-        
+
         # Se data_processo está vazia ou é "Não processado", usar NULL
         if not data_processo or data_processo == "Não processado":
             data_processo = None
-        
+
         conn = conectar_db()
         cursor = conn.cursor()
-        
+
         cursor.execute(
             """
             UPDATE registro 
@@ -236,15 +236,16 @@ def atualizar_lancamento(id_registro, cliente, processo, qtde_itens, data_entrad
                 data_entrada = ?, data_processo = ?, valor_pedido = ?
             WHERE id = ?
             """,
-            (cliente, processo, qtde_itens, data_entrada, data_processo, valor_pedido, id_registro)
+            (cliente, processo, qtde_itens, data_entrada,
+             data_processo, valor_pedido, id_registro)
         )
-        
+
         if cursor.rowcount == 0:
             return "Erro: Registro não encontrado."
-        
+
         conn.commit()
         return "Sucesso: Processo atualizado com sucesso!"
-        
+
     except sqlite3.Error as e:
         return f"Erro no banco de dados: {e}"
     finally:
@@ -260,6 +261,16 @@ def buscar_usuarios_unicos():
     usuarios = [row[0] for row in cursor.fetchall()]
     conn.close()
     return usuarios
+
+
+def buscar_clientes_unicos():
+    """Retorna uma lista de nomes de clientes únicos já cadastrados."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT cliente FROM registro ORDER BY cliente")
+    clientes = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return clientes
 
 
 # Garante que a tabela seja criada na primeira vez que o módulo foi importado
