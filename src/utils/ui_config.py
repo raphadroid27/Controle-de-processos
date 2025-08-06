@@ -23,6 +23,11 @@ RAIO_BORDA_BOTAO = 4
 PADDING_BOTAO = "2px 4px"
 ESPACAMENTO_PADRAO = 10
 
+# Constantes para widgets de entrada (LineEdit, ComboBox, DateEdit, etc.)
+ALTURA_WIDGET_ENTRADA = 32
+ALTURA_MINIMA_WIDGET_ENTRADA = 28
+LARGURA_MINIMA_WIDGET_ENTRADA = 80
+
 # Constantes para outros componentes
 ALTURA_PADRAO_COMPONENTE = 20
 LARGURA_MINIMA_COMPONENTE = 60
@@ -113,6 +118,21 @@ def obter_estilo_botao(cor, largura=None):
     """
 
 
+def configurar_widgets_entrada_uniformes(widgets_list):
+    """
+    Configura widgets de entrada (LineEdit, ComboBox, DateEdit, etc.) 
+    para ter tamanho e comportamento uniformes.
+    
+    Args:
+        widgets_list: Lista de widgets para configurar
+    """
+    for widget in widgets_list:
+        widget.setMinimumHeight(ALTURA_MINIMA_WIDGET_ENTRADA)
+        widget.setMaximumHeight(ALTURA_WIDGET_ENTRADA)
+        widget.setMinimumWidth(LARGURA_MINIMA_WIDGET_ENTRADA)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+
 def configurar_botao_padrao(botao, largura_minima=None):
     """
     Função global para configurar qualquer botão com padrão uniforme de altura e largura.
@@ -121,8 +141,6 @@ def configurar_botao_padrao(botao, largura_minima=None):
         botao: O botão QPushButton a ser configurado
         largura_minima: Largura mínima opcional (usa LARGURA_BOTAO se não especificado)
     """
-    from PySide6.QtWidgets import QSizePolicy
-
     botao.setMinimumHeight(ALTURA_MINIMA_BOTAO)
     botao.setMaximumHeight(ALTURA_BOTAO)
     botao.setMinimumWidth(largura_minima or LARGURA_BOTAO)

@@ -41,9 +41,10 @@ from utils import usuario
 from utils.ui_config import (
     aplicar_estilo_botao,
     aplicar_estilo_botao_desabilitado,
+    configurar_widgets_entrada_uniformes,
     ESPACAMENTO_PADRAO,
-    ALTURA_MINIMA_BOTAO,
-    ALTURA_BOTAO
+    ALTURA_WIDGET_ENTRADA,
+    ALTURA_MINIMA_WIDGET_ENTRADA
 )
 from gerenciar_usuarios import GerenciarUsuariosDialog
 
@@ -647,13 +648,7 @@ class ProcessosWidget(QWidget):
 
     def configurar_widgets_uniformes(self, widgets_list):
         """Configura widgets para ter tamanho e comportamento uniformes."""
-        from PySide6.QtWidgets import QSizePolicy
-
-        for widget in widgets_list:
-            widget.setMinimumHeight(ALTURA_MINIMA_BOTAO)
-            widget.setMaximumHeight(ALTURA_BOTAO)
-            widget.setMinimumWidth(80)
-            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        configurar_widgets_entrada_uniformes(widgets_list)
 
     def configurar_botao_uniforme(self, botao, largura_minima=None):
         """Configura um botão para ter tamanho e comportamento uniformes usando função global."""
