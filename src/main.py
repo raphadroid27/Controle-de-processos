@@ -374,15 +374,15 @@ class ProcessosWidget(QWidget):
         except Exception as e:
             print(f"Erro ao atualizar autocompletar do filtro: {e}")
 
-    def configurar_filtros_mes_ano(self):
+    def configurar_filtros_ano_periodo(self):
         """
-        Configura os combos de mês e ano com dados únicos do banco.
+        Configura os combos de ano e período de faturamento com dados únicos do banco.
         
-        Garante que o período de faturamento atual sempre esteja disponível nos filtros,
+        Garante que o ano/período de faturamento atual sempre esteja disponível nos filtros,
         mesmo que ainda não tenha lançamentos, permitindo que seja preenchido.
         """
         try:
-            # Determinar qual usuário filtrar para meses e anos
+            # Determinar qual usuário filtrar
             if self.is_admin:
                 if hasattr(self, 'combo_usuario') and self.combo_usuario.currentText() != "Todos os usuários":
                     usuario_filtro = self.combo_usuario.currentText()
@@ -393,76 +393,126 @@ class ProcessosWidget(QWidget):
                 usuario_filtro = self.usuario_logado
 
             # Bloquear sinais temporariamente
-            self.combo_filtro_mes.blockSignals(True)
             self.combo_filtro_ano.blockSignals(True)
+            self.combo_filtro_periodo.blockSignals(True)
 
             # Salvar seleções atuais
-            mes_selecionado = self.combo_filtro_mes.currentText()
             ano_selecionado = self.combo_filtro_ano.currentText()
+            periodo_selecionado = self.combo_filtro_periodo.currentText()
 
-            # Limpar e adicionar opção "Todos"
-            self.combo_filtro_mes.clear()
-            self.combo_filtro_mes.addItem("Todos os meses")
-
+            # Configurar combo de anos
             self.combo_filtro_ano.clear()
             self.combo_filtro_ano.addItem("Todos os anos")
-
-            # Obter período de faturamento atual para garantir que esteja sempre disponível
-            mes_periodo_atual, ano_periodo_atual = self.calcular_periodo_faturamento_atual()
-
-            # Buscar meses únicos do banco
-            meses_db = db.buscar_meses_unicos(usuario_filtro)
-            
-            # Garantir que o mês do período atual esteja na lista, mesmo se vazio
-            if mes_periodo_atual not in meses_db:
-                meses_db.append(mes_periodo_atual)
-            
-            # Ordenar meses
-            meses_db.sort()
-            
-            nomes_meses = {
-                "01": "Janeiro", "02": "Fevereiro", "03": "Março",
-                "04": "Abril", "05": "Maio", "06": "Junho",
-                "07": "Julho", "08": "Agosto", "09": "Setembro",
-                "10": "Outubro", "11": "Novembro", "12": "Dezembro"
-            }
-
-            for mes in meses_db:
-                if mes in nomes_meses:
-                    self.combo_filtro_mes.addItem(
-                        f"{mes} - {nomes_meses[mes]}")
 
             # Buscar anos únicos do banco
             anos_db = db.buscar_anos_unicos(usuario_filtro)
             
-            # Garantir que o ano do período atual esteja na lista, mesmo se vazio
-            if ano_periodo_atual not in anos_db:
-                anos_db.append(ano_periodo_atual)
+            # Garantir que o ano atual esteja na lista
+            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            ano_atual = str(data_inicio_atual.year)
+            if ano_atual not in anos_db:
+                anos_db.append(ano_atual)
             
-            # Ordenar anos
-            anos_db.sort()
+            # Ordenar anos (mais recente primeiro)
+            anos_db.sort(reverse=True)
             
             for ano in anos_db:
                 self.combo_filtro_ano.addItem(ano)
 
-            # Restaurar seleções se ainda existirem
-            mes_index = self.combo_filtro_mes.findText(mes_selecionado)
-            if mes_index >= 0:
-                self.combo_filtro_mes.setCurrentIndex(mes_index)
-
+            # Restaurar seleção de ano se ainda existir
             ano_index = self.combo_filtro_ano.findText(ano_selecionado)
             if ano_index >= 0:
                 self.combo_filtro_ano.setCurrentIndex(ano_index)
+            else:
+                # Se não encontrou, selecionar o ano atual
+                ano_atual_index = self.combo_filtro_ano.findText(ano_atual)
+                if ano_atual_index >= 0:
+                    self.combo_filtro_ano.setCurrentIndex(ano_atual_index)
+
+            # Configurar períodos baseado no ano selecionado
+            self.configurar_periodos_do_ano()
 
             # Reativar sinais
-            self.combo_filtro_mes.blockSignals(False)
             self.combo_filtro_ano.blockSignals(False)
+            self.combo_filtro_periodo.blockSignals(False)
 
         except Exception as e:
-            print(f"Erro ao configurar filtros de mês/ano: {e}")
+            print(f"Erro ao configurar filtros de ano/período: {e}")
             # Reativar sinais em caso de erro
-            self.combo_filtro_mes.blockSignals(False)
             self.combo_filtro_ano.blockSignals(False)
+            self.combo_filtro_periodo.blockSignals(False)
+
+    def configurar_periodos_do_ano(self):
+        """Configura o combo de períodos baseado no ano selecionado."""
+        try:
+            # Determinar usuário para filtro
+            if self.is_admin:
+                if hasattr(self, 'combo_usuario') and self.combo_usuario.currentText() != "Todos os usuários":
+                    usuario_filtro = self.combo_usuario.currentText()
+                else:
+                    usuario_filtro = None
+            else:
+                usuario_filtro = self.usuario_logado
+
+            # Salvar seleção atual de período
+            periodo_selecionado = self.combo_filtro_periodo.currentText()
+
+            # Limpar combo de períodos
+            self.combo_filtro_periodo.clear()
+            self.combo_filtro_periodo.addItem("Todos os períodos")
+
+            # Obter ano selecionado
+            ano_selecionado = self.combo_filtro_ano.currentText()
+            
+            if ano_selecionado != "Todos os anos":
+                # Buscar períodos do ano específico
+                periodos_db = db.buscar_periodos_faturamento_por_ano(ano_selecionado, usuario_filtro)
+                
+                # Adicionar período atual se o ano selecionado for o ano atual
+                data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+                ano_atual = str(data_inicio_atual.year)
+                
+                if ano_selecionado == ano_atual:
+                    periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m')} a {data_fim_atual.strftime('%d/%m')}"
+                    
+                    periodo_atual_existe = False
+                    for periodo in periodos_db:
+                        if periodo['display'] == periodo_atual_display:
+                            periodo_atual_existe = True
+                            break
+                    
+                    if not periodo_atual_existe:
+                        periodos_db.insert(0, {
+                            'display': periodo_atual_display,
+                            'inicio': data_inicio_atual.strftime('%Y-%m-%d'),
+                            'fim': data_fim_atual.strftime('%Y-%m-%d')
+                        })
+
+                # Adicionar períodos ao combo
+                for periodo in periodos_db:
+                    self.combo_filtro_periodo.addItem(periodo['display'])
+                    # Armazenar as datas no userData para usar depois
+                    index = self.combo_filtro_periodo.count() - 1
+                    self.combo_filtro_periodo.setItemData(index, {
+                        'inicio': periodo['inicio'],
+                        'fim': periodo['fim']
+                    })
+
+            # Restaurar seleção se ainda existir
+            periodo_index = self.combo_filtro_periodo.findText(periodo_selecionado)
+            if periodo_index >= 0:
+                self.combo_filtro_periodo.setCurrentIndex(periodo_index)
+
+        except Exception as e:
+            print(f"Erro ao configurar períodos do ano: {e}")
+
+    def on_ano_changed(self):
+        """Chamado quando o ano é alterado - atualiza os períodos disponíveis."""
+        self.combo_filtro_periodo.blockSignals(True)
+        self.configurar_periodos_do_ano()
+        self.combo_filtro_periodo.blockSignals(False)
+        # Aplicar filtros automaticamente
+        self.aplicar_filtro()
 
     def converter_cliente_maiuscula(self, texto):
         """Converte automaticamente o texto do campo cliente para maiúscula."""
@@ -698,18 +748,6 @@ class ProcessosWidget(QWidget):
         self.entry_filtro_processo.textChanged.connect(
             lambda: self.timer_processo.start(500))
 
-        # Filtro por mês
-        self.combo_filtro_mes = QComboBox()
-        self.combo_filtro_mes.addItem("Todos os meses")
-        widgets_filtro.append(self.combo_filtro_mes)
-
-        mes_layout, peso_mes = self.criar_layout_coluna_uniforme(
-            "Mês:", self.combo_filtro_mes, 2)
-        filtro_completo_layout.addLayout(mes_layout, peso_mes)
-
-        # Conectar mudança no combo de mês
-        self.combo_filtro_mes.currentTextChanged.connect(self.aplicar_filtro)
-
         # Filtro por ano
         self.combo_filtro_ano = QComboBox()
         self.combo_filtro_ano.addItem("Todos os anos")
@@ -720,7 +758,19 @@ class ProcessosWidget(QWidget):
         filtro_completo_layout.addLayout(ano_layout, peso_ano)
 
         # Conectar mudança no combo de ano
-        self.combo_filtro_ano.currentTextChanged.connect(self.aplicar_filtro)
+        self.combo_filtro_ano.currentTextChanged.connect(self.on_ano_changed)
+
+        # Filtro por período de faturamento
+        self.combo_filtro_periodo = QComboBox()
+        self.combo_filtro_periodo.addItem("Todos os períodos")
+        widgets_filtro.append(self.combo_filtro_periodo)
+
+        periodo_layout, peso_periodo = self.criar_layout_coluna_uniforme(
+            "Período:", self.combo_filtro_periodo, 3)
+        filtro_completo_layout.addLayout(periodo_layout, peso_periodo)
+
+        # Conectar mudança no combo de período
+        self.combo_filtro_periodo.currentTextChanged.connect(self.aplicar_filtro)
 
         # Aplicar configuração uniforme a todos os widgets de filtro
         self.configurar_widgets_uniformes(widgets_filtro)
@@ -975,8 +1025,8 @@ class ProcessosWidget(QWidget):
             self.entry_filtro_processo.clear()
             self.entry_filtro_processo.blockSignals(False)
 
-        # Para mês e ano, aplicar o filtro do mês corrente em vez de limpar
-        self.aplicar_filtro_mes_corrente()
+        # Para período, aplicar o filtro do período corrente em vez de limpar
+        self.aplicar_filtro_periodo_corrente()
 
         # Aplicar filtros (agora com mês corrente aplicado)
         self.aplicar_filtro()
@@ -1020,47 +1070,97 @@ class ProcessosWidget(QWidget):
         
         return mes_formatado, ano_formatado
 
-    def aplicar_filtro_mes_corrente(self):
-        """Aplica automaticamente o filtro do mês corrente baseado no período de faturamento."""
+    def calcular_periodo_faturamento_atual_datas(self):
+        """
+        Calcula as datas de início e fim do período de faturamento atual.
+        Retorna objetos datetime para facilitar manipulação.
+        """
+        hoje = datetime.now()
+        
+        if hoje.day >= 26:
+            # Período atual: 26/MM a 25/(MM+1)
+            inicio_mes = hoje.month
+            inicio_ano = hoje.year
+            
+            # Calcular mês seguinte
+            if inicio_mes == 12:
+                fim_mes = 1
+                fim_ano = inicio_ano + 1
+            else:
+                fim_mes = inicio_mes + 1
+                fim_ano = inicio_ano
+        else:
+            # Período anterior: 26/(MM-1) a 25/MM
+            fim_mes = hoje.month
+            fim_ano = hoje.year
+            
+            # Calcular mês anterior
+            if fim_mes == 1:
+                inicio_mes = 12
+                inicio_ano = fim_ano - 1
+            else:
+                inicio_mes = fim_mes - 1
+                inicio_ano = fim_ano
+        
+        data_inicio = datetime(inicio_ano, inicio_mes, 26)
+        data_fim = datetime(fim_ano, fim_mes, 25)
+        
+        return data_inicio, data_fim
+
+    def aplicar_filtro_periodo_corrente(self):
+        """Aplica automaticamente o filtro do período corrente baseado no período de faturamento."""
         try:
-            mes_atual, ano_atual = self.calcular_periodo_faturamento_atual()
-            
-            # Mapear número do mês para nome
-            nomes_meses = {
-                "01": "Janeiro", "02": "Fevereiro", "03": "Março",
-                "04": "Abril", "05": "Maio", "06": "Junho",
-                "07": "Julho", "08": "Agosto", "09": "Setembro",
-                "10": "Outubro", "11": "Novembro", "12": "Dezembro"
-            }
-            
-            mes_texto = f"{mes_atual} - {nomes_meses.get(mes_atual, 'Mês')}"
+            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m/%Y')} a {data_fim_atual.strftime('%d/%m/%Y')}"
             
             # Bloquear sinais temporariamente
-            if hasattr(self, 'combo_filtro_mes'):
-                self.combo_filtro_mes.blockSignals(True)
-                # Procurar e selecionar o mês atual
-                mes_index = self.combo_filtro_mes.findText(mes_texto)
-                if mes_index >= 0:
-                    self.combo_filtro_mes.setCurrentIndex(mes_index)
-                self.combo_filtro_mes.blockSignals(False)
+            if hasattr(self, 'combo_filtro_periodo'):
+                self.combo_filtro_periodo.blockSignals(True)
+                # Procurar e selecionar o período atual
+                periodo_index = self.combo_filtro_periodo.findText(periodo_atual_display)
+                if periodo_index >= 0:
+                    self.combo_filtro_periodo.setCurrentIndex(periodo_index)
+                self.combo_filtro_periodo.blockSignals(False)
+                
+        except Exception as e:
+            print(f"Erro ao aplicar filtro do período corrente: {e}")
+
+    def aplicar_filtro_periodo_corrente(self):
+        """Aplica automaticamente o filtro do período corrente baseado no período de faturamento."""
+        try:
+            # Obter período atual
+            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            ano_atual = str(data_inicio_atual.year)
             
+            # Bloquear sinais temporariamente
             if hasattr(self, 'combo_filtro_ano'):
                 self.combo_filtro_ano.blockSignals(True)
                 # Procurar e selecionar o ano atual
                 ano_index = self.combo_filtro_ano.findText(ano_atual)
                 if ano_index >= 0:
                     self.combo_filtro_ano.setCurrentIndex(ano_index)
+                    # Atualizar períodos do ano
+                    self.configurar_periodos_do_ano()
                 self.combo_filtro_ano.blockSignals(False)
+            
+            if hasattr(self, 'combo_filtro_periodo'):
+                self.combo_filtro_periodo.blockSignals(True)
+                # Procurar e selecionar o período atual
+                periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m')} a {data_fim_atual.strftime('%d/%m')}"
+                periodo_index = self.combo_filtro_periodo.findText(periodo_atual_display)
+                if periodo_index >= 0:
+                    self.combo_filtro_periodo.setCurrentIndex(periodo_index)
+                self.combo_filtro_periodo.blockSignals(False)
                 
         except Exception as e:
-            print(f"Erro ao aplicar filtro do mês corrente: {e}")
+            print(f"Erro ao aplicar filtro do período corrente: {e}")
 
     def on_usuario_changed(self):
         """Chamado quando o filtro de usuário muda (apenas para admins)."""
-        # Reconfigurar filtros de mês e ano baseado no usuário selecionado
-        self.configurar_filtros_mes_ano()
-        # Aplicar filtro do mês corrente automaticamente
-        self.aplicar_filtro_mes_corrente()
+        # Reconfigurar filtros de ano/período baseado no usuário selecionado
+        self.configurar_filtros_ano_periodo()
+        # Aplicar filtro do período corrente automaticamente
+        self.aplicar_filtro_periodo_corrente()
         # Aplicar filtros
         self.aplicar_filtro()
 
@@ -1072,11 +1172,11 @@ class ProcessosWidget(QWidget):
             for user in usuarios_list:
                 self.combo_usuario.addItem(user)
 
-        # Configurar filtros de mês e ano com dados únicos
-        self.configurar_filtros_mes_ano()
+        # Configurar filtros de ano/período com dados únicos
+        self.configurar_filtros_ano_periodo()
         
-        # Aplicar filtro do mês corrente automaticamente
-        self.aplicar_filtro_mes_corrente()
+        # Aplicar filtro do período corrente automaticamente
+        self.aplicar_filtro_periodo_corrente()
 
         # Aplicar filtros (agora já com o mês corrente selecionado)
         self.aplicar_filtro()
@@ -1215,9 +1315,9 @@ class ProcessosWidget(QWidget):
             )
 
             if "Sucesso" in resultado:
-                # Reconfigurar filtros de mês e ano se a data de entrada foi alterada
+                # Reconfigurar filtros de ano/período se a data de entrada foi alterada
                 if col_editada == 3:  # Se foi alterada a data de entrada
-                    self.configurar_filtros_mes_ano()
+                    self.configurar_filtros_ano_periodo()
                 # Recarregar dados para garantir consistência e atualizar totais
                 self.aplicar_filtro(rolar_para_ultimo=False)
             else:
@@ -1293,19 +1393,21 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
             processo_filtro = self.entry_filtro_processo.text().strip()
 
-        # Determinar filtros de mês e ano
-        mes_filtro = None
-        if hasattr(self, 'combo_filtro_mes') and self.combo_filtro_mes.currentText() != "Todos os meses":
-            # Extrair número do mês (primeiros 2 caracteres)
-            mes_filtro = self.combo_filtro_mes.currentText()[:2]
-
-        ano_filtro = None
-        if hasattr(self, 'combo_filtro_ano') and self.combo_filtro_ano.currentText() != "Todos os anos":
-            ano_filtro = self.combo_filtro_ano.currentText()
+        # Determinar filtros de período
+        data_inicio = None
+        data_fim = None
+        if hasattr(self, 'combo_filtro_periodo') and self.combo_filtro_periodo.currentText() != "Todos os períodos":
+            # Obter dados do período selecionado
+            index_selecionado = self.combo_filtro_periodo.currentIndex()
+            if index_selecionado > 0:  # Não é "Todos os períodos"
+                dados_periodo = self.combo_filtro_periodo.itemData(index_selecionado)
+                if dados_periodo:
+                    data_inicio = dados_periodo['inicio']
+                    data_fim = dados_periodo['fim']
 
         # Buscar dados com filtros aplicados
         registros = db.buscar_lancamentos_filtros_completos(
-            usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
+            usuario_filtro, cliente_filtro, processo_filtro, data_inicio, data_fim)
 
         # Ordenar por critérios múltiplos para garantir que novos itens apareçam no final
         # Função para extrair critérios de ordenação
@@ -1426,16 +1528,18 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'entry_filtro_processo') and self.entry_filtro_processo.text().strip():
             processo_filtro = self.entry_filtro_processo.text().strip()
 
-        mes_filtro = None
-        if hasattr(self, 'combo_filtro_mes') and self.combo_filtro_mes.currentText() != "Todos os meses":
-            mes_filtro = self.combo_filtro_mes.currentText()[:2]
-
-        ano_filtro = None
-        if hasattr(self, 'combo_filtro_ano') and self.combo_filtro_ano.currentText() != "Todos os anos":
-            ano_filtro = self.combo_filtro_ano.currentText()
+        data_inicio = None
+        data_fim = None
+        if hasattr(self, 'combo_filtro_periodo') and self.combo_filtro_periodo.currentText() != "Todos os períodos":
+            index_selecionado = self.combo_filtro_periodo.currentIndex()
+            if index_selecionado > 0:
+                dados_periodo = self.combo_filtro_periodo.itemData(index_selecionado)
+                if dados_periodo:
+                    data_inicio = dados_periodo['inicio']
+                    data_fim = dados_periodo['fim']
 
         self.atualizar_totais(usuario_filtro, cliente_filtro,
-                              processo_filtro, mes_filtro, ano_filtro)
+                              processo_filtro, data_inicio, data_fim)
 
         # Rolar para o último item apenas quando solicitado
         if rolar_para_ultimo:
@@ -1450,10 +1554,10 @@ class ProcessosWidget(QWidget):
             # Também garantir que a linha seja selecionada visualmente
             self.tabela.selectRow(ultima_linha)
 
-    def atualizar_totais(self, usuario_filtro=None, cliente_filtro=None, processo_filtro=None, mes_filtro=None, ano_filtro=None):
+    def atualizar_totais(self, usuario_filtro=None, cliente_filtro=None, processo_filtro=None, data_inicio=None, data_fim=None):
         """Atualiza os totais exibidos no painel de estatísticas."""
         estatisticas = db.buscar_estatisticas_completas(
-            usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
+            usuario_filtro, cliente_filtro, processo_filtro, data_inicio, data_fim)
 
         self.label_total_processos.setText(
             f"Total Processos: {estatisticas['total_processos']}"
@@ -1515,8 +1619,8 @@ class ProcessosWidget(QWidget):
             self.atualizar_autocompletar_cliente()
             self.atualizar_autocompletar_filtro_cliente()
 
-            # Reconfigurar filtros de mês e ano (podem ter novos valores)
-            self.configurar_filtros_mes_ano()
+            # Reconfigurar filtros de ano/período (podem ter novos valores)
+            self.configurar_filtros_ano_periodo()
 
             # Atualizar tabela
             self.aplicar_filtro()
@@ -1568,8 +1672,8 @@ class ProcessosWidget(QWidget):
 
                 if "Sucesso" in resultado:
                     QMessageBox.information(self, "Sucesso", resultado)
-                    # Reconfigurar filtros de mês e ano (podem ter perdido valores)
-                    self.configurar_filtros_mes_ano()
+                    # Reconfigurar filtros de ano/período (podem ter perdido valores)
+                    self.configurar_filtros_ano_periodo()
                     self.aplicar_filtro(rolar_para_ultimo=False)
                 else:
                     QMessageBox.warning(self, "Erro", resultado)

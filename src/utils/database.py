@@ -311,7 +311,7 @@ def buscar_processos_unicos_por_usuario(usuario=None):
     return processos
 
 
-def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=None, mes=None, ano=None):
+def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=None, data_inicio=None, data_fim=None):
     """Busca lançamentos aplicando múltiplos filtros com busca parcial."""
     conn = conectar_db()
     cursor = conn.cursor()
@@ -332,13 +332,10 @@ def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=No
         conditions.append("UPPER(processo) LIKE ?")
         params.append(f"{processo.upper()}%")
 
-    if mes:
-        conditions.append("strftime('%m', data_entrada) = ?")
-        params.append(mes)
-
-    if ano:
-        conditions.append("strftime('%Y', data_entrada) = ?")
-        params.append(ano)
+    if data_inicio and data_fim:
+        conditions.append("data_processo BETWEEN ? AND ?")
+        params.append(data_inicio)
+        params.append(data_fim)
 
     query = "SELECT * FROM registro"
     if conditions:
@@ -351,7 +348,7 @@ def buscar_lancamentos_filtros_completos(usuario=None, cliente=None, processo=No
     return registros
 
 
-def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None, mes=None, ano=None):
+def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None, data_inicio=None, data_fim=None):
     """Calcula estatísticas aplicando múltiplos filtros com busca parcial."""
     conn = conectar_db()
     cursor = conn.cursor()
@@ -372,13 +369,10 @@ def buscar_estatisticas_completas(usuario=None, cliente=None, processo=None, mes
         conditions.append("UPPER(processo) LIKE ?")
         params.append(f"{processo.upper()}%")
 
-    if mes:
-        conditions.append("strftime('%m', data_entrada) = ?")
-        params.append(mes)
-
-    if ano:
-        conditions.append("strftime('%Y', data_entrada) = ?")
-        params.append(ano)
+    if data_inicio and data_fim:
+        conditions.append("data_processo BETWEEN ? AND ?")
+        params.append(data_inicio)
+        params.append(data_fim)
 
     query = "SELECT COUNT(*) as total_processos, SUM(qtde_itens) as total_itens, SUM(valor_pedido) as total_valor FROM registro"
     if conditions:
@@ -399,29 +393,151 @@ def buscar_meses_unicos(usuario=None):
     """Busca os meses únicos que possuem registros no banco de dados."""
     conn = conectar_db()
     cursor = conn.cursor()
-    
+
     conditions = []
     params = []
-    
+
     if usuario:
         conditions.append("usuario = ?")
         params.append(usuario)
-    
-    query = "SELECT DISTINCT strftime('%m', data_entrada) as mes FROM registro"
+
+    query = "SELECT DISTINCT strftime('%m', data_processo) as mes FROM registro"
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
     query += " ORDER BY mes"
-    
+
     cursor.execute(query, params)
     meses = cursor.fetchall()
     conn.close()
-    
+
     # Retornar apenas os números dos meses (sem None)
     return [mes[0] for mes in meses if mes[0] is not None]
 
 
 def buscar_anos_unicos(usuario=None):
     """Busca os anos únicos que possuem registros no banco de dados."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    conditions = []
+    params = []
+
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+
+    query = "SELECT DISTINCT strftime('%Y', data_processo) as ano FROM registro"
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    # Anos em ordem decrescente (mais recente primeiro)
+    query += " ORDER BY ano DESC"
+
+    cursor.execute(query, params)
+    anos = cursor.fetchall()
+    conn.close()
+
+    # Retornar apenas os anos (sem None)
+    return [ano[0] for ano in anos if ano[0] is not None]
+
+
+def buscar_periodos_faturamento_por_ano(ano, usuario=None):
+    """Busca os períodos de faturamento de um ano específico (26/MM a 25/MM+1)."""
+    from datetime import datetime
+    
+    conn = conectar_db()
+    cursor = conn.cursor()
+    
+    conditions = ["data_processo IS NOT NULL"]
+    params = []
+    
+    if usuario:
+        conditions.append("usuario = ?")
+        params.append(usuario)
+    
+    # Buscar datas do ano especificado e do ano seguinte (para períodos que cruzam anos)
+    ano_int = int(ano)
+    conditions.append("(strftime('%Y', data_processo) = ? OR strftime('%Y', data_processo) = ?)")
+    params.extend([str(ano_int), str(ano_int + 1)])
+    
+    query = f"SELECT DISTINCT data_processo FROM registro WHERE {' AND '.join(conditions)} ORDER BY data_processo"
+    
+    cursor.execute(query, params)
+    datas = cursor.fetchall()
+    conn.close()
+    
+    # Converter as datas para objetos datetime e determinar períodos do ano especificado
+    periodos = set()
+    
+    for data_tupla in datas:
+        data_str = data_tupla[0]
+        try:
+            data_obj = datetime.strptime(data_str, '%Y-%m-%d')
+            
+            # Determinar o período de faturamento desta data
+            if data_obj.day >= 26:
+                # Período atual: 26/MM a 25/(MM+1)
+                inicio_mes = data_obj.month
+                inicio_ano = data_obj.year
+                
+                # Calcular mês seguinte
+                if inicio_mes == 12:
+                    fim_mes = 1
+                    fim_ano = inicio_ano + 1
+                else:
+                    fim_mes = inicio_mes + 1
+                    fim_ano = inicio_ano
+            else:
+                # Período anterior: 26/(MM-1) a 25/MM
+                fim_mes = data_obj.month
+                fim_ano = data_obj.year
+                
+                # Calcular mês anterior
+                if fim_mes == 1:
+                    inicio_mes = 12
+                    inicio_ano = fim_ano - 1
+                else:
+                    inicio_mes = fim_mes - 1
+                    inicio_ano = fim_ano
+            
+            # Só incluir períodos que começam no ano especificado
+            if inicio_ano == ano_int:
+                periodo_inicio = f"{inicio_ano}-{inicio_mes:02d}-26"
+                periodo_fim = f"{fim_ano}-{fim_mes:02d}-25"
+                periodos.add((periodo_inicio, periodo_fim))
+            
+        except ValueError:
+            continue  # Pular datas inválidas
+    
+    # Converter para lista e ordenar por data de início
+    periodos_lista = sorted(list(periodos), key=lambda x: x[0])
+    
+    # Retornar períodos formatados para exibição
+    periodos_formatados = []
+    for inicio, fim in periodos_lista:
+        try:
+            data_inicio = datetime.strptime(inicio, '%Y-%m-%d')
+            data_fim = datetime.strptime(fim, '%Y-%m-%d')
+            
+            # Formato abreviado: 26/12 a 25/01
+            formato_inicio = data_inicio.strftime('%d/%m')
+            formato_fim = data_fim.strftime('%d/%m')
+            
+            periodos_formatados.append({
+                'display': f"{formato_inicio} a {formato_fim}",
+                'inicio': inicio,
+                'fim': fim
+            })
+        except ValueError:
+            continue
+    
+    return periodos_formatados
+
+
+def buscar_periodos_faturamento_unicos(usuario=None):
+    """Busca os períodos de faturamento únicos (26 de um mês até 25 do mês seguinte)."""
+    from datetime import datetime, timedelta
+    from calendar import monthrange
+    
     conn = conectar_db()
     cursor = conn.cursor()
     
@@ -432,17 +548,83 @@ def buscar_anos_unicos(usuario=None):
         conditions.append("usuario = ?")
         params.append(usuario)
     
-    query = "SELECT DISTINCT strftime('%Y', data_entrada) as ano FROM registro"
+    query = "SELECT DISTINCT data_processo FROM registro WHERE data_processo IS NOT NULL"
     if conditions:
-        query += " WHERE " + " AND ".join(conditions)
-    query += " ORDER BY ano DESC"  # Anos em ordem decrescente (mais recente primeiro)
+        query += " AND " + " AND ".join(conditions)
+    query += " ORDER BY data_processo"
     
     cursor.execute(query, params)
-    anos = cursor.fetchall()
+    datas = cursor.fetchall()
     conn.close()
     
-    # Retornar apenas os anos (sem None)
-    return [ano[0] for ano in anos if ano[0] is not None]
+    # Converter as datas para objetos datetime e determinar períodos
+    periodos = set()
+    
+    for data_tupla in datas:
+        data_str = data_tupla[0]
+        try:
+            # Assumindo formato YYYY-MM-DD
+            data_obj = datetime.strptime(data_str, '%Y-%m-%d')
+            
+            # Determinar o período de faturamento desta data
+            if data_obj.day >= 26:
+                # Período atual: 26/MM a 25/(MM+1)
+                inicio_mes = data_obj.month
+                inicio_ano = data_obj.year
+                
+                # Calcular mês seguinte
+                if inicio_mes == 12:
+                    fim_mes = 1
+                    fim_ano = inicio_ano + 1
+                else:
+                    fim_mes = inicio_mes + 1
+                    fim_ano = inicio_ano
+                    
+                periodo_inicio = f"{inicio_ano}-{inicio_mes:02d}-26"
+                periodo_fim = f"{fim_ano}-{fim_mes:02d}-25"
+            else:
+                # Período anterior: 26/(MM-1) a 25/MM
+                fim_mes = data_obj.month
+                fim_ano = data_obj.year
+                
+                # Calcular mês anterior
+                if fim_mes == 1:
+                    inicio_mes = 12
+                    inicio_ano = fim_ano - 1
+                else:
+                    inicio_mes = fim_mes - 1
+                    inicio_ano = fim_ano
+                    
+                periodo_inicio = f"{inicio_ano}-{inicio_mes:02d}-26"
+                periodo_fim = f"{fim_ano}-{fim_mes:02d}-25"
+            
+            periodos.add((periodo_inicio, periodo_fim))
+            
+        except ValueError:
+            continue  # Pular datas inválidas
+    
+    # Converter para lista e ordenar por data de início (mais recente primeiro)
+    periodos_lista = sorted(list(periodos), key=lambda x: x[0], reverse=True)
+    
+    # Retornar períodos formatados para exibição
+    periodos_formatados = []
+    for inicio, fim in periodos_lista:
+        try:
+            data_inicio = datetime.strptime(inicio, '%Y-%m-%d')
+            data_fim = datetime.strptime(fim, '%Y-%m-%d')
+            
+            formato_inicio = data_inicio.strftime('%d/%m/%Y')
+            formato_fim = data_fim.strftime('%d/%m/%Y')
+            
+            periodos_formatados.append({
+                'display': f"{formato_inicio} a {formato_fim}",
+                'inicio': inicio,
+                'fim': fim
+            })
+        except ValueError:
+            continue
+    
+    return periodos_formatados
 
 
 # Garante que a tabela seja criada na primeira vez que o módulo foi importado
