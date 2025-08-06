@@ -32,7 +32,7 @@ class GerenciarUsuariosDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gerenciar Usuários e Sessões")
-        self.setFixedSize(800, 600)
+        self.setFixedSize(600, 400)
         self.setModal(True)
 
         self.init_ui()
@@ -74,9 +74,9 @@ class GerenciarUsuariosDialog(QDialog):
         self.tree_sessoes = QTreeWidget()
         self.tree_sessoes.setHeaderLabels(
             ["Usuário", "Computador", "Última Atividade"])
-        self.tree_sessoes.setColumnWidth(0, 120)
-        self.tree_sessoes.setColumnWidth(1, 120)
-        self.tree_sessoes.setColumnWidth(2, 130)
+        self.tree_sessoes.setColumnWidth(0, 80)
+        self.tree_sessoes.setColumnWidth(1, 80)
+        self.tree_sessoes.setColumnWidth(2, 80)
         sessoes_layout.addWidget(self.tree_sessoes)
 
         # Botões de ação para sessões
@@ -114,15 +114,15 @@ class GerenciarUsuariosDialog(QDialog):
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
-        aplicar_estilo_botao(self.btn_resetar_senha, "laranja", 120)
+        aplicar_estilo_botao(self.btn_resetar_senha, "laranja", 80)
 
         self.btn_excluir = QPushButton("Excluir Usuário")
         self.btn_excluir.clicked.connect(self.excluir_usuario)
-        aplicar_estilo_botao(self.btn_excluir, "vermelho", 120)
+        aplicar_estilo_botao(self.btn_excluir, "vermelho", 80)
 
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
-        aplicar_estilo_botao(self.btn_alterar_senha, "azul", 140)
+        aplicar_estilo_botao(self.btn_alterar_senha, "azul", 80)
 
         self.botoes_layout.addWidget(self.btn_resetar_senha)
         self.botoes_layout.addWidget(self.btn_excluir)
@@ -134,11 +134,11 @@ class GerenciarUsuariosDialog(QDialog):
 
         self.btn_atualizar_sessoes = QPushButton("Atualizar")
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
-        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 100)
+        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 80)
 
         self.btn_shutdown_sistema = QPushButton("Shutdown Sistema")
         self.btn_shutdown_sistema.clicked.connect(self.shutdown_sistema)
-        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 140)
+        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 80)
 
         self.botoes_sessoes_layout.addWidget(self.btn_atualizar_sessoes)
         self.botoes_sessoes_layout.addWidget(self.btn_shutdown_sistema)
