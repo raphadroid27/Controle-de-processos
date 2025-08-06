@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QSpacerItem,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt
 
@@ -23,11 +25,13 @@ from utils import usuario
 from utils.ui_config import (
     aplicar_estilo_botao,
     configurar_widgets_entrada_uniformes,
-    ESPACAMENTO_PADRAO
+    ESPACAMENTO_PADRAO,
+    ALTURA_DIALOG_LOGIN,
+    LARGURA_DIALOG_LOGIN,
+    ALTURA_DIALOG_NOVO_USUARIO,
+    LARGURA_DIALOG_NOVO_USUARIO,
+    MARGEM_DIALOG
 )
-ALTURA_LAYOUT = 180
-LARGURA_LAYOUT = 300
-MARGEM = 10
 
 
 class LoginDialog(QDialog):
@@ -36,7 +40,7 @@ class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login - Controle de Processos")
-        self.setFixedSize(LARGURA_LAYOUT, ALTURA_LAYOUT)
+        self.setFixedSize(LARGURA_DIALOG_LOGIN, ALTURA_DIALOG_LOGIN)
         self.setModal(True)
         self.usuario_logado = None
         self.is_admin = False
@@ -47,7 +51,8 @@ class LoginDialog(QDialog):
         """Inicializa a interface do usuário com melhor distribuição."""
         layout = QFormLayout()
         layout.setSpacing(ESPACAMENTO_PADRAO)
-        layout.setContentsMargins(MARGEM, MARGEM, MARGEM, MARGEM)
+        layout.setContentsMargins(
+            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG)
 
         # Campos de entrada
         self.entry_usuario = QLineEdit()
@@ -64,10 +69,12 @@ class LoginDialog(QDialog):
         layout.addRow("Usuário:", self.entry_usuario)
         layout.addRow("Senha:", self.entry_senha)
 
-        # Espaço extra antes dos botões
-        layout.addRow("", QLabel(""))
+        # Espaçador para empurrar botões para o final
+        spacer = QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        layout.addItem(spacer)
 
-        # Botões com layout horizontal
+        # Botões com layout horizontal no final
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
@@ -154,7 +161,8 @@ class NovoUsuarioDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_LAYOUT, ALTURA_LAYOUT)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                          ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         self.init_ui()
@@ -163,7 +171,8 @@ class NovoUsuarioDialog(QDialog):
         """Inicializa a interface do usuário."""
         layout = QFormLayout()
         layout.setSpacing(ESPACAMENTO_PADRAO)
-        layout.setContentsMargins(MARGEM, MARGEM, MARGEM, MARGEM)
+        layout.setContentsMargins(
+            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG)
 
         # Campos de entrada
         self.entry_nome = QLineEdit()
@@ -184,11 +193,15 @@ class NovoUsuarioDialog(QDialog):
         if not usuario.verificar_admin_existente():
             self.check_admin = QCheckBox()
             layout.addRow("Admin:", self.check_admin)
+            self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                              (ALTURA_DIALOG_NOVO_USUARIO+20))
 
-        # Espaço extra antes dos botões
-        layout.addRow("", QLabel(""))
+        # Espaçador para empurrar botões para o final
+        spacer = QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        layout.addItem(spacer)
 
-        # Botões com layout horizontal
+        # Botões com layout horizontal no final
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
@@ -196,7 +209,7 @@ class NovoUsuarioDialog(QDialog):
         self.btn_salvar = QPushButton("Salvar")
 
         # Aplicar estilo padronizado com larguras iguais
-        aplicar_estilo_botao(self.btn_cancelar, "cinza", 110)
+        aplicar_estilo_botao(self.btn_cancelar, "vermelho", 110)
         aplicar_estilo_botao(self.btn_salvar, "verde", 110)
 
         btn_layout.addWidget(self.btn_cancelar)
