@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from utils import usuario
+from utils import session_manager
 from utils.ui_config import (
     aplicar_estilo_botao,
     configurar_widgets_entrada_uniformes,
@@ -112,9 +113,32 @@ class LoginDialog(QDialog):
             self.solicitar_nova_senha(nome)
             return
 
+        # Verificar se usuário já está logado em outra máquina
+        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(
+            nome)
+        if ja_logado and info_sessao:
+            resposta = QMessageBox.question(
+                self,
+                "Usuário já logado",
+                f"O usuário '{nome}' já está logado no computador '{info_sessao['hostname']}'.\n\n"
+                "Deseja encerrar a sessão anterior e fazer login neste computador?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+
+            if resposta == QMessageBox.StandardButton.Yes:
+                # Remove a sessão anterior
+                session_manager.remover_sessao_por_id(
+                    info_sessao['session_id'])
+            else:
+                return
+
         resultado = usuario.verificar_login(nome, senha)
 
         if resultado["sucesso"]:
+            # Registra a nova sessão
+            session_manager.registrar_sessao(nome)
+
             self.usuario_logado = resultado["nome"]
             self.is_admin = resultado["admin"]
             self.accept()

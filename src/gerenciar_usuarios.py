@@ -2,8 +2,8 @@
 Módulo para gerenciamento de usuários do sistema.
 
 Este módulo implementa uma interface gráfica para administradores
-gerenciarem usuários, incluindo reset de senhas, exclusão de usuários
-e alteração de senhas próprias.
+gerenciarem usuários, incluindo reset de senhas, exclusão de
+usuários, alteração de senhas próprias e controle de sessões ativas.
 """
 
 from PySide6.QtWidgets import (
@@ -22,28 +22,22 @@ from PySide6.QtWidgets import (
 )
 
 from utils import usuario
+from utils import session_manager
 from utils.ui_config import aplicar_estilo_botao
 
 
 class GerenciarUsuariosDialog(QDialog):
-    """Dialog para gerenciamento de usuários do sistema."""
+    """Dialog para gerenciamento de usuários e sessões do sistema."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Gerenciar Usuários")
-        self.setFixedSize(500, 400)
+        self.setWindowTitle("Gerenciar Usuários e Sessões")
+        self.setFixedSize(800, 600)
         self.setModal(True)
 
         self.init_ui()
         self.carregar_usuarios()
-
-        # Inicializar atributos
-        self.frame_busca = None
-        self.entry_busca = None
-        self.botoes_layout = None
-        self.btn_resetar_senha = None
-        self.btn_excluir = None
-        self.btn_alterar_senha = None
+        self.carregar_sessoes()
 
     def init_ui(self):
         """Inicializa a interface do usuário."""
@@ -53,17 +47,45 @@ class GerenciarUsuariosDialog(QDialog):
         self.criar_frame_busca()
         layout.addWidget(self.frame_busca)
 
-        # Lista de usuários
+        # Layout horizontal para dividir usuários e sessões
+        main_layout = QHBoxLayout()
+
+        # Seção de usuários
+        usuarios_layout = QVBoxLayout()
+        usuarios_layout.addWidget(QLabel("Usuários:"))
+
         self.tree_usuarios = QTreeWidget()
         self.tree_usuarios.setHeaderLabels(["ID", "Nome", "Tipo"])
         self.tree_usuarios.setColumnHidden(0, True)  # Esconder coluna ID
-        self.tree_usuarios.setColumnWidth(1, 200)
-        self.tree_usuarios.setColumnWidth(2, 100)
-        layout.addWidget(self.tree_usuarios)
+        self.tree_usuarios.setColumnWidth(1, 150)
+        self.tree_usuarios.setColumnWidth(2, 80)
+        usuarios_layout.addWidget(self.tree_usuarios)
 
-        # Botões de ação
+        # Botões de ação para usuários
         self.criar_botoes_acao()
-        layout.addLayout(self.botoes_layout)
+        usuarios_layout.addLayout(self.botoes_layout)
+
+        main_layout.addLayout(usuarios_layout)
+
+        # Seção de sessões ativas
+        sessoes_layout = QVBoxLayout()
+        sessoes_layout.addWidget(QLabel("Sessões Ativas:"))
+
+        self.tree_sessoes = QTreeWidget()
+        self.tree_sessoes.setHeaderLabels(
+            ["Usuário", "Computador", "Última Atividade"])
+        self.tree_sessoes.setColumnWidth(0, 120)
+        self.tree_sessoes.setColumnWidth(1, 120)
+        self.tree_sessoes.setColumnWidth(2, 130)
+        sessoes_layout.addWidget(self.tree_sessoes)
+
+        # Botões de ação para sessões
+        self.criar_botoes_sessoes()
+        sessoes_layout.addLayout(self.botoes_sessoes_layout)
+
+        main_layout.addLayout(sessoes_layout)
+
+        layout.addLayout(main_layout)
 
         self.setLayout(layout)
 
@@ -92,105 +114,125 @@ class GerenciarUsuariosDialog(QDialog):
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
-        aplicar_estilo_botao(self.btn_resetar_senha,
-                             "laranja", 120)  # Laranja para reset
+        aplicar_estilo_botao(self.btn_resetar_senha, "laranja", 120)
 
         self.btn_excluir = QPushButton("Excluir Usuário")
         self.btn_excluir.clicked.connect(self.excluir_usuario)
-        aplicar_estilo_botao(self.btn_excluir, "vermelho",
-                             120)  # Vermelho para exclusão
+        aplicar_estilo_botao(self.btn_excluir, "vermelho", 120)
 
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
-        self.btn_alterar_senha.clicked.connect(self.alterar_minha_senha)
-        aplicar_estilo_botao(self.btn_alterar_senha,
-                             "verde", 150)  # Verde para alteração
+        self.btn_alterar_senha.clicked.connect(self.alterar_senha)
+        aplicar_estilo_botao(self.btn_alterar_senha, "azul", 140)
 
         self.botoes_layout.addWidget(self.btn_resetar_senha)
         self.botoes_layout.addWidget(self.btn_excluir)
         self.botoes_layout.addWidget(self.btn_alterar_senha)
 
+    def criar_botoes_sessoes(self):
+        """Cria os botões de ação para gerenciamento de sessões."""
+        self.botoes_sessoes_layout = QHBoxLayout()
+
+        self.btn_atualizar_sessoes = QPushButton("Atualizar")
+        self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
+        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 100)
+
+        self.btn_shutdown_sistema = QPushButton("Shutdown Sistema")
+        self.btn_shutdown_sistema.clicked.connect(self.shutdown_sistema)
+        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 140)
+
+        self.botoes_sessoes_layout.addWidget(self.btn_atualizar_sessoes)
+        self.botoes_sessoes_layout.addWidget(self.btn_shutdown_sistema)
+
     def carregar_usuarios(self):
-        """Carrega e exibe a lista de usuários na interface."""
+        """Carrega e exibe os usuários do sistema."""
         self.tree_usuarios.clear()
-        usuarios_lista = usuario.listar_usuarios()
 
-        for user_data in usuarios_lista:
-            user_id, nome, admin = user_data
-            tipo = "Administrador" if admin else "Usuário"
+        usuarios_list = usuario.listar_usuarios()
 
-            item = QTreeWidgetItem([str(user_id), nome, tipo])
+        for user in usuarios_list:
+            item = QTreeWidgetItem([
+                str(user[0]),  # ID
+                user[1],       # Nome
+                "Admin" if user[2] else "Usuário"  # Tipo
+            ])
             self.tree_usuarios.addTopLevelItem(item)
 
+    def carregar_sessoes(self):
+        """Carrega e exibe as sessões ativas."""
+        self.tree_sessoes.clear()
+
+        sessoes = session_manager.obter_sessoes_ativas()
+
+        for sessao in sessoes:
+            item = QTreeWidgetItem([
+                sessao['usuario'],
+                sessao['hostname'],
+                sessao['last_updated']
+            ])
+            # Armazenar o session_id no item para uso posterior
+            # Qt.UserRole = 0x0100
+            item.setData(0, 0x0100, sessao['session_id'])
+            self.tree_sessoes.addTopLevelItem(item)
+
     def filtrar_usuarios(self):
-        """Filtra os usuários exibidos baseado no texto de busca."""
+        """Filtra os usuários baseado no texto de busca."""
         filtro = self.entry_busca.text().lower()
 
         for i in range(self.tree_usuarios.topLevelItemCount()):
             item = self.tree_usuarios.topLevelItem(i)
-            nome = item.text(1).lower()
-
-            # Mostrar/esconder item baseado no filtro
-            item.setHidden(filtro not in nome)
+            if item:
+                nome = item.text(1).lower()
+                # Mostrar/esconder baseado no filtro
+                item.setHidden(filtro not in nome)
 
     def limpar_busca(self):
-        """Limpa o campo de busca de usuários."""
+        """Limpa o campo de busca."""
         self.entry_busca.clear()
 
-    def obter_usuario_selecionado(self):
-        """Retorna o ID e nome do usuário selecionado."""
-        selected_items = self.tree_usuarios.selectedItems()
-        if not selected_items:
-            QMessageBox.warning(self, "Seleção", "Selecione um usuário.")
-            return None, None
-
-        item = selected_items[0]
-        user_id = int(item.text(0))
-        nome = item.text(1)
-
-        return user_id, nome
-
     def resetar_senha(self):
-        """Reseta a senha do usuário selecionado para padrão."""
-        user_id, nome = self.obter_usuario_selecionado()
-        if user_id is None:
+        """Reseta a senha do usuário selecionado."""
+        item_selecionado = self.tree_usuarios.currentItem()
+        if not item_selecionado:
+            QMessageBox.warning(
+                self, "Erro", "Selecione um usuário para resetar a senha.")
             return
+
+        nome_usuario = item_selecionado.text(1)
 
         resposta = QMessageBox.question(
             self,
             "Confirmar Reset",
-            f"Resetar a senha do usuário '{nome}'?\nA senha será alterada para 'nova_senha'.",
-            QMessageBox.Yes | QMessageBox.No,
+            f"Resetar senha do usuário '{nome_usuario}' para senha padrão?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if resposta == QMessageBox.Yes:
-            resultado = usuario.resetar_senha_usuario(user_id)
+        if resposta == QMessageBox.StandardButton.Yes:
+            resultado = usuario.resetar_senha_usuario(nome_usuario)
 
             if "Sucesso" in resultado:
-                QMessageBox.information(
-                    self,
-                    "Sucesso",
-                    f"Senha do usuário '{nome}' foi resetada.\n"
-                    "Nova senha temporária: 'nova_senha'\n"
-                    "O usuário deverá alterar a senha no próximo login.",
-                )
+                QMessageBox.information(self, "Sucesso", resultado)
             else:
                 QMessageBox.warning(self, "Erro", resultado)
 
     def excluir_usuario(self):
-        """Exclui o usuário selecionado do sistema."""
-        user_id, nome = self.obter_usuario_selecionado()
-        if user_id is None:
+        """Exclui o usuário selecionado."""
+        item_selecionado = self.tree_usuarios.currentItem()
+        if not item_selecionado:
+            QMessageBox.warning(
+                self, "Erro", "Selecione um usuário para excluir.")
             return
+
+        nome_usuario = item_selecionado.text(1)
 
         resposta = QMessageBox.question(
             self,
             "Confirmar Exclusão",
-            f"Tem certeza que deseja excluir o usuário '{nome}'?\nEsta ação não pode ser desfeita.",
-            QMessageBox.Yes | QMessageBox.No,
+            f"Tem certeza que deseja excluir o usuário '{nome_usuario}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if resposta == QMessageBox.Yes:
-            resultado = usuario.excluir_usuario_por_id(user_id)
+        if resposta == QMessageBox.StandardButton.Yes:
+            resultado = usuario.excluir_usuario(nome_usuario)
 
             if "Sucesso" in resultado:
                 QMessageBox.information(self, "Sucesso", resultado)
@@ -198,12 +240,11 @@ class GerenciarUsuariosDialog(QDialog):
             else:
                 QMessageBox.warning(self, "Erro", resultado)
 
-    def alterar_minha_senha(self):
+    def alterar_senha(self):
         """Permite ao usuário logado alterar sua própria senha."""
-        # Pegar o usuário logado da janela principal (parent)
+        # Obter o usuário logado da janela principal
         main_window = self.parent()
-
-        if not main_window or not hasattr(main_window, "usuario_logado"):
+        if not hasattr(main_window, 'usuario_logado'):
             QMessageBox.warning(
                 self, "Erro", "Não foi possível identificar o usuário logado."
             )
@@ -213,7 +254,7 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Solicitar senha atual
         senha_atual, ok = QInputDialog.getText(
-            self, "Senha Atual", "Digite sua senha atual:", QLineEdit.Password
+            self, "Senha Atual", "Digite sua senha atual:", QLineEdit.EchoMode.Password
         )
 
         if not ok or not senha_atual.strip():
@@ -221,7 +262,7 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Solicitar nova senha
         nova_senha, ok = QInputDialog.getText(
-            self, "Nova Senha", "Digite a nova senha:", QLineEdit.Password
+            self, "Nova Senha", "Digite a nova senha:", QLineEdit.EchoMode.Password
         )
 
         if not ok or not nova_senha.strip():
@@ -229,11 +270,11 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Confirmar nova senha
         confirmar_senha, ok = QInputDialog.getText(
-            self, "Confirmar Senha", "Confirme a nova senha:", QLineEdit.Password
+            self, "Confirmar Senha", "Confirme a nova senha:", QLineEdit.EchoMode.Password
         )
 
-        if not ok or nova_senha != confirmar_senha:
-            QMessageBox.warning(self, "Erro", "As senhas não coincidem.")
+        if not ok or confirmar_senha != nova_senha:
+            QMessageBox.warning(self, "Erro", "As senhas não conferem.")
             return
 
         # Alterar senha
@@ -246,3 +287,23 @@ class GerenciarUsuariosDialog(QDialog):
                 self, "Sucesso", "Senha alterada com sucesso!")
         else:
             QMessageBox.warning(self, "Erro", resultado)
+
+    def shutdown_sistema(self):
+        """Envia comando de shutdown para todas as instâncias do sistema."""
+        resposta = QMessageBox.question(
+            self,
+            "Shutdown do Sistema",
+            "Deseja enviar comando de fechamento para todas as instâncias do sistema?\n\n"
+            "Isso irá fechar automaticamente todas as aplicações ativas.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if resposta == QMessageBox.StandardButton.Yes:
+            session_manager.definir_comando_sistema("SHUTDOWN")
+            QMessageBox.information(
+                self,
+                "Comando Enviado",
+                "Comando de shutdown enviado para todas as instâncias.\n"
+                "As aplicações serão fechadas automaticamente."
+            )
+            self.carregar_sessoes()

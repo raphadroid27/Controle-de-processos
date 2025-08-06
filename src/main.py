@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 
 from utils import database as db
 from utils import usuario
+from utils import session_manager
 from utils.ui_config import (
     aplicar_estilo_botao,
     aplicar_estilo_botao_desabilitado,
@@ -377,7 +378,7 @@ class ProcessosWidget(QWidget):
     def configurar_filtros_ano_periodo(self):
         """
         Configura os combos de ano e período de faturamento com dados únicos do banco.
-        
+
         Garante que o ano/período de faturamento atual sempre esteja disponível nos filtros,
         mesmo que ainda não tenha lançamentos, permitindo que seja preenchido.
         """
@@ -406,16 +407,16 @@ class ProcessosWidget(QWidget):
 
             # Buscar anos únicos do banco
             anos_db = db.buscar_anos_unicos(usuario_filtro)
-            
+
             # Garantir que o ano atual esteja na lista
             data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
             ano_atual = str(data_inicio_atual.year)
             if ano_atual not in anos_db:
                 anos_db.append(ano_atual)
-            
+
             # Ordenar anos (mais recente primeiro)
             anos_db.sort(reverse=True)
-            
+
             for ano in anos_db:
                 self.combo_filtro_ano.addItem(ano)
 
@@ -463,24 +464,25 @@ class ProcessosWidget(QWidget):
 
             # Obter ano selecionado
             ano_selecionado = self.combo_filtro_ano.currentText()
-            
+
             if ano_selecionado != "Todos os anos":
                 # Buscar períodos do ano específico
-                periodos_db = db.buscar_periodos_faturamento_por_ano(ano_selecionado, usuario_filtro)
-                
+                periodos_db = db.buscar_periodos_faturamento_por_ano(
+                    ano_selecionado, usuario_filtro)
+
                 # Adicionar período atual se o ano selecionado for o ano atual
                 data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
                 ano_atual = str(data_inicio_atual.year)
-                
+
                 if ano_selecionado == ano_atual:
                     periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m')} a {data_fim_atual.strftime('%d/%m')}"
-                    
+
                     periodo_atual_existe = False
                     for periodo in periodos_db:
                         if periodo['display'] == periodo_atual_display:
                             periodo_atual_existe = True
                             break
-                    
+
                     if not periodo_atual_existe:
                         periodos_db.insert(0, {
                             'display': periodo_atual_display,
@@ -499,7 +501,8 @@ class ProcessosWidget(QWidget):
                     })
 
             # Restaurar seleção se ainda existir
-            periodo_index = self.combo_filtro_periodo.findText(periodo_selecionado)
+            periodo_index = self.combo_filtro_periodo.findText(
+                periodo_selecionado)
             if periodo_index >= 0:
                 self.combo_filtro_periodo.setCurrentIndex(periodo_index)
 
@@ -770,7 +773,8 @@ class ProcessosWidget(QWidget):
         filtro_completo_layout.addLayout(periodo_layout, peso_periodo)
 
         # Conectar mudança no combo de período
-        self.combo_filtro_periodo.currentTextChanged.connect(self.aplicar_filtro)
+        self.combo_filtro_periodo.currentTextChanged.connect(
+            self.aplicar_filtro)
 
         # Aplicar configuração uniforme a todos os widgets de filtro
         self.configurar_widgets_uniformes(widgets_filtro)
@@ -787,7 +791,8 @@ class ProcessosWidget(QWidget):
         btn_layout.addWidget(label_vazio)
 
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
-        self.btn_limpar_filtros.setToolTip("Limpar filtros de cliente e processo, mantendo o mês corrente")
+        self.btn_limpar_filtros.setToolTip(
+            "Limpar filtros de cliente e processo, mantendo o mês corrente")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
 
         # Aplicar estilo e configuração do botão usando função unificada
@@ -1035,19 +1040,19 @@ class ProcessosWidget(QWidget):
         """
         Calcula o período de faturamento atual baseado na regra da empresa:
         Do dia 26 do mês anterior até o dia 25 do mês corrente.
-        
+
         Exemplos:
         - Se hoje é 06/08/2025: período = agosto/2025 (26/07 a 25/08)
         - Se hoje é 25/08/2025: período = agosto/2025 (ainda no período atual)
         - Se hoje é 26/08/2025: período = setembro/2025 (novo período iniciou)
         - Se hoje é 24/08/2025: período = agosto/2025 (ainda no período atual)
-        
+
         O período de faturamento sempre corresponde ao mês onde o dia 25 está incluído.
-        
+
         Retorna o mês e ano que devem ser filtrados.
         """
         hoje = datetime.now()
-        
+
         if hoje.day >= 26:
             # Se hoje é 26 ou depois, o período é do próximo mês
             # Exemplo: 26/08 = período setembro (26/08 a 25/09)
@@ -1063,11 +1068,11 @@ class ProcessosWidget(QWidget):
             # Exemplo: 06/08 = período agosto (26/07 a 25/08)
             mes_faturamento = hoje.month
             ano_faturamento = hoje.year
-        
+
         # Retornar mês formatado com zero à esquerda
         mes_formatado = f"{mes_faturamento:02d}"
         ano_formatado = str(ano_faturamento)
-        
+
         return mes_formatado, ano_formatado
 
     def calcular_periodo_faturamento_atual_datas(self):
@@ -1076,12 +1081,12 @@ class ProcessosWidget(QWidget):
         Retorna objetos datetime para facilitar manipulação.
         """
         hoje = datetime.now()
-        
+
         if hoje.day >= 26:
             # Período atual: 26/MM a 25/(MM+1)
             inicio_mes = hoje.month
             inicio_ano = hoje.year
-            
+
             # Calcular mês seguinte
             if inicio_mes == 12:
                 fim_mes = 1
@@ -1093,7 +1098,7 @@ class ProcessosWidget(QWidget):
             # Período anterior: 26/(MM-1) a 25/MM
             fim_mes = hoje.month
             fim_ano = hoje.year
-            
+
             # Calcular mês anterior
             if fim_mes == 1:
                 inicio_mes = 12
@@ -1101,10 +1106,10 @@ class ProcessosWidget(QWidget):
             else:
                 inicio_mes = fim_mes - 1
                 inicio_ano = fim_ano
-        
+
         data_inicio = datetime(inicio_ano, inicio_mes, 26)
         data_fim = datetime(fim_ano, fim_mes, 25)
-        
+
         return data_inicio, data_fim
 
     def aplicar_filtro_periodo_corrente(self):
@@ -1112,16 +1117,17 @@ class ProcessosWidget(QWidget):
         try:
             data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
             periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m/%Y')} a {data_fim_atual.strftime('%d/%m/%Y')}"
-            
+
             # Bloquear sinais temporariamente
             if hasattr(self, 'combo_filtro_periodo'):
                 self.combo_filtro_periodo.blockSignals(True)
                 # Procurar e selecionar o período atual
-                periodo_index = self.combo_filtro_periodo.findText(periodo_atual_display)
+                periodo_index = self.combo_filtro_periodo.findText(
+                    periodo_atual_display)
                 if periodo_index >= 0:
                     self.combo_filtro_periodo.setCurrentIndex(periodo_index)
                 self.combo_filtro_periodo.blockSignals(False)
-                
+
         except Exception as e:
             print(f"Erro ao aplicar filtro do período corrente: {e}")
 
@@ -1131,7 +1137,7 @@ class ProcessosWidget(QWidget):
             # Obter período atual
             data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
             ano_atual = str(data_inicio_atual.year)
-            
+
             # Bloquear sinais temporariamente
             if hasattr(self, 'combo_filtro_ano'):
                 self.combo_filtro_ano.blockSignals(True)
@@ -1142,16 +1148,17 @@ class ProcessosWidget(QWidget):
                     # Atualizar períodos do ano
                     self.configurar_periodos_do_ano()
                 self.combo_filtro_ano.blockSignals(False)
-            
+
             if hasattr(self, 'combo_filtro_periodo'):
                 self.combo_filtro_periodo.blockSignals(True)
                 # Procurar e selecionar o período atual
                 periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m')} a {data_fim_atual.strftime('%d/%m')}"
-                periodo_index = self.combo_filtro_periodo.findText(periodo_atual_display)
+                periodo_index = self.combo_filtro_periodo.findText(
+                    periodo_atual_display)
                 if periodo_index >= 0:
                     self.combo_filtro_periodo.setCurrentIndex(periodo_index)
                 self.combo_filtro_periodo.blockSignals(False)
-                
+
         except Exception as e:
             print(f"Erro ao aplicar filtro do período corrente: {e}")
 
@@ -1174,7 +1181,7 @@ class ProcessosWidget(QWidget):
 
         # Configurar filtros de ano/período com dados únicos
         self.configurar_filtros_ano_periodo()
-        
+
         # Aplicar filtro do período corrente automaticamente
         self.aplicar_filtro_periodo_corrente()
 
@@ -1400,7 +1407,8 @@ class ProcessosWidget(QWidget):
             # Obter dados do período selecionado
             index_selecionado = self.combo_filtro_periodo.currentIndex()
             if index_selecionado > 0:  # Não é "Todos os períodos"
-                dados_periodo = self.combo_filtro_periodo.itemData(index_selecionado)
+                dados_periodo = self.combo_filtro_periodo.itemData(
+                    index_selecionado)
                 if dados_periodo:
                     data_inicio = dados_periodo['inicio']
                     data_fim = dados_periodo['fim']
@@ -1533,7 +1541,8 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'combo_filtro_periodo') and self.combo_filtro_periodo.currentText() != "Todos os períodos":
             index_selecionado = self.combo_filtro_periodo.currentIndex()
             if index_selecionado > 0:
-                dados_periodo = self.combo_filtro_periodo.itemData(index_selecionado)
+                dados_periodo = self.combo_filtro_periodo.itemData(
+                    index_selecionado)
                 if dados_periodo:
                     data_inicio = dados_periodo['inicio']
                     data_fim = dados_periodo['fim']
@@ -1704,6 +1713,39 @@ class MainWindow(QMainWindow):
             f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}"
         )
 
+        # Timer para heartbeat da sessão (atualiza a cada 30 segundos)
+        self.heartbeat_timer = QTimer()
+        self.heartbeat_timer.timeout.connect(self.atualizar_heartbeat)
+        self.heartbeat_timer.start(30000)  # 30 segundos
+
+        # Timer para verificar comandos do sistema (a cada 5 segundos)
+        self.command_timer = QTimer()
+        self.command_timer.timeout.connect(self.verificar_comando_sistema)
+        self.command_timer.start(5000)  # 5 segundos
+
+    def atualizar_heartbeat(self):
+        """Atualiza o heartbeat da sessão."""
+        session_manager.atualizar_heartbeat_sessao()
+
+    def verificar_comando_sistema(self):
+        """Verifica se há comandos do sistema para executar."""
+        # Verificar comando global do sistema
+        comando_global = session_manager.obter_comando_sistema()
+        if comando_global == "SHUTDOWN":
+            QMessageBox.information(
+                self,
+                "Sistema",
+                "O administrador solicitou o fechamento do sistema.\n"
+                "A aplicação será encerrada."
+            )
+            session_manager.limpar_comando_sistema()
+            QApplication.quit()
+
+    def closeEvent(self, event):
+        """Sobrescreve o evento de fechamento para remover a sessão."""
+        session_manager.remover_sessao()
+        event.accept()
+
     def criar_menu(self):
         """Cria o menu da aplicação."""
         menubar = self.menuBar()
@@ -1748,10 +1790,12 @@ class MainWindow(QMainWindow):
             self,
             "Logout",
             "Tem certeza que deseja fazer logout?",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
-        if resposta == QMessageBox.Yes:
+        if resposta == QMessageBox.StandardButton.Yes:
+            # Remover sessão antes do logout
+            session_manager.remover_sessao()
             # Emitir sinal de logout para a aplicação principal gerenciar
             self.logout_requested.emit()
             # Fechar a janela atual
@@ -1765,6 +1809,9 @@ class ControleProcessosApp:
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Processos")
         self.main_window = None
+
+        # Inicializar todas as tabelas do banco de dados
+        db.inicializar_todas_tabelas()
 
     def run(self):
         """Executa a aplicação."""

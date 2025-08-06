@@ -131,8 +131,8 @@ def listar_usuarios():
             conn.close()
 
 
-def resetar_senha_usuario(user_id, nova_senha="nova_senha"):
-    """Reseta a senha de um usuário específico."""
+def resetar_senha_usuario(nome, nova_senha="nova_senha"):
+    """Reseta a senha de um usuário pelo nome."""
     conn = conectar_db()
     cursor = conn.cursor()
 
@@ -145,7 +145,7 @@ def resetar_senha_usuario(user_id, nova_senha="nova_senha"):
             senha_hash = hash_senha(nova_senha)
 
         cursor.execute(
-            "UPDATE usuario SET senha = ? WHERE id = ?", (senha_hash, user_id)
+            "UPDATE usuario SET senha = ? WHERE nome = ?", (senha_hash, nome)
         )
         conn.commit()
 
@@ -235,6 +235,63 @@ def verificar_senha_reset(nome):
     except sqlite3.Error as e:
         print(f"Erro ao verificar senha de reset: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
+
+
+def excluir_usuario(nome):
+    """Exclui um usuário pelo nome."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        # Verifica se o usuário existe e se é admin
+        cursor.execute("SELECT admin FROM usuario WHERE nome = ?", (nome,))
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            return "Erro: Usuário não encontrado."
+
+        if usuario[0]:  # Se for admin
+            return "Erro: Não é possível excluir um administrador."
+
+        cursor.execute("DELETE FROM usuario WHERE nome = ?", (nome,))
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            return "Sucesso: Usuário excluído com sucesso."
+        return "Erro: Usuário não encontrado."
+    except sqlite3.Error as e:
+        return f"Erro ao excluir usuário: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+
+def resetar_senha_usuario(nome, nova_senha="nova_senha"):
+    """Reseta a senha de um usuário pelo nome."""
+    conn = conectar_db()
+    cursor = conn.cursor()
+
+    try:
+        if nova_senha == "nova_senha":
+            # Senha padrão para reset
+            senha_hash = nova_senha
+        else:
+            # Nova senha personalizada
+            senha_hash = hash_senha(nova_senha)
+
+        cursor.execute(
+            "UPDATE usuario SET senha = ? WHERE nome = ?", (senha_hash, nome)
+        )
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            return "Sucesso: Senha resetada com sucesso."
+        return "Erro: Usuário não encontrado."
+    except sqlite3.Error as e:
+        return f"Erro ao resetar senha: {e}"
     finally:
         if conn:
             conn.close()
