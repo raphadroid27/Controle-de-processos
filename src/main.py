@@ -375,7 +375,12 @@ class ProcessosWidget(QWidget):
             print(f"Erro ao atualizar autocompletar do filtro: {e}")
 
     def configurar_filtros_mes_ano(self):
-        """Configura os combos de mês e ano com dados únicos do banco."""
+        """
+        Configura os combos de mês e ano com dados únicos do banco.
+        
+        Garante que o período de faturamento atual sempre esteja disponível nos filtros,
+        mesmo que ainda não tenha lançamentos, permitindo que seja preenchido.
+        """
         try:
             # Determinar qual usuário filtrar para meses e anos
             if self.is_admin:
@@ -402,8 +407,19 @@ class ProcessosWidget(QWidget):
             self.combo_filtro_ano.clear()
             self.combo_filtro_ano.addItem("Todos os anos")
 
+            # Obter período de faturamento atual para garantir que esteja sempre disponível
+            mes_periodo_atual, ano_periodo_atual = self.calcular_periodo_faturamento_atual()
+
             # Buscar meses únicos do banco
             meses_db = db.buscar_meses_unicos(usuario_filtro)
+            
+            # Garantir que o mês do período atual esteja na lista, mesmo se vazio
+            if mes_periodo_atual not in meses_db:
+                meses_db.append(mes_periodo_atual)
+            
+            # Ordenar meses
+            meses_db.sort()
+            
             nomes_meses = {
                 "01": "Janeiro", "02": "Fevereiro", "03": "Março",
                 "04": "Abril", "05": "Maio", "06": "Junho",
@@ -418,6 +434,14 @@ class ProcessosWidget(QWidget):
 
             # Buscar anos únicos do banco
             anos_db = db.buscar_anos_unicos(usuario_filtro)
+            
+            # Garantir que o ano do período atual esteja na lista, mesmo se vazio
+            if ano_periodo_atual not in anos_db:
+                anos_db.append(ano_periodo_atual)
+            
+            # Ordenar anos
+            anos_db.sort()
+            
             for ano in anos_db:
                 self.combo_filtro_ano.addItem(ano)
 
@@ -713,6 +737,7 @@ class ProcessosWidget(QWidget):
         btn_layout.addWidget(label_vazio)
 
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
+        self.btn_limpar_filtros.setToolTip("Limpar filtros de cliente e processo, mantendo o mês corrente")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
 
         # Aplicar estilo e configuração do botão usando função unificada
@@ -933,7 +958,7 @@ class ProcessosWidget(QWidget):
             QTimer.singleShot(50, self.aplicar_larguras_colunas)
 
     def limpar_filtros(self):
-        """Limpa todos os filtros aplicados."""
+        """Limpa todos os filtros aplicados, mas mantém o mês corrente selecionado."""
         # Bloquear sinais temporariamente para evitar múltiplas chamadas
         if self.is_admin and hasattr(self, 'combo_usuario'):
             self.combo_usuario.blockSignals(True)
@@ -950,23 +975,92 @@ class ProcessosWidget(QWidget):
             self.entry_filtro_processo.clear()
             self.entry_filtro_processo.blockSignals(False)
 
-        if hasattr(self, 'combo_filtro_mes'):
-            self.combo_filtro_mes.blockSignals(True)
-            self.combo_filtro_mes.setCurrentText("Todos os meses")
-            self.combo_filtro_mes.blockSignals(False)
+        # Para mês e ano, aplicar o filtro do mês corrente em vez de limpar
+        self.aplicar_filtro_mes_corrente()
 
-        if hasattr(self, 'combo_filtro_ano'):
-            self.combo_filtro_ano.blockSignals(True)
-            self.combo_filtro_ano.setCurrentText("Todos os anos")
-            self.combo_filtro_ano.blockSignals(False)
-
-        # Aplicar filtros limpos
+        # Aplicar filtros (agora com mês corrente aplicado)
         self.aplicar_filtro()
+
+    def calcular_periodo_faturamento_atual(self):
+        """
+        Calcula o período de faturamento atual baseado na regra da empresa:
+        Do dia 26 do mês anterior até o dia 25 do mês corrente.
+        
+        Exemplos:
+        - Se hoje é 06/08/2025: período = agosto/2025 (26/07 a 25/08)
+        - Se hoje é 25/08/2025: período = agosto/2025 (ainda no período atual)
+        - Se hoje é 26/08/2025: período = setembro/2025 (novo período iniciou)
+        - Se hoje é 24/08/2025: período = agosto/2025 (ainda no período atual)
+        
+        O período de faturamento sempre corresponde ao mês onde o dia 25 está incluído.
+        
+        Retorna o mês e ano que devem ser filtrados.
+        """
+        hoje = datetime.now()
+        
+        if hoje.day >= 26:
+            # Se hoje é 26 ou depois, o período é do próximo mês
+            # Exemplo: 26/08 = período setembro (26/08 a 25/09)
+            if hoje.month == 12:
+                # Dezembro -> período de janeiro do próximo ano
+                mes_faturamento = 1
+                ano_faturamento = hoje.year + 1
+            else:
+                mes_faturamento = hoje.month + 1
+                ano_faturamento = hoje.year
+        else:
+            # Se hoje é antes do dia 26, o período é do mês atual
+            # Exemplo: 06/08 = período agosto (26/07 a 25/08)
+            mes_faturamento = hoje.month
+            ano_faturamento = hoje.year
+        
+        # Retornar mês formatado com zero à esquerda
+        mes_formatado = f"{mes_faturamento:02d}"
+        ano_formatado = str(ano_faturamento)
+        
+        return mes_formatado, ano_formatado
+
+    def aplicar_filtro_mes_corrente(self):
+        """Aplica automaticamente o filtro do mês corrente baseado no período de faturamento."""
+        try:
+            mes_atual, ano_atual = self.calcular_periodo_faturamento_atual()
+            
+            # Mapear número do mês para nome
+            nomes_meses = {
+                "01": "Janeiro", "02": "Fevereiro", "03": "Março",
+                "04": "Abril", "05": "Maio", "06": "Junho",
+                "07": "Julho", "08": "Agosto", "09": "Setembro",
+                "10": "Outubro", "11": "Novembro", "12": "Dezembro"
+            }
+            
+            mes_texto = f"{mes_atual} - {nomes_meses.get(mes_atual, 'Mês')}"
+            
+            # Bloquear sinais temporariamente
+            if hasattr(self, 'combo_filtro_mes'):
+                self.combo_filtro_mes.blockSignals(True)
+                # Procurar e selecionar o mês atual
+                mes_index = self.combo_filtro_mes.findText(mes_texto)
+                if mes_index >= 0:
+                    self.combo_filtro_mes.setCurrentIndex(mes_index)
+                self.combo_filtro_mes.blockSignals(False)
+            
+            if hasattr(self, 'combo_filtro_ano'):
+                self.combo_filtro_ano.blockSignals(True)
+                # Procurar e selecionar o ano atual
+                ano_index = self.combo_filtro_ano.findText(ano_atual)
+                if ano_index >= 0:
+                    self.combo_filtro_ano.setCurrentIndex(ano_index)
+                self.combo_filtro_ano.blockSignals(False)
+                
+        except Exception as e:
+            print(f"Erro ao aplicar filtro do mês corrente: {e}")
 
     def on_usuario_changed(self):
         """Chamado quando o filtro de usuário muda (apenas para admins)."""
         # Reconfigurar filtros de mês e ano baseado no usuário selecionado
         self.configurar_filtros_mes_ano()
+        # Aplicar filtro do mês corrente automaticamente
+        self.aplicar_filtro_mes_corrente()
         # Aplicar filtros
         self.aplicar_filtro()
 
@@ -980,7 +1074,11 @@ class ProcessosWidget(QWidget):
 
         # Configurar filtros de mês e ano com dados únicos
         self.configurar_filtros_mes_ano()
+        
+        # Aplicar filtro do mês corrente automaticamente
+        self.aplicar_filtro_mes_corrente()
 
+        # Aplicar filtros (agora já com o mês corrente selecionado)
         self.aplicar_filtro()
 
         # Usar timer para garantir que a rolagem aconteça após os dados serem carregados
