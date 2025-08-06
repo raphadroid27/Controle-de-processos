@@ -1,0 +1,241 @@
+"""
+Módulo para dialogs de autenticação do sistema.
+
+Este módulo contém as classes LoginDialog e NovoUsuarioDialog
+para gerenciar a autenticação e criação de usuários.
+"""
+
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
+from PySide6.QtCore import Qt
+
+from utils import usuario
+from utils.ui_config import (
+    aplicar_estilo_botao,
+    configurar_widgets_entrada_uniformes,
+    ESPACAMENTO_PADRAO
+)
+ALTURA_LAYOUT = 180
+LARGURA_LAYOUT = 300
+MARGEM = 10
+
+
+class LoginDialog(QDialog):
+    """Dialog de login para autenticação de usuários."""
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Login - Controle de Processos")
+        self.setFixedSize(LARGURA_LAYOUT, ALTURA_LAYOUT)
+        self.setModal(True)
+        self.usuario_logado = None
+        self.is_admin = False
+
+        self.init_ui()
+
+    def init_ui(self):
+        """Inicializa a interface do usuário com melhor distribuição."""
+        layout = QFormLayout()
+        layout.setSpacing(ESPACAMENTO_PADRAO)
+        layout.setContentsMargins(MARGEM, MARGEM, MARGEM, MARGEM)
+
+        # Campos de entrada
+        self.entry_usuario = QLineEdit()
+        self.entry_usuario.setPlaceholderText("Digite seu nome de usuário")
+
+        self.entry_senha = QLineEdit()
+        self.entry_senha.setEchoMode(QLineEdit.EchoMode.Password)
+        self.entry_senha.setPlaceholderText("Digite sua senha")
+
+        # Aplicar altura uniforme aos campos
+        configurar_widgets_entrada_uniformes(
+            [self.entry_usuario, self.entry_senha])
+
+        layout.addRow("Usuário:", self.entry_usuario)
+        layout.addRow("Senha:", self.entry_senha)
+
+        # Espaço extra antes dos botões
+        layout.addRow("", QLabel(""))
+
+        # Botões com layout horizontal
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(ESPACAMENTO_PADRAO)
+
+        self.btn_login = QPushButton("Login")
+        self.btn_novo_usuario = QPushButton("Novo Usuário")
+
+        # Aplicar estilo padronizado com larguras iguais
+        aplicar_estilo_botao(self.btn_login, "azul", 120)
+        aplicar_estilo_botao(self.btn_novo_usuario, "verde", 120)
+
+        btn_layout.addWidget(self.btn_login)
+        btn_layout.addWidget(self.btn_novo_usuario)
+
+        layout.addRow(btn_layout)
+
+        self.setLayout(layout)
+
+        # Conectar eventos
+        self.btn_login.clicked.connect(self.fazer_login)
+        self.btn_novo_usuario.clicked.connect(self.abrir_novo_usuario)
+        self.entry_senha.returnPressed.connect(self.fazer_login)
+        self.entry_usuario.returnPressed.connect(self.entry_senha.setFocus)
+
+    def fazer_login(self):
+        """Realiza a autenticação do usuário."""
+        nome = self.entry_usuario.text().strip()
+        senha = self.entry_senha.text().strip()
+
+        if not nome or not senha:
+            QMessageBox.warning(self, "Erro", "Preencha usuário e senha.")
+            return
+
+        # Verificar se precisa redefinir senha
+        if usuario.verificar_senha_reset(nome):
+            self.solicitar_nova_senha(nome)
+            return
+
+        resultado = usuario.verificar_login(nome, senha)
+
+        if resultado["sucesso"]:
+            self.usuario_logado = resultado["nome"]
+            self.is_admin = resultado["admin"]
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Erro de Login", resultado["mensagem"])
+            self.entry_senha.clear()
+            self.entry_senha.setFocus()
+
+    def solicitar_nova_senha(self, nome):
+        """Solicita nova senha quando o usuário tem senha de reset."""
+        nova_senha, ok = QInputDialog.getText(
+            self,
+            "Nova Senha Requerida",
+            "Sua senha foi resetada. Digite uma nova senha:",
+            QLineEdit.EchoMode.Password,
+        )
+
+        if ok and nova_senha.strip():
+            resultado = usuario.alterar_senha_usuario(
+                nome, "nova_senha", nova_senha)
+            if "Sucesso" in resultado:
+                QMessageBox.information(
+                    self, "Sucesso", "Senha alterada com sucesso. Faça login novamente."
+                )
+                self.entry_senha.clear()
+            else:
+                QMessageBox.warning(self, "Erro", resultado)
+        else:
+            QMessageBox.warning(self, "Erro", "Nova senha é obrigatória.")
+
+    def abrir_novo_usuario(self):
+        """Abre o diálogo para criação de novo usuário."""
+        dialog = NovoUsuarioDialog()
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            QMessageBox.information(
+                self, "Sucesso",
+                "Usuário criado com sucesso! Você pode fazer login agora."
+            )
+
+
+class NovoUsuarioDialog(QDialog):
+    """Dialog para criação de novos usuários."""
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Novo Usuário")
+        self.setFixedSize(LARGURA_LAYOUT, ALTURA_LAYOUT)
+        self.setModal(True)
+
+        self.init_ui()
+
+    def init_ui(self):
+        """Inicializa a interface do usuário."""
+        layout = QFormLayout()
+        layout.setSpacing(ESPACAMENTO_PADRAO)
+        layout.setContentsMargins(MARGEM, MARGEM, MARGEM, MARGEM)
+
+        # Campos de entrada
+        self.entry_nome = QLineEdit()
+        self.entry_nome.setPlaceholderText("Digite o nome do usuário")
+
+        self.entry_senha = QLineEdit()
+        self.entry_senha.setEchoMode(QLineEdit.EchoMode.Password)
+        self.entry_senha.setPlaceholderText("Digite a senha")
+
+        # Aplicar altura uniforme aos campos
+        configurar_widgets_entrada_uniformes(
+            [self.entry_nome, self.entry_senha])
+
+        layout.addRow("Nome:", self.entry_nome)
+        layout.addRow("Senha:", self.entry_senha)
+
+        # Só mostra opção admin se não existir um
+        if not usuario.verificar_admin_existente():
+            self.check_admin = QCheckBox()
+            layout.addRow("Admin:", self.check_admin)
+
+        # Espaço extra antes dos botões
+        layout.addRow("", QLabel(""))
+
+        # Botões com layout horizontal
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(ESPACAMENTO_PADRAO)
+
+        self.btn_cancelar = QPushButton("Cancelar")
+        self.btn_salvar = QPushButton("Salvar")
+
+        # Aplicar estilo padronizado com larguras iguais
+        aplicar_estilo_botao(self.btn_cancelar, "cinza", 110)
+        aplicar_estilo_botao(self.btn_salvar, "verde", 110)
+
+        btn_layout.addWidget(self.btn_cancelar)
+        btn_layout.addWidget(self.btn_salvar)
+
+        layout.addRow(btn_layout)
+
+        self.setLayout(layout)
+
+        # Conectar eventos
+        self.btn_salvar.clicked.connect(self.salvar_usuario)
+        self.btn_cancelar.clicked.connect(self.reject)
+
+        # Navegação com Enter
+        self.entry_nome.returnPressed.connect(self.entry_senha.setFocus)
+        self.entry_senha.returnPressed.connect(self.salvar_usuario)
+
+    def salvar_usuario(self):
+        """Salva o novo usuário no banco de dados."""
+        nome = self.entry_nome.text().strip()
+        senha = self.entry_senha.text().strip()
+
+        if not nome or not senha:
+            QMessageBox.warning(self, "Erro", "Nome e senha são obrigatórios.")
+            return
+
+        if len(senha) < 4:
+            QMessageBox.warning(
+                self, "Erro", "A senha deve ter pelo menos 4 caracteres.")
+            return
+
+        # Verificar se é admin
+        is_admin = hasattr(
+            self, 'check_admin') and self.check_admin.isChecked()
+
+        resultado = usuario.inserir_usuario(nome, senha, is_admin)
+
+        if "Sucesso" in resultado:
+            QMessageBox.information(self, "Sucesso", resultado)
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Erro", resultado)

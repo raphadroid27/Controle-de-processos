@@ -122,7 +122,7 @@ def configurar_widgets_entrada_uniformes(widgets_list):
     """
     Configura widgets de entrada (LineEdit, ComboBox, DateEdit, etc.) 
     para ter tamanho e comportamento uniformes.
-    
+
     Args:
         widgets_list: Lista de widgets para configurar
     """
@@ -130,7 +130,8 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widget.setMinimumHeight(ALTURA_MINIMA_WIDGET_ENTRADA)
         widget.setMaximumHeight(ALTURA_WIDGET_ENTRADA)
         widget.setMinimumWidth(LARGURA_MINIMA_WIDGET_ENTRADA)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                             QSizePolicy.Policy.Fixed)
 
 
 def configurar_botao_padrao(botao, largura_minima=None):
