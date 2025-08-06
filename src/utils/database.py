@@ -508,8 +508,8 @@ def buscar_periodos_faturamento_por_ano(ano, usuario=None):
         except ValueError:
             continue  # Pular datas inválidas
     
-    # Converter para lista e ordenar por data de início
-    periodos_lista = sorted(list(periodos), key=lambda x: x[0])
+    # Converter para lista e ordenar por data de início (mais recente primeiro)
+    periodos_lista = sorted(list(periodos), key=lambda x: x[0], reverse=True)
     
     # Retornar períodos formatados para exibição
     periodos_formatados = []
