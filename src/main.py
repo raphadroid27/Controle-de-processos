@@ -41,9 +41,10 @@ from utils import usuario
 from gerenciar_usuarios import GerenciarUsuariosDialog
 
 
-ALTURA_BOTAO = 20
+ALTURA_BOTAO = 32
+ALTURA_MINIMA_BOTAO = 28
 LARGURA_BOTAO = 80
-TAMANHO_FONTE_BOTAO = 12
+TAMANHO_FONTE_BOTAO = 11
 RAIO_BORDA_BOTAO = 4
 PADDING_BOTAO = "2px 4px"
 ESPACAMENTO_PADRAO = 10
@@ -569,7 +570,8 @@ class ProcessosWidget(QWidget):
 
             for mes in meses_db:
                 if mes in nomes_meses:
-                    self.combo_filtro_mes.addItem(f"{mes} - {nomes_meses[mes]}")
+                    self.combo_filtro_mes.addItem(
+                        f"{mes} - {nomes_meses[mes]}")
 
             # Buscar anos únicos do banco
             anos_db = db.buscar_anos_unicos(usuario_filtro)
@@ -636,6 +638,33 @@ class ProcessosWidget(QWidget):
             elif not valor_pedido:
                 self.entry_valor_pedido.setFocus()
 
+    def configurar_widgets_uniformes(self, widgets_list):
+        """Configura widgets para ter tamanho e comportamento uniformes."""
+        from PySide6.QtWidgets import QSizePolicy
+
+        for widget in widgets_list:
+            widget.setMinimumHeight(28)
+            widget.setMaximumHeight(32)
+            widget.setMinimumWidth(80)
+            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def criar_layout_coluna_uniforme(self, label_text, widget, peso=1, espacamento_label=3):
+        """Cria um layout de coluna uniforme com label e widget."""
+        col_layout = QVBoxLayout()
+        col_layout.setSpacing(espacamento_label)
+        col_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Label com formatação consistente
+        label = QLabel(label_text)
+        label.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        label.setMinimumHeight(16)
+        label.setMaximumHeight(18)
+
+        col_layout.addWidget(label)
+        col_layout.addWidget(widget)
+
+        return col_layout, peso
+
     def criar_frame_entrada(self):
         """Cria o frame de entrada de dados."""
         self.frame_entrada = QFrame()
@@ -662,8 +691,8 @@ class ProcessosWidget(QWidget):
         self.entry_valor_pedido = NavigableLineEdit()
         self.entry_valor_pedido.setPlaceholderText("0.00")
 
-        # Configurar tamanho uniforme e política de redimensionamento para todos os campos
-        campos_entrada = [
+        # Lista de widgets para configuração uniforme
+        widgets_entrada = [
             self.entry_cliente,
             self.entry_processo,
             self.entry_qtde_itens,
@@ -672,28 +701,12 @@ class ProcessosWidget(QWidget):
             self.entry_valor_pedido
         ]
 
-        # Definir tamanho mínimo e política de expansão uniformes
-        from PySide6.QtWidgets import QSizePolicy
-        for campo in campos_entrada:
-            # Largura mínima reduzida para melhor adaptação
-            campo.setMinimumWidth(100)
-            campo.setMaximumHeight(30)  # Altura máxima para uniformidade
-            campo.setMinimumHeight(25)  # Altura mínima consistente
-            campo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Aplicar configuração uniforme a todos os widgets
+        self.configurar_widgets_uniformes(widgets_entrada)
 
         # Configurar navegação entre campos
-        campos_navegacao = [
-            self.entry_cliente,
-            self.entry_processo,
-            self.entry_qtde_itens,
-            self.entry_data_entrada,
-            self.entry_data_processo,
-            self.entry_valor_pedido
-        ]
-
-        # Aplicar lista de navegação a todos os campos
-        for campo in campos_navegacao:
-            campo.set_campos_navegacao(campos_navegacao)
+        for campo in widgets_entrada:
+            campo.set_campos_navegacao(widgets_entrada)
 
         # Conectar sinal para converter automaticamente para maiúscula
         self.entry_cliente.textChanged.connect(
@@ -702,49 +715,48 @@ class ProcessosWidget(QWidget):
         # Configurar autocompletar para cliente
         self.configurar_autocompletar_cliente()
 
-        # Layout horizontal para os campos com espaçamento uniforme
+        # Layout horizontal principal com espaçamento uniforme
         campos_layout = QHBoxLayout()
-        campos_layout.setSpacing(ESPACAMENTO_PADRAO)  # Espaçamento padrão entre colunas
-        campos_layout.setContentsMargins(5, 5, 5, 5)  # Margens uniformes
+        campos_layout.setSpacing(10)  # Espaçamento consistente entre colunas
+        campos_layout.setContentsMargins(8, 8, 8, 8)  # Margens uniformes
 
-        # Criar colunas com larguras proporcionais
+        # Criar colunas com layouts uniformes
         colunas_info = [
-            ("Cliente:", self.entry_cliente, 2),  # Peso 2 (mais largo)
-            ("Processo:", self.entry_processo, 2),  # Peso 2 (mais largo)
-            ("Qtd. Itens:", self.entry_qtde_itens, 1),  # Peso 1 (mais estreito)
-            ("Data Entrada:", self.entry_data_entrada, 1),  # Peso 1
-            ("Data Processo:", self.entry_data_processo, 1),  # Peso 1
-            ("Valor (R$):", self.entry_valor_pedido, 1)  # Peso 1
+            # Peso maior para campos de texto
+            ("Cliente:", self.entry_cliente, 3),
+            # Peso maior para campos de texto
+            ("Processo:", self.entry_processo, 3),
+            ("Qtd. Itens:", self.entry_qtde_itens, 2),  # Peso menor para números
+            ("Data Entrada:", self.entry_data_entrada, 2),  # Peso menor para datas
+            # Peso menor para datas
+            ("Data Processo:", self.entry_data_processo, 2),
+            ("Valor (R$):", self.entry_valor_pedido, 2)  # Peso menor para valores
         ]
 
         for label_text, widget, peso in colunas_info:
-            col_layout = QVBoxLayout()
-            col_layout.setSpacing(2)  # Espaçamento pequeno entre label e campo
+            col_layout, peso_col = self.criar_layout_coluna_uniforme(
+                label_text, widget, peso)
+            campos_layout.addLayout(col_layout, peso_col)
 
-            label = QLabel(label_text)
-            label.setAlignment(Qt.AlignLeft)
-
-            col_layout.addWidget(label)
-            col_layout.addWidget(widget)
-
-            # Adicionar ao layout principal com peso específico
-            campos_layout.addLayout(col_layout, peso)
-
-        # Botão Adicionar (alinhado com os campos)
+        # Botão Adicionar com layout uniforme
         btn_layout = QVBoxLayout()
-        btn_layout.setSpacing(2)
+        btn_layout.setSpacing(3)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Label vazio para alinhar com os outros campos
-        btn_layout.addWidget(QLabel(""))
+        # Label vazio para alinhar com outros campos
+        label_vazio = QLabel("")
+        label_vazio.setMinimumHeight(16)
+        label_vazio.setMaximumHeight(18)
+        btn_layout.addWidget(label_vazio)
+
         self.btn_adicionar = QPushButton("Adicionar")
         self.btn_adicionar.setToolTip(
             "Adicionar novo processo (Atalho: Enter)")
 
-        # Configurar tamanho do botão para se adaptar melhor
-        self.btn_adicionar.setMinimumWidth(80)
-        # Altura máxima consistente com os campos
-        self.btn_adicionar.setMaximumHeight(30)
-        self.btn_adicionar.setMinimumHeight(25)
+        # Configurar tamanho do botão consistente com os campos
+        self.btn_adicionar.setMinimumHeight(ALTURA_MINIMA_BOTAO)
+        self.btn_adicionar.setMaximumHeight(ALTURA_BOTAO)
+        self.btn_adicionar.setMinimumWidth(LARGURA_BOTAO)
         from PySide6.QtWidgets import QSizePolicy
         self.btn_adicionar.setSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -759,8 +771,6 @@ class ProcessosWidget(QWidget):
                 border-radius: {RAIO_BORDA_BOTAO}px;
                 font-weight: bold;
                 font-size: {TAMANHO_FONTE_BOTAO}px;
-                height: {ALTURA_BOTAO}px;
-                min-width: 80px;
             }}
             QPushButton:hover {{
                 background-color: #45a049;
@@ -771,9 +781,7 @@ class ProcessosWidget(QWidget):
         """)
 
         btn_layout.addWidget(self.btn_adicionar)
-
-        # Adicionar layout do botão ao layout principal
-        campos_layout.addLayout(btn_layout)
+        campos_layout.addLayout(btn_layout, 1)  # Peso menor para o botão
 
         self.frame_entrada.setLayout(campos_layout)
 
@@ -787,36 +795,40 @@ class ProcessosWidget(QWidget):
         # Área de filtros (para todos os usuários)
         filtros_frame = QFrame()
         filtros_frame.setFrameStyle(QFrame.StyledPanel)
-        filtros_layout = QVBoxLayout()
 
-        # Layout principal dos filtros com widgets distribuídos
+        # Layout principal dos filtros com widgets distribuídos uniformemente (diretamente no frame)
         filtro_completo_layout = QHBoxLayout()
-        filtro_completo_layout.setSpacing(ESPACAMENTO_PADRAO)  # Espaçamento padrão entre widgets
-        filtro_completo_layout.setContentsMargins(5, 5, 5, 5)  # Margens uniformes
+        # Mesmo espaçamento do frame de entrada
+        filtro_completo_layout.setSpacing(10)
+        filtro_completo_layout.setContentsMargins(
+            8, 8, 8, 8)  # Mesmas margens do frame de entrada
+
+        # Lista para armazenar widgets de filtro para configuração uniforme
+        widgets_filtro = []
 
         # Filtro por usuário (apenas para admins)
         if self.is_admin:
-            usuario_layout = QVBoxLayout()
-            usuario_layout.addWidget(QLabel("Usuário:"))
             self.combo_usuario = QComboBox()
             self.combo_usuario.addItem("Todos os usuários")
-            self.combo_usuario.setMinimumWidth(150)
-            usuario_layout.addWidget(self.combo_usuario)
-            filtro_completo_layout.addLayout(usuario_layout)
+            widgets_filtro.append(self.combo_usuario)
+
+            usuario_layout, peso_usuario = self.criar_layout_coluna_uniforme(
+                "Usuário:", self.combo_usuario, 2)
+            filtro_completo_layout.addLayout(usuario_layout, peso_usuario)
 
             # Conectar mudança no combo para aplicar filtro automaticamente
             self.combo_usuario.currentTextChanged.connect(
                 self.on_usuario_changed)
 
         # Filtro por cliente
-        cliente_layout = QVBoxLayout()
-        cliente_layout.addWidget(QLabel("Cliente:"))
         self.entry_filtro_cliente = QLineEdit()
         self.entry_filtro_cliente.setPlaceholderText(
             "Digite o nome do cliente")
-        self.entry_filtro_cliente.setMinimumWidth(180)
-        cliente_layout.addWidget(self.entry_filtro_cliente)
-        filtro_completo_layout.addLayout(cliente_layout)
+        widgets_filtro.append(self.entry_filtro_cliente)
+
+        cliente_layout, peso_cliente = self.criar_layout_coluna_uniforme(
+            "Cliente:", self.entry_filtro_cliente, 3)
+        filtro_completo_layout.addLayout(cliente_layout, peso_cliente)
 
         # Conectar mudança no campo de cliente (com delay para não filtrar a cada letra)
         self.timer_cliente = QTimer()
@@ -829,14 +841,14 @@ class ProcessosWidget(QWidget):
         self.configurar_autocompletar_filtro_cliente()
 
         # Filtro por processo
-        processo_layout = QVBoxLayout()
-        processo_layout.addWidget(QLabel("Processo:"))
         self.entry_filtro_processo = QLineEdit()
         self.entry_filtro_processo.setPlaceholderText(
             "Digite o nome do processo")
-        self.entry_filtro_processo.setMinimumWidth(180)
-        processo_layout.addWidget(self.entry_filtro_processo)
-        filtro_completo_layout.addLayout(processo_layout)
+        widgets_filtro.append(self.entry_filtro_processo)
+
+        processo_layout, peso_processo = self.criar_layout_coluna_uniforme(
+            "Processo:", self.entry_filtro_processo, 3)
+        filtro_completo_layout.addLayout(processo_layout, peso_processo)
 
         # Conectar mudança no campo de processo (com delay para não filtrar a cada letra)
         self.timer_processo = QTimer()
@@ -846,34 +858,53 @@ class ProcessosWidget(QWidget):
             lambda: self.timer_processo.start(500))
 
         # Filtro por mês
-        mes_layout = QVBoxLayout()
-        mes_layout.addWidget(QLabel("Mês:"))
         self.combo_filtro_mes = QComboBox()
         self.combo_filtro_mes.addItem("Todos os meses")
-        self.combo_filtro_mes.setMinimumWidth(120)
-        mes_layout.addWidget(self.combo_filtro_mes)
-        filtro_completo_layout.addLayout(mes_layout)
+        widgets_filtro.append(self.combo_filtro_mes)
+
+        mes_layout, peso_mes = self.criar_layout_coluna_uniforme(
+            "Mês:", self.combo_filtro_mes, 2)
+        filtro_completo_layout.addLayout(mes_layout, peso_mes)
 
         # Conectar mudança no combo de mês
         self.combo_filtro_mes.currentTextChanged.connect(self.aplicar_filtro)
 
         # Filtro por ano
-        ano_layout = QVBoxLayout()
-        ano_layout.addWidget(QLabel("Ano:"))
         self.combo_filtro_ano = QComboBox()
         self.combo_filtro_ano.addItem("Todos os anos")
-        self.combo_filtro_ano.setMinimumWidth(100)
-        ano_layout.addWidget(self.combo_filtro_ano)
-        filtro_completo_layout.addLayout(ano_layout)
+        widgets_filtro.append(self.combo_filtro_ano)
+
+        ano_layout, peso_ano = self.criar_layout_coluna_uniforme(
+            "Ano:", self.combo_filtro_ano, 2)
+        filtro_completo_layout.addLayout(ano_layout, peso_ano)
 
         # Conectar mudança no combo de ano
         self.combo_filtro_ano.currentTextChanged.connect(self.aplicar_filtro)
 
-        # Botão limpar filtros
-        botao_layout = QVBoxLayout()
-        botao_layout.addWidget(QLabel(""))  # Label vazio para alinhamento
+        # Aplicar configuração uniforme a todos os widgets de filtro
+        self.configurar_widgets_uniformes(widgets_filtro)
+
+        # Botão limpar filtros com layout uniforme
+        btn_layout = QVBoxLayout()
+        btn_layout.setSpacing(3)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Label vazio para alinhar com outros campos
+        label_vazio = QLabel("")
+        label_vazio.setMinimumHeight(16)
+        label_vazio.setMaximumHeight(18)
+        btn_layout.addWidget(label_vazio)
+
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
+
+        # Configurar tamanho do botão consistente com os outros widgets
+        self.btn_limpar_filtros.setMinimumHeight(ALTURA_MINIMA_BOTAO)
+        self.btn_limpar_filtros.setMaximumHeight(ALTURA_BOTAO)
+        self.btn_limpar_filtros.setMinimumWidth(LARGURA_BOTAO)
+        from PySide6.QtWidgets import QSizePolicy
+        self.btn_limpar_filtros.setSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # Estilizar o botão limpar filtros
         self.btn_limpar_filtros.setStyleSheet(f"""
@@ -885,8 +916,6 @@ class ProcessosWidget(QWidget):
                 border-radius: {RAIO_BORDA_BOTAO}px;
                 font-weight: bold;
                 font-size: {TAMANHO_FONTE_BOTAO}px;
-                height: {ALTURA_BOTAO}px;
-                width: {LARGURA_BOTAO + 20}px;
             }}
             QPushButton:hover {{
                 background-color: #F57C00;
@@ -896,15 +925,15 @@ class ProcessosWidget(QWidget):
             }}
         """)
 
-        botao_layout.addWidget(self.btn_limpar_filtros)
-        filtro_completo_layout.addLayout(botao_layout)
+        btn_layout.addWidget(self.btn_limpar_filtros)
+        filtro_completo_layout.addLayout(
+            btn_layout, 1)  # Peso menor para o botão
 
-        # Adicionar stretch para empurrar elementos para a esquerda
+        # Adicionar stretch para empurrar elementos para a esquerda quando necessário
         filtro_completo_layout.addStretch()
 
-        filtros_layout.addLayout(filtro_completo_layout)
-
-        filtros_frame.setLayout(filtros_layout)
+        # Aplicar o layout diretamente ao frame (sem VBoxLayout intermediário)
+        filtros_frame.setLayout(filtro_completo_layout)
         self.tabela_layout.addWidget(filtros_frame)
 
         # Tabela
@@ -1057,7 +1086,13 @@ class ProcessosWidget(QWidget):
         self.btn_excluir = QPushButton("Excluir")
         self.btn_excluir.setToolTip(
             "Excluir processo selecionado na tabela (Atalho: Delete)")
+
         self.btn_excluir.clicked.connect(self.excluir_processo)
+
+        # Configurar tamanho do botão consistente com os campos
+        self.btn_excluir.setMinimumHeight(ALTURA_MINIMA_BOTAO)
+        self.btn_excluir.setMaximumHeight(ALTURA_BOTAO)
+        self.btn_excluir.setMinimumWidth(LARGURA_BOTAO)
 
         # Estilizar o botão excluir
         self.btn_excluir.setStyleSheet(f"""
@@ -1069,8 +1104,6 @@ class ProcessosWidget(QWidget):
                 border-radius: {RAIO_BORDA_BOTAO}px;
                 font-weight: bold;
                 font-size: {TAMANHO_FONTE_BOTAO}px;
-                width: {LARGURA_BOTAO}px;
-                height: {ALTURA_BOTAO}px;
             }}
             QPushButton:hover {{
                 background-color: #da190b;
@@ -1530,7 +1563,8 @@ class ProcessosWidget(QWidget):
         if hasattr(self, 'combo_filtro_ano') and self.combo_filtro_ano.currentText() != "Todos os anos":
             ano_filtro = self.combo_filtro_ano.currentText()
 
-        self.atualizar_totais(usuario_filtro, cliente_filtro, processo_filtro, mes_filtro, ano_filtro)
+        self.atualizar_totais(usuario_filtro, cliente_filtro,
+                              processo_filtro, mes_filtro, ano_filtro)
 
         # Rolar para o último item apenas quando solicitado
         if rolar_para_ultimo:
