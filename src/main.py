@@ -39,6 +39,11 @@ from PySide6.QtWidgets import (
 from utils import database as db
 from utils import usuario
 from utils import session_manager
+from utils.formatters import (
+    formatar_valor_monetario,
+    converter_data_para_banco,
+    formatar_data_para_exibicao
+)
 from utils.ui_config import (
     aplicar_estilo_botao,
     aplicar_estilo_botao_desabilitado,
@@ -47,186 +52,14 @@ from utils.ui_config import (
     ALTURA_WIDGET_ENTRADA,
     ALTURA_MINIMA_WIDGET_ENTRADA
 )
+from ui.delegates import DateEditDelegate
+from widgets.navigable_widgets import NavigableLineEdit, NavigableDateEdit
+from business.periodo_faturamento import (
+    calcular_periodo_faturamento_atual_datas,
+    calcular_periodo_faturamento_atual
+)
 from login_dialog import LoginDialog
 from gerenciar_usuarios import GerenciarUsuariosDialog
-
-
-def formatar_valor_monetario(valor):
-    """Formata valor monetário com separador de milhares e vírgula decimal."""
-    try:
-        if isinstance(valor, str):
-            # Limpar valor se for string
-            valor_limpo = valor.replace("R$", "").replace(
-                " ", "").replace(".", "").replace(",", ".")
-            valor = float(valor_limpo)
-
-        # Formatar com separador de milhares (ponto) e decimais (vírgula)
-        valor_formatado = f"{valor:,.2f}".replace(
-            ",", "X").replace(".", ",").replace("X", ".")
-        return f"R$ {valor_formatado}"
-    except (ValueError, TypeError):
-        return "R$ 0,00"
-
-
-class DateEditDelegate(QStyledItemDelegate):
-    """Delegate personalizado para edição de datas com calendário."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def createEditor(self, parent, option, index):
-        """Cria o editor de data com calendário."""
-        editor = QDateEdit(parent)
-        editor.setCalendarPopup(True)
-        editor.setDisplayFormat("dd/MM/yyyy")
-
-        # Definir data máxima como hoje
-        editor.setMaximumDate(QDate.currentDate())
-
-        # Verificar se é uma coluna de data processo (pode estar vazia)
-        data_texto = index.data()
-        if data_texto == "Não processado" or not data_texto:
-            editor.setSpecialValueText("Não processado")
-            editor.setDate(QDate())  # Data nula
-        else:
-            # Tentar converter a data do formato DD/MM/AAAA
-            try:
-                if "/" in data_texto:
-                    data_obj = datetime.strptime(data_texto, "%d/%m/%Y")
-                else:
-                    # Formato AAAA-MM-DD do banco
-                    data_obj = datetime.strptime(data_texto, "%Y-%m-%d")
-                editor.setDate(
-                    QDate(data_obj.year, data_obj.month, data_obj.day))
-            except (ValueError, AttributeError):
-                editor.setDate(QDate.currentDate())
-
-        return editor
-
-    def setEditorData(self, editor, index):
-        """Define os dados no editor."""
-        value = index.data()
-        if value == "Não processado" or not value:
-            editor.setDate(QDate())  # Data nula
-        else:
-            try:
-                if "/" in value:
-                    data_obj = datetime.strptime(value, "%d/%m/%Y")
-                else:
-                    data_obj = datetime.strptime(value, "%Y-%m-%d")
-                editor.setDate(
-                    QDate(data_obj.year, data_obj.month, data_obj.day))
-            except (ValueError, AttributeError):
-                editor.setDate(QDate.currentDate())
-
-    def setModelData(self, editor, model, index):
-        """Define os dados do editor no modelo."""
-        date = editor.date()
-        if date.isNull() or not date.isValid():
-            model.setData(index, "Não processado")
-        else:
-            # Formatar como DD/MM/AAAA para exibição
-            formatted_date = date.toString("dd/MM/yyyy")
-            model.setData(index, formatted_date)
-
-    def updateEditorGeometry(self, editor, option, index):
-        """Atualiza a geometria do editor."""
-        editor.setGeometry(option.rect)
-
-
-class NavigableLineEdit(QLineEdit):
-    """QLineEdit personalizado que permite navegação entre campos com setas."""
-
-    def __init__(self, campos_navegacao=None, parent=None):
-        super().__init__(parent)
-        self.campos_navegacao = campos_navegacao or []
-
-    def set_campos_navegacao(self, campos):
-        """Define a lista de campos para navegação."""
-        self.campos_navegacao = campos
-
-    def keyPressEvent(self, event):
-        """Intercepta eventos de teclado para navegação."""
-        if event.key() == Qt.Key_Left:
-            # Navegar para campo anterior se cursor estiver no início
-            if self.cursorPosition() == 0 and self.campos_navegacao:
-                try:
-                    indice_atual = self.campos_navegacao.index(self)
-                    indice_anterior = (
-                        indice_atual - 1) % len(self.campos_navegacao)
-                    self.campos_navegacao[indice_anterior].setFocus()
-                    # Posicionar cursor no final do campo anterior
-                    if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
-                        self.campos_navegacao[indice_anterior].setCursorPosition(
-                            len(self.campos_navegacao[indice_anterior].text())
-                        )
-                    return
-                except ValueError:
-                    pass
-
-        elif event.key() == Qt.Key_Right:
-            # Navegar para próximo campo se cursor estiver no final
-            if self.cursorPosition() == len(self.text()) and self.campos_navegacao:
-                try:
-                    indice_atual = self.campos_navegacao.index(self)
-                    proximo_indice = (
-                        indice_atual + 1) % len(self.campos_navegacao)
-                    self.campos_navegacao[proximo_indice].setFocus()
-                    # Posicionar cursor no início do próximo campo
-                    if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
-                        self.campos_navegacao[proximo_indice].setCursorPosition(
-                            0)
-                    return
-                except ValueError:
-                    pass
-
-        # Passar o evento para o comportamento padrão
-        super().keyPressEvent(event)
-
-
-class NavigableDateEdit(QDateEdit):
-    """QDateEdit personalizado que permite navegação entre campos com setas."""
-
-    def __init__(self, campos_navegacao=None, parent=None):
-        super().__init__(parent)
-        self.campos_navegacao = campos_navegacao or []
-
-    def set_campos_navegacao(self, campos):
-        """Define a lista de campos para navegação."""
-        self.campos_navegacao = campos
-
-    def keyPressEvent(self, event):
-        """Intercepta eventos de teclado para navegação."""
-        if event.key() == Qt.Key_Left and self.campos_navegacao:
-            try:
-                indice_atual = self.campos_navegacao.index(self)
-                indice_anterior = (
-                    indice_atual - 1) % len(self.campos_navegacao)
-                self.campos_navegacao[indice_anterior].setFocus()
-                # Posicionar cursor no final do campo anterior
-                if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
-                    self.campos_navegacao[indice_anterior].setCursorPosition(
-                        len(self.campos_navegacao[indice_anterior].text())
-                    )
-                return
-            except ValueError:
-                pass
-
-        elif event.key() == Qt.Key_Right and self.campos_navegacao:
-            try:
-                indice_atual = self.campos_navegacao.index(self)
-                proximo_indice = (
-                    indice_atual + 1) % len(self.campos_navegacao)
-                self.campos_navegacao[proximo_indice].setFocus()
-                # Posicionar cursor no início do próximo campo
-                if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
-                    self.campos_navegacao[proximo_indice].setCursorPosition(0)
-                return
-            except ValueError:
-                pass
-
-        # Passar o evento para o comportamento padrão
-        super().keyPressEvent(event)
 
 
 class ProcessosWidget(QWidget):
@@ -287,16 +120,16 @@ class ProcessosWidget(QWidget):
     def configurar_atalhos(self):
         """Configura os atalhos de teclado para a aplicação."""
         # Atalho Enter para adicionar processo (com validação)
-        self.shortcut_enter = QShortcut(QKeySequence(Qt.Key_Return), self)
+        self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
 
         # Atalho Enter (teclado numérico) para adicionar processo (com validação)
-        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key_Enter), self)
+        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
         self.shortcut_enter_num.activated.connect(
             self.atalho_adicionar_processo)
 
         # Atalho Delete para excluir processo
-        self.shortcut_delete = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
         self.shortcut_delete.activated.connect(self.excluir_processo)
 
     def configurar_autocompletar_cliente(self):
@@ -409,7 +242,7 @@ class ProcessosWidget(QWidget):
             anos_db = db.buscar_anos_unicos(usuario_filtro)
 
             # Garantir que o ano atual esteja na lista
-            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
             ano_atual = str(data_inicio_atual.year)
             if ano_atual not in anos_db:
                 anos_db.append(ano_atual)
@@ -471,7 +304,7 @@ class ProcessosWidget(QWidget):
                     ano_selecionado, usuario_filtro)
 
                 # Adicionar período atual se o ano selecionado for o ano atual
-                data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+                data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
                 ano_atual = str(data_inicio_atual.year)
 
                 if ano_selecionado == ano_atual:
@@ -1115,7 +948,7 @@ class ProcessosWidget(QWidget):
     def aplicar_filtro_periodo_corrente(self):
         """Aplica automaticamente o filtro do período corrente baseado no período de faturamento."""
         try:
-            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
             periodo_atual_display = f"{data_inicio_atual.strftime('%d/%m/%Y')} a {data_fim_atual.strftime('%d/%m/%Y')}"
 
             # Bloquear sinais temporariamente
@@ -1135,7 +968,7 @@ class ProcessosWidget(QWidget):
         """Aplica automaticamente o filtro do período corrente baseado no período de faturamento."""
         try:
             # Obter período atual
-            data_inicio_atual, data_fim_atual = self.calcular_periodo_faturamento_atual_datas()
+            data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
             ano_atual = str(data_inicio_atual.year)
 
             # Bloquear sinais temporariamente
@@ -1296,13 +1129,13 @@ class ProcessosWidget(QWidget):
             valor_text = self.tabela.item(row, col_offset + 5).text().strip()
 
             # Converter datas do formato DD/MM/AAAA para AAAA-MM-DD para o banco
-            data_entrada = self.converter_data_para_banco(data_entrada_text)
+            data_entrada = converter_data_para_banco(data_entrada_text)
 
             # Processar data de processo
             if data_processo_text == "Não processado" or not data_processo_text:
                 data_processo = ""
             else:
-                data_processo = self.converter_data_para_banco(
+                data_processo = converter_data_para_banco(
                     data_processo_text)
 
             # Processar valor (remover R$, espaços e separadores, converter vírgula decimal para ponto)
@@ -1340,44 +1173,6 @@ class ProcessosWidget(QWidget):
         finally:
             # Reativar sinais
             self.tabela.blockSignals(False)
-
-    def converter_data_para_banco(self, data_str):
-        """Converte data do formato DD/MM/AAAA para AAAA-MM-DD para o banco."""
-        if not data_str or data_str == "Não processado":
-            return ""
-
-        try:
-            # Se já está no formato AAAA-MM-DD, retorna como está
-            if "-" in data_str and len(data_str) == 10:
-                # Validar se está no formato correto
-                datetime.strptime(data_str, "%Y-%m-%d")
-                return data_str
-
-            # Converter de DD/MM/AAAA para AAAA-MM-DD
-            data_obj = datetime.strptime(data_str, "%d/%m/%Y")
-            return data_obj.strftime("%Y-%m-%d")
-        except ValueError:
-            # Se não conseguir converter, retorna como veio
-            return str(data_str)
-
-    def formatar_data_para_exibicao(self, data_str):
-        """Converte data do formato AAAA-MM-DD para DD/MM/AAAA."""
-        if not data_str:
-            return ""
-
-        try:
-            # Se já está no formato DD/MM/AAAA, retorna como está
-            if "/" in data_str:
-                # Validar se está no formato correto
-                datetime.strptime(data_str, "%d/%m/%Y")
-                return data_str
-
-            # Converter de AAAA-MM-DD para DD/MM/AAAA
-            data_obj = datetime.strptime(data_str, "%Y-%m-%d")
-            return data_obj.strftime("%d/%m/%Y")
-        except ValueError:
-            # Se não conseguir converter, retorna como veio
-            return str(data_str)
 
     def aplicar_filtro(self, rolar_para_ultimo=True):
         """Aplica filtros na tabela de processos baseado nos filtros selecionados."""
@@ -1495,7 +1290,7 @@ class ProcessosWidget(QWidget):
             self.tabela.setItem(row, col + 2, item_qtde)
 
             # Formatar data de entrada DD/MM/AAAA e alinhar ao centro
-            data_entrada_formatada = self.formatar_data_para_exibicao(
+            data_entrada_formatada = formatar_data_para_exibicao(
                 registro[5])
             item_data_entrada = QTableWidgetItem(data_entrada_formatada)
             item_data_entrada.setTextAlignment(
@@ -1503,7 +1298,7 @@ class ProcessosWidget(QWidget):
             self.tabela.setItem(row, col + 3, item_data_entrada)
 
             # Formatar data de processo DD/MM/AAAA e alinhar ao centro
-            data_processo_formatada = self.formatar_data_para_exibicao(
+            data_processo_formatada = formatar_data_para_exibicao(
                 registro[6]) if registro[6] else "Não processado"
             item_data_processo = QTableWidgetItem(data_processo_formatada)
             item_data_processo.setTextAlignment(
