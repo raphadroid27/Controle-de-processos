@@ -38,16 +38,14 @@ from PySide6.QtWidgets import (
 
 from utils import database as db
 from utils import usuario
+from utils.ui_config import (
+    aplicar_estilo_botao,
+    aplicar_estilo_botao_desabilitado,
+    ESPACAMENTO_PADRAO,
+    ALTURA_MINIMA_BOTAO,
+    ALTURA_BOTAO
+)
 from gerenciar_usuarios import GerenciarUsuariosDialog
-
-
-ALTURA_BOTAO = 32
-ALTURA_MINIMA_BOTAO = 28
-LARGURA_BOTAO = 80
-TAMANHO_FONTE_BOTAO = 11
-RAIO_BORDA_BOTAO = 4
-PADDING_BOTAO = "2px 4px"
-ESPACAMENTO_PADRAO = 10
 
 
 def formatar_valor_monetario(valor):
@@ -164,6 +162,11 @@ class LoginDialog(QDialog):
         self.btn_login = QPushButton("Login")
         self.btn_novo_usuario = QPushButton("Novo Usuário")
 
+        # Aplicar estilo padronizado aos botões
+        aplicar_estilo_botao(self.btn_login, "azul")
+        # Largura maior para "Novo Usuário"
+        aplicar_estilo_botao(self.btn_novo_usuario, "verde", 120)
+
         btn_layout.addWidget(self.btn_login)
         btn_layout.addWidget(self.btn_novo_usuario)
 
@@ -255,6 +258,10 @@ class NovoUsuarioDialog(QDialog):
         btn_layout = QHBoxLayout()
         self.btn_salvar = QPushButton("Salvar")
         self.btn_cancelar = QPushButton("Cancelar")
+
+        # Aplicar estilo padronizado aos botões
+        aplicar_estilo_botao(self.btn_salvar, "verde")
+        aplicar_estilo_botao(self.btn_cancelar, "cinza")
 
         btn_layout.addWidget(self.btn_salvar)
         btn_layout.addWidget(self.btn_cancelar)
@@ -643,10 +650,14 @@ class ProcessosWidget(QWidget):
         from PySide6.QtWidgets import QSizePolicy
 
         for widget in widgets_list:
-            widget.setMinimumHeight(28)
-            widget.setMaximumHeight(32)
+            widget.setMinimumHeight(ALTURA_MINIMA_BOTAO)
+            widget.setMaximumHeight(ALTURA_BOTAO)
             widget.setMinimumWidth(80)
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def configurar_botao_uniforme(self, botao, largura_minima=None):
+        """Configura um botão para ter tamanho e comportamento uniformes usando função global."""
+        configurar_botao_padrao(botao, largura_minima)
 
     def criar_layout_coluna_uniforme(self, label_text, widget, peso=1, espacamento_label=3):
         """Cria um layout de coluna uniforme com label e widget."""
@@ -753,32 +764,8 @@ class ProcessosWidget(QWidget):
         self.btn_adicionar.setToolTip(
             "Adicionar novo processo (Atalho: Enter)")
 
-        # Configurar tamanho do botão consistente com os campos
-        self.btn_adicionar.setMinimumHeight(ALTURA_MINIMA_BOTAO)
-        self.btn_adicionar.setMaximumHeight(ALTURA_BOTAO)
-        self.btn_adicionar.setMinimumWidth(LARGURA_BOTAO)
-        from PySide6.QtWidgets import QSizePolicy
-        self.btn_adicionar.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-        # Estilizar o botão adicionar
-        self.btn_adicionar.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                padding: {PADDING_BOTAO};
-                border-radius: {RAIO_BORDA_BOTAO}px;
-                font-weight: bold;
-                font-size: {TAMANHO_FONTE_BOTAO}px;
-            }}
-            QPushButton:hover {{
-                background-color: #45a049;
-            }}
-            QPushButton:pressed {{
-                background-color: #3d8b40;
-            }}
-        """)
+        # Aplicar estilo e configuração do botão usando função unificada
+        aplicar_estilo_botao(self.btn_adicionar, "verde", 90)
 
         btn_layout.addWidget(self.btn_adicionar)
         campos_layout.addLayout(btn_layout, 1)  # Peso menor para o botão
@@ -898,32 +885,8 @@ class ProcessosWidget(QWidget):
         self.btn_limpar_filtros = QPushButton("Limpar Filtros")
         self.btn_limpar_filtros.clicked.connect(self.limpar_filtros)
 
-        # Configurar tamanho do botão consistente com os outros widgets
-        self.btn_limpar_filtros.setMinimumHeight(ALTURA_MINIMA_BOTAO)
-        self.btn_limpar_filtros.setMaximumHeight(ALTURA_BOTAO)
-        self.btn_limpar_filtros.setMinimumWidth(LARGURA_BOTAO)
-        from PySide6.QtWidgets import QSizePolicy
-        self.btn_limpar_filtros.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-        # Estilizar o botão limpar filtros
-        self.btn_limpar_filtros.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FF9800;
-                color: white;
-                border: none;
-                padding: {PADDING_BOTAO};
-                border-radius: {RAIO_BORDA_BOTAO}px;
-                font-weight: bold;
-                font-size: {TAMANHO_FONTE_BOTAO}px;
-            }}
-            QPushButton:hover {{
-                background-color: #F57C00;
-            }}
-            QPushButton:pressed {{
-                background-color: #E65100;
-            }}
-        """)
+        # Aplicar estilo e configuração do botão usando função unificada
+        aplicar_estilo_botao(self.btn_limpar_filtros, "laranja", 110)
 
         btn_layout.addWidget(self.btn_limpar_filtros)
         filtro_completo_layout.addLayout(
@@ -1089,33 +1052,13 @@ class ProcessosWidget(QWidget):
 
         self.btn_excluir.clicked.connect(self.excluir_processo)
 
-        # Configurar tamanho do botão consistente com os campos
-        self.btn_excluir.setMinimumHeight(ALTURA_MINIMA_BOTAO)
-        self.btn_excluir.setMaximumHeight(ALTURA_BOTAO)
-        self.btn_excluir.setMinimumWidth(LARGURA_BOTAO)
+        # Aplicar estilo e configuração do botão usando função unificada
+        aplicar_estilo_botao(self.btn_excluir, "vermelho")
 
-        # Estilizar o botão excluir
-        self.btn_excluir.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #f44336;
-                color: white;
-                border: none;
-                padding: {PADDING_BOTAO};
-                border-radius: {RAIO_BORDA_BOTAO}px;
-                font-weight: bold;
-                font-size: {TAMANHO_FONTE_BOTAO}px;
-            }}
-            QPushButton:hover {{
-                background-color: #da190b;
-            }}
-            QPushButton:pressed {{
-                background-color: #b71c1c;
-            }}
-            QPushButton:disabled {{
-                background-color: #cccccc;
-                color: #666666;
-            }}
-        """)
+        # Adicionar estilo específico para estado desabilitado usando estilo base
+        estilo_atual = self.btn_excluir.styleSheet()
+        estilo_completo = estilo_atual + aplicar_estilo_botao_desabilitado()
+        self.btn_excluir.setStyleSheet(estilo_completo)
 
         botao_layout.addStretch()  # Empurra o botão para a direita
         botao_layout.addWidget(self.btn_excluir)

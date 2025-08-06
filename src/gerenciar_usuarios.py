@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from utils import usuario
+from utils.ui_config import aplicar_estilo_botao
 
 
 class GerenciarUsuariosDialog(QDialog):
@@ -79,6 +80,8 @@ class GerenciarUsuariosDialog(QDialog):
 
         btn_limpar = QPushButton("Limpar")
         btn_limpar.clicked.connect(self.limpar_busca)
+        # Aplicar estilo cinza padrão
+        aplicar_estilo_botao(btn_limpar, "cinza")
         busca_layout.addWidget(btn_limpar, 0, 2)
 
         self.frame_busca.setLayout(busca_layout)
@@ -88,16 +91,19 @@ class GerenciarUsuariosDialog(QDialog):
         self.botoes_layout = QHBoxLayout()
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
-        self.btn_resetar_senha.setStyleSheet("background-color: #FFA500;")
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
+        aplicar_estilo_botao(self.btn_resetar_senha,
+                             "laranja", 120)  # Laranja para reset
 
         self.btn_excluir = QPushButton("Excluir Usuário")
-        self.btn_excluir.setStyleSheet("background-color: #FF4444;")
         self.btn_excluir.clicked.connect(self.excluir_usuario)
+        aplicar_estilo_botao(self.btn_excluir, "vermelho",
+                             120)  # Vermelho para exclusão
 
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
-        self.btn_alterar_senha.setStyleSheet("background-color: #4CAF50;")
         self.btn_alterar_senha.clicked.connect(self.alterar_minha_senha)
+        aplicar_estilo_botao(self.btn_alterar_senha,
+                             "verde", 150)  # Verde para alteração
 
         self.botoes_layout.addWidget(self.btn_resetar_senha)
         self.botoes_layout.addWidget(self.btn_excluir)
