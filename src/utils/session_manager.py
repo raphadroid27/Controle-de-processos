@@ -4,11 +4,11 @@ remoção e verificação de sessões ativas dos usuários.
 """
 
 import socket
+import sqlite3
 import uuid
 from datetime import datetime, timezone
 
 from .database import conectar_db
-
 
 # ID único da sessão atual
 SESSION_ID = str(uuid.uuid4())
@@ -20,7 +20,8 @@ def criar_tabela_system_control():
     cursor = conn.cursor()
 
     try:
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS system_control (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 type TEXT NOT NULL,
@@ -28,9 +29,10 @@ def criar_tabela_system_control():
                 value TEXT,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
         conn.commit()
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao criar tabela system_control: {e}")
     finally:
         if conn:
@@ -45,24 +47,34 @@ def registrar_sessao(usuario_nome):
         cursor = conn.cursor()
 
         # Remove sessão anterior do mesmo usuário se existir
-        cursor.execute("""
-            DELETE FROM system_control 
+        cursor.execute(
+            """
+            DELETE FROM system_control
             WHERE type = 'SESSION' AND value LIKE ?
-        """, (f"{usuario_nome}|%",))
+        """,
+            (f"{usuario_nome}|%",),
+        )
 
         # Registra nova sessão
         session_value = f"{usuario_nome}|{hostname}"
-        cursor.execute("""
-            INSERT OR REPLACE INTO system_control 
-            (type, key, value, last_updated) 
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO system_control
+            (type, key, value, last_updated)
             VALUES (?, ?, ?, ?)
-        """, ("SESSION", SESSION_ID, session_value, datetime.now(timezone.utc)))
+        """,
+            ("SESSION", SESSION_ID, session_value, datetime.now(timezone.utc)),
+        )
 
         conn.commit()
         print(
-            f"Sessão registrada: {SESSION_ID} para usuário {usuario_nome} no host {hostname}")
+            (
+                f"Sessão registrada: {SESSION_ID} para usuário {usuario_nome} "
+                f"no host {hostname}"
+            )
+        )
 
-    except Exception as e:
+    except (sqlite3.Error, OSError) as e:
         print(f"Erro ao registrar sessão: {e}")
     finally:
         if conn:
@@ -75,15 +87,18 @@ def remover_sessao():
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            DELETE FROM system_control 
+        cursor.execute(
+            """
+            DELETE FROM system_control
             WHERE type = 'SESSION' AND key = ?
-        """, (SESSION_ID,))
+        """,
+            (SESSION_ID,),
+        )
 
         conn.commit()
         print(f"Sessão removida: {SESSION_ID}")
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao remover sessão: {e}")
     finally:
         if conn:
@@ -96,15 +111,18 @@ def atualizar_heartbeat_sessao():
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            UPDATE system_control 
-            SET last_updated = ? 
+        cursor.execute(
+            """
+            UPDATE system_control
+            SET last_updated = ?
             WHERE type = 'SESSION' AND key = ?
-        """, (datetime.now(timezone.utc), SESSION_ID))
+        """,
+            (datetime.now(timezone.utc), SESSION_ID),
+        )
 
         conn.commit()
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao atualizar heartbeat da sessão: {e}")
     finally:
         if conn:
@@ -117,28 +135,32 @@ def obter_sessoes_ativas():
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT key, value, last_updated 
-            FROM system_control 
+        cursor.execute(
+            """
+            SELECT key, value, last_updated
+            FROM system_control
             WHERE type = 'SESSION'
             ORDER BY last_updated DESC
-        """)
+        """
+        )
 
         sessoes = []
         for row in cursor.fetchall():
             session_key, session_value, last_updated = row
-            if '|' in session_value:
-                usuario, hostname = session_value.split('|', 1)
-                sessoes.append({
-                    'session_id': session_key,
-                    'usuario': usuario,
-                    'hostname': hostname,
-                    'last_updated': last_updated
-                })
+            if "|" in session_value:
+                usuario, hostname = session_value.split("|", 1)
+                sessoes.append(
+                    {
+                        "session_id": session_key,
+                        "usuario": usuario,
+                        "hostname": hostname,
+                        "last_updated": last_updated,
+                    }
+                )
 
         return sessoes
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao obter sessões ativas: {e}")
         return []
     finally:
@@ -152,15 +174,18 @@ def definir_comando_sistema(comando):
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            INSERT OR REPLACE INTO system_control 
-            (type, key, value, last_updated) 
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO system_control
+            (type, key, value, last_updated)
             VALUES (?, ?, ?, ?)
-        """, ("COMMAND", "SYSTEM_CMD", comando, datetime.now(timezone.utc)))
+        """,
+            ("COMMAND", "SYSTEM_CMD", comando, datetime.now(timezone.utc)),
+        )
 
         conn.commit()
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao definir comando do sistema: {e}")
     finally:
         if conn:
@@ -173,15 +198,17 @@ def obter_comando_sistema():
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT value FROM system_control 
+        cursor.execute(
+            """
+            SELECT value FROM system_control
             WHERE type = 'COMMAND' AND key = 'SYSTEM_CMD'
-        """)
+        """
+        )
 
         result = cursor.fetchone()
         return result[0] if result else None
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao obter comando do sistema: {e}")
         return None
     finally:
@@ -195,14 +222,16 @@ def limpar_comando_sistema():
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            DELETE FROM system_control 
+        cursor.execute(
+            """
+            DELETE FROM system_control
             WHERE type = 'COMMAND' AND key = 'SYSTEM_CMD'
-        """)
+        """
+        )
 
         conn.commit()
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao limpar comando do sistema: {e}")
     finally:
         if conn:
@@ -215,15 +244,18 @@ def verificar_usuario_ja_logado(usuario_nome):
         conn = conectar_db()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT key, value FROM system_control 
+        cursor.execute(
+            """
+            SELECT key, value FROM system_control
             WHERE type = 'SESSION' AND value LIKE ?
-        """, (f"{usuario_nome}|%",))
+        """,
+            (f"{usuario_nome}|%",),
+        )
 
         result = cursor.fetchone()
         if result:
             session_key, session_value = result
-            _, hostname = session_value.split('|', 1)
+            _, hostname = session_value.split("|", 1)
             current_hostname = socket.gethostname()
 
             # Se está na mesma máquina, permite
@@ -231,16 +263,35 @@ def verificar_usuario_ja_logado(usuario_nome):
                 return False, None
 
             # Se está em máquina diferente, retorna info
-            return True, {
-                'session_id': session_key,
-                'hostname': hostname
-            }
+            return True, {"session_id": session_key, "hostname": hostname}
 
         return False, None
 
-    except Exception as e:
+    except sqlite3.Error as e:
         print(f"Erro ao verificar usuário logado: {e}")
         return False, None
+    finally:
+        if conn:
+            conn.close()
+
+
+def remover_sessao_por_id(session_id: str) -> bool:
+    """Remove uma sessão específica pelo seu ID. Retorna True se removeu."""
+    try:
+        conn = conectar_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            DELETE FROM system_control
+            WHERE type = 'SESSION' AND key = ?
+            """,
+            (session_id,),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except sqlite3.Error as e:
+        print(f"Erro ao remover sessão por ID: {e}")
+        return False
     finally:
         if conn:
             conn.close()

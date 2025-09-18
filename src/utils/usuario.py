@@ -9,7 +9,7 @@ e controle de permissões administrativas.
 import hashlib
 import sqlite3
 
-from utils.database import conectar_db
+from .database import conectar_db
 
 
 def criar_tabela_usuario():
@@ -264,34 +264,6 @@ def excluir_usuario(nome):
         return "Erro: Usuário não encontrado."
     except sqlite3.Error as e:
         return f"Erro ao excluir usuário: {e}"
-    finally:
-        if conn:
-            conn.close()
-
-
-def resetar_senha_usuario(nome, nova_senha="nova_senha"):
-    """Reseta a senha de um usuário pelo nome."""
-    conn = conectar_db()
-    cursor = conn.cursor()
-
-    try:
-        if nova_senha == "nova_senha":
-            # Senha padrão para reset
-            senha_hash = nova_senha
-        else:
-            # Nova senha personalizada
-            senha_hash = hash_senha(nova_senha)
-
-        cursor.execute(
-            "UPDATE usuario SET senha = ? WHERE nome = ?", (senha_hash, nome)
-        )
-        conn.commit()
-
-        if cursor.rowcount > 0:
-            return "Sucesso: Senha resetada com sucesso."
-        return "Erro: Usuário não encontrado."
-    except sqlite3.Error as e:
-        return f"Erro ao resetar senha: {e}"
     finally:
         if conn:
             conn.close()

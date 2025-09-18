@@ -12,13 +12,18 @@ def formatar_valor_monetario(valor):
     try:
         if isinstance(valor, str):
             # Limpar valor se for string
-            valor_limpo = valor.replace("R$", "").replace(
-                " ", "").replace(".", "").replace(",", ".")
+            valor_limpo = (
+                valor.replace("R$", "")
+                .replace(" ", "")
+                .replace(".", "")
+                .replace(",", ".")
+            )
             valor = float(valor_limpo)
 
         # Formatar com separador de milhares (ponto) e decimais (vírgula)
-        valor_formatado = f"{valor:,.2f}".replace(
-            ",", "X").replace(".", ",").replace("X", ".")
+        valor_formatado = (
+            f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        )
         return f"R$ {valor_formatado}"
     except (ValueError, TypeError):
         return "R$ 0,00"
