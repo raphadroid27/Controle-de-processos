@@ -1,7 +1,8 @@
 """
 Módulo de lógica de negócio para períodos de faturamento.
 
-Contém funções para calcular períodos de faturamento e aplicar filtros baseados nas regras da empresa.
+Contém funções para calcular períodos de faturamento e aplicar
+filtros baseados nas regras da empresa.
 """
 
 from datetime import datetime
