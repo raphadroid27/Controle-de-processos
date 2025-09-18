@@ -11,27 +11,23 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QInputDialog,
-    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QVBoxLayout,
-    QSpacerItem,
     QSizePolicy,
+    QSpacerItem,
 )
-from PySide6.QtCore import Qt
 
-from utils import usuario
-from utils import session_manager
-from utils.ui_config import (
+from .utils import session_manager, usuario
+from .utils.ui_config import (
+    ALTURA_DIALOG_LOGIN,
+    ALTURA_DIALOG_NOVO_USUARIO,
+    ESPACAMENTO_PADRAO,
+    LARGURA_DIALOG_LOGIN,
+    LARGURA_DIALOG_NOVO_USUARIO,
+    MARGEM_DIALOG,
     aplicar_estilo_botao,
     configurar_widgets_entrada_uniformes,
-    ESPACAMENTO_PADRAO,
-    ALTURA_DIALOG_LOGIN,
-    LARGURA_DIALOG_LOGIN,
-    ALTURA_DIALOG_NOVO_USUARIO,
-    LARGURA_DIALOG_NOVO_USUARIO,
-    MARGEM_DIALOG
 )
 
 
@@ -53,7 +49,8 @@ class LoginDialog(QDialog):
         layout = QFormLayout()
         layout.setSpacing(ESPACAMENTO_PADRAO)
         layout.setContentsMargins(
-            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG)
+            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG
+        )
 
         # Campos de entrada
         self.entry_usuario = QLineEdit()
@@ -72,7 +69,8 @@ class LoginDialog(QDialog):
 
         # Espaçador para empurrar botões para o final
         spacer = QSpacerItem(
-            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
         layout.addItem(spacer)
 
         # Botões com layout horizontal no final
@@ -120,16 +118,25 @@ class LoginDialog(QDialog):
             resposta = QMessageBox.question(
                 self,
                 "Usuário já logado",
-                f"O usuário '{nome}' já está logado no computador '{info_sessao['hostname']}'.\n\n"
-                "Deseja encerrar a sessão anterior e fazer login neste computador?",
+                (
+                    f"O usuário '{nome}' já está logado no computador "
+                    f"'{info_sessao['hostname']}'.\n\n"
+                    "Deseja encerrar a sessão anterior e fazer login neste computador?"
+                ),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.No,
             )
 
             if resposta == QMessageBox.StandardButton.Yes:
                 # Remove a sessão anterior
-                session_manager.remover_sessao_por_id(
-                    info_sessao['session_id'])
+                if hasattr(session_manager, "remover_sessao_por_id"):
+                    session_manager.remover_sessao_por_id(
+                        # type: ignore[attr-defined]
+                        info_sessao["session_id"]
+                    )
+                else:
+                    # Fallback: limpar comando e seguir (mantém compatibilidade)
+                    session_manager.limpar_comando_sistema()
             else:
                 return
 
@@ -174,8 +181,9 @@ class LoginDialog(QDialog):
         dialog = NovoUsuarioDialog()
         if dialog.exec() == QDialog.DialogCode.Accepted:
             QMessageBox.information(
-                self, "Sucesso",
-                "Usuário criado com sucesso! Você pode fazer login agora."
+                self,
+                "Sucesso",
+                "Usuário criado com sucesso! Você pode fazer login agora.",
             )
 
 
@@ -196,7 +204,8 @@ class NovoUsuarioDialog(QDialog):
         layout = QFormLayout()
         layout.setSpacing(ESPACAMENTO_PADRAO)
         layout.setContentsMargins(
-            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG)
+            MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG, MARGEM_DIALOG
+        )
 
         # Campos de entrada
         self.entry_nome = QLineEdit()
@@ -217,12 +226,14 @@ class NovoUsuarioDialog(QDialog):
         if not usuario.verificar_admin_existente():
             self.check_admin = QCheckBox()
             layout.addRow("Admin:", self.check_admin)
-            self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
-                              (ALTURA_DIALOG_NOVO_USUARIO+20))
+            self.setFixedSize(
+                LARGURA_DIALOG_NOVO_USUARIO, (ALTURA_DIALOG_NOVO_USUARIO + 20)
+            )
 
         # Espaçador para empurrar botões para o final
         spacer = QSpacerItem(
-            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
         layout.addItem(spacer)
 
         # Botões com layout horizontal no final
@@ -262,12 +273,13 @@ class NovoUsuarioDialog(QDialog):
 
         if len(senha) < 4:
             QMessageBox.warning(
-                self, "Erro", "A senha deve ter pelo menos 4 caracteres.")
+                self, "Erro", "A senha deve ter pelo menos 4 caracteres."
+            )
             return
 
         # Verificar se é admin
         is_admin = hasattr(
-            self, 'check_admin') and self.check_admin.isChecked()
+            self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario.inserir_usuario(nome, senha, is_admin)
 

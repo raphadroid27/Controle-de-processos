@@ -21,9 +21,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from utils import usuario
-from utils import session_manager
-from utils.ui_config import aplicar_estilo_botao
+from .utils import session_manager, usuario
+from .utils.ui_config import aplicar_estilo_botao
 
 
 class GerenciarUsuariosDialog(QDialog):
@@ -34,6 +33,19 @@ class GerenciarUsuariosDialog(QDialog):
         self.setWindowTitle("Gerenciar Usuários e Sessões")
         self.setFixedSize(600, 400)
         self.setModal(True)
+        # Atributos inicializados para satisfazer Pylint
+        # (definidos em métodos auxiliares)
+        self.frame_busca = None
+        self.entry_busca = None
+        self.botoes_layout = None
+        self.btn_resetar_senha = None
+        self.btn_excluir = None
+        self.btn_alterar_senha = None
+        self.botoes_sessoes_layout = None
+        self.btn_atualizar_sessoes = None
+        self.btn_shutdown_sistema = None
+        self.tree_usuarios = None
+        self.tree_sessoes = None
 
         self.init_ui()
         self.carregar_usuarios()
@@ -150,11 +162,13 @@ class GerenciarUsuariosDialog(QDialog):
         usuarios_list = usuario.listar_usuarios()
 
         for user in usuarios_list:
-            item = QTreeWidgetItem([
-                str(user[0]),  # ID
-                user[1],       # Nome
-                "Admin" if user[2] else "Usuário"  # Tipo
-            ])
+            item = QTreeWidgetItem(
+                [
+                    str(user[0]),  # ID
+                    user[1],  # Nome
+                    "Admin" if user[2] else "Usuário",  # Tipo
+                ]
+            )
             self.tree_usuarios.addTopLevelItem(item)
 
     def carregar_sessoes(self):
@@ -164,14 +178,12 @@ class GerenciarUsuariosDialog(QDialog):
         sessoes = session_manager.obter_sessoes_ativas()
 
         for sessao in sessoes:
-            item = QTreeWidgetItem([
-                sessao['usuario'],
-                sessao['hostname'],
-                sessao['last_updated']
-            ])
+            item = QTreeWidgetItem(
+                [sessao["usuario"], sessao["hostname"], sessao["last_updated"]]
+            )
             # Armazenar o session_id no item para uso posterior
             # Qt.UserRole = 0x0100
-            item.setData(0, 0x0100, sessao['session_id'])
+            item.setData(0, 0x0100, sessao["session_id"])
             self.tree_sessoes.addTopLevelItem(item)
 
     def filtrar_usuarios(self):
@@ -194,7 +206,8 @@ class GerenciarUsuariosDialog(QDialog):
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
             QMessageBox.warning(
-                self, "Erro", "Selecione um usuário para resetar a senha.")
+                self, "Erro", "Selecione um usuário para resetar a senha."
+            )
             return
 
         nome_usuario = item_selecionado.text(1)
@@ -244,7 +257,7 @@ class GerenciarUsuariosDialog(QDialog):
         """Permite ao usuário logado alterar sua própria senha."""
         # Obter o usuário logado da janela principal
         main_window = self.parent()
-        if not hasattr(main_window, 'usuario_logado'):
+        if not hasattr(main_window, "usuario_logado"):
             QMessageBox.warning(
                 self, "Erro", "Não foi possível identificar o usuário logado."
             )
@@ -254,7 +267,10 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Solicitar senha atual
         senha_atual, ok = QInputDialog.getText(
-            self, "Senha Atual", "Digite sua senha atual:", QLineEdit.EchoMode.Password
+            self,
+            "Senha Atual",
+            "Digite sua senha atual:",
+            QLineEdit.EchoMode.Password,
         )
 
         if not ok or not senha_atual.strip():
@@ -262,7 +278,10 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Solicitar nova senha
         nova_senha, ok = QInputDialog.getText(
-            self, "Nova Senha", "Digite a nova senha:", QLineEdit.EchoMode.Password
+            self,
+            "Nova Senha",
+            "Digite a nova senha:",
+            QLineEdit.EchoMode.Password,
         )
 
         if not ok or not nova_senha.strip():
@@ -270,7 +289,10 @@ class GerenciarUsuariosDialog(QDialog):
 
         # Confirmar nova senha
         confirmar_senha, ok = QInputDialog.getText(
-            self, "Confirmar Senha", "Confirme a nova senha:", QLineEdit.EchoMode.Password
+            self,
+            "Confirmar Senha",
+            "Confirme a nova senha:",
+            QLineEdit.EchoMode.Password,
         )
 
         if not ok or confirmar_senha != nova_senha:
@@ -293,9 +315,12 @@ class GerenciarUsuariosDialog(QDialog):
         resposta = QMessageBox.question(
             self,
             "Shutdown do Sistema",
-            "Deseja enviar comando de fechamento para todas as instâncias do sistema?\n\n"
-            "Isso irá fechar automaticamente todas as aplicações ativas.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            (
+                "Deseja enviar comando de fechamento para todas as instâncias do "
+                "sistema?\n\n"
+                "Isso irá fechar automaticamente todas as aplicações ativas."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if resposta == QMessageBox.StandardButton.Yes:
@@ -304,6 +329,6 @@ class GerenciarUsuariosDialog(QDialog):
                 self,
                 "Comando Enviado",
                 "Comando de shutdown enviado para todas as instâncias.\n"
-                "As aplicações serão fechadas automaticamente."
+                "As aplicações serão fechadas automaticamente.",
             )
             self.carregar_sessoes()
