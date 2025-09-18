@@ -92,12 +92,13 @@ def aplicar_estilo_botao_desabilitado():
     """
 
 
-def obter_estilo_botao(cor, largura=None):
+def obter_estilo_botao(cor, _largura=None):
     """
     Retorna o estilo CSS para botões com a cor especificada.
 
     Args:
-        cor: Uma das cores disponíveis: 'verde', 'laranja', 'vermelho', 'azul', 'cinza', 'amarelo'
+        cor: Uma das cores disponíveis: 'verde', 'laranja',
+            'vermelho', 'azul', 'cinza', 'amarelo'
 
     Returns:
         String CSS para aplicar ao botão
@@ -127,7 +128,7 @@ def obter_estilo_botao(cor, largura=None):
 
 def configurar_widgets_entrada_uniformes(widgets_list):
     """
-    Configura widgets de entrada (LineEdit, ComboBox, DateEdit, etc.) 
+    Configura widgets de entrada (LineEdit, ComboBox, DateEdit, etc.)
     para ter tamanho e comportamento uniformes.
 
     Args:
@@ -137,13 +138,13 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widget.setMinimumHeight(ALTURA_MINIMA_WIDGET_ENTRADA)
         widget.setMaximumHeight(ALTURA_WIDGET_ENTRADA)
         widget.setMinimumWidth(LARGURA_MINIMA_WIDGET_ENTRADA)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
-                             QSizePolicy.Policy.Fixed)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
 
 def configurar_botao_padrao(botao, largura_minima=None):
     """
-    Função global para configurar qualquer botão com padrão uniforme de altura e largura.
+    Função global para configurar botão com padrão uniforme
+    de altura e largura.
 
     Args:
         botao: O botão QPushButton a ser configurado
@@ -161,7 +162,8 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
 
     Args:
         botao: O botão QPushButton a ser estilizado
-        cor: Cor do botão ('verde', 'laranja', 'vermelho', 'azul', 'cinza', 'amarelo')
+        cor: Cor do botão ('verde', 'laranja', 'vermelho',
+            'azul', 'cinza', 'amarelo')
         largura_minima: Largura mínima do botão (opcional)
     """
     if not hasattr(botao, "setStyleSheet"):
@@ -295,14 +297,14 @@ def configurar_layout_flexivel(layout):
     """
     config = obter_configuracao_layout_flexivel()
 
-    if hasattr(layout, 'setColumnStretch'):
+    if hasattr(layout, "setColumnStretch"):
         for col in range(4):
             layout.setColumnStretch(col, 1)
 
-    if hasattr(layout, 'setHorizontalSpacing'):
+    if hasattr(layout, "setHorizontalSpacing"):
         layout.setHorizontalSpacing(config["horizontal_spacing"])
 
-    if hasattr(layout, 'setVerticalSpacing'):
+    if hasattr(layout, "setVerticalSpacing"):
         layout.setVerticalSpacing(config["vertical_spacing"])
 
 
