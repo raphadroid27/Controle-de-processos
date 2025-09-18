@@ -1,12 +1,12 @@
 """
 Widgets personalizados com navegação por teclado.
 
-Contém widgets customizados que permitem navegação entre campos usando as setas do teclado.
+Contém widgets customizados que permitem navegação entre campos
+usando as setas do teclado.
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QLineEdit, QDateEdit
+from PySide6.QtWidgets import QDateEdit, QLineEdit
 
 
 class NavigableLineEdit(QLineEdit):
@@ -20,15 +20,14 @@ class NavigableLineEdit(QLineEdit):
         """Define a lista de campos para navegação."""
         self.campos_navegacao = campos
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
         """Intercepta eventos de teclado para navegação."""
         if event.key() == Qt.Key.Key_Left:
             # Navegar para campo anterior se cursor estiver no início
             if self.cursorPosition() == 0 and self.campos_navegacao:
                 try:
                     indice_atual = self.campos_navegacao.index(self)
-                    indice_anterior = (
-                        indice_atual - 1) % len(self.campos_navegacao)
+                    indice_anterior = (indice_atual - 1) % len(self.campos_navegacao)
                     self.campos_navegacao[indice_anterior].setFocus()
                     # Posicionar cursor no final do campo anterior
                     if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
@@ -44,13 +43,11 @@ class NavigableLineEdit(QLineEdit):
             if self.cursorPosition() == len(self.text()) and self.campos_navegacao:
                 try:
                     indice_atual = self.campos_navegacao.index(self)
-                    proximo_indice = (
-                        indice_atual + 1) % len(self.campos_navegacao)
+                    proximo_indice = (indice_atual + 1) % len(self.campos_navegacao)
                     self.campos_navegacao[proximo_indice].setFocus()
                     # Posicionar cursor no início do próximo campo
                     if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
-                        self.campos_navegacao[proximo_indice].setCursorPosition(
-                            0)
+                        self.campos_navegacao[proximo_indice].setCursorPosition(0)
                     return
                 except ValueError:
                     pass
@@ -70,13 +67,12 @@ class NavigableDateEdit(QDateEdit):
         """Define a lista de campos para navegação."""
         self.campos_navegacao = campos
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
         """Intercepta eventos de teclado para navegação."""
         if event.key() == Qt.Key.Key_Left and self.campos_navegacao:
             try:
                 indice_atual = self.campos_navegacao.index(self)
-                indice_anterior = (
-                    indice_atual - 1) % len(self.campos_navegacao)
+                indice_anterior = (indice_atual - 1) % len(self.campos_navegacao)
                 self.campos_navegacao[indice_anterior].setFocus()
                 # Posicionar cursor no final do campo anterior
                 if isinstance(self.campos_navegacao[indice_anterior], QLineEdit):
@@ -90,8 +86,7 @@ class NavigableDateEdit(QDateEdit):
         elif event.key() == Qt.Key.Key_Right and self.campos_navegacao:
             try:
                 indice_atual = self.campos_navegacao.index(self)
-                proximo_indice = (
-                    indice_atual + 1) % len(self.campos_navegacao)
+                proximo_indice = (indice_atual + 1) % len(self.campos_navegacao)
                 self.campos_navegacao[proximo_indice].setFocus()
                 # Posicionar cursor no início do próximo campo
                 if isinstance(self.campos_navegacao[proximo_indice], QLineEdit):
