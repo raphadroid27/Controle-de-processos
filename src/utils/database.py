@@ -607,15 +607,18 @@ def buscar_periodos_faturamento_por_ano(ano, usuario=None):
         incluir_ano_seguinte=True,
     )
 
-    periodos_lista = sorted(
-        [
-            p
-            for p in (_periodo_faturamento_datas(data) for data in datas)
-            if p and int(p[0][:4]) == ano_int
-        ],
-        key=lambda x: x[0],
-        reverse=True,
-    )
+    # Garante períodos únicos (inicio, fim) para todos os usuários
+    periodos_set = set()
+    periodos_lista = []
+    for data in datas:
+        p = _periodo_faturamento_datas(data)
+        if p and int(p[0][:4]) == ano_int:
+            chave = (p[0], p[1])
+            if chave not in periodos_set:
+                periodos_set.add(chave)
+                periodos_lista.append(p)
+
+    periodos_lista.sort(key=lambda x: x[0], reverse=True)
 
     return [
         {"display": d, "inicio": i, "fim": f}
