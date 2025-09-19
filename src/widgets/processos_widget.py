@@ -1115,7 +1115,13 @@ class ProcessosWidget(QWidget):
 
             self.atualizar_autocompletar_cliente()
             self.atualizar_autocompletar_filtro_cliente()
+            # Salva o período selecionado antes de atualizar os filtros
+            periodo_selecionado = self.combo_filtro_periodo.currentText()
             self.configurar_filtros_ano_periodo()
+            # Restaura o período selecionado se ainda existir
+            idx = self.combo_filtro_periodo.findText(periodo_selecionado)
+            if idx >= 0:
+                self.combo_filtro_periodo.setCurrentIndex(idx)
             self.aplicar_filtro()
             self.rolar_para_ultimo_item()
             self.entry_cliente.setFocus()
