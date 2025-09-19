@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 
 from ..ui.delegates import DateEditDelegate
 from ..utils import database as db
-from ..utils.formatters import (
+from ..utils.formatador import (
     converter_data_para_banco,
     formatar_data_para_exibicao,
     formatar_valor_monetario,
