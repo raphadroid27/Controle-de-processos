@@ -48,6 +48,8 @@ class ControleProcessosApp:
 
 
 def main():
+    """Ponto de entrada para execução direta da aplicação."""
+
     app = ControleProcessosApp()
     sys.exit(app.run())
 

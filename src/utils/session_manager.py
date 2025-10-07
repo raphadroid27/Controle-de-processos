@@ -1,297 +1,272 @@
 """
-Gerenciamento de sessões do sistema, incluindo registro,
-remoção e verificação de sessões ativas dos usuários.
+Gerenciamento de sessões do sistema com SQLAlchemy.
 """
 
+from __future__ import annotations
+
 import socket
-import sqlite3
 import uuid
 from datetime import datetime, timezone
 
-from .database import conectar_db
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import SQLAlchemyError
+
+from .database import SystemControlModel, get_shared_engine
+from .database.sessions import executar_sessao_compartilhada
 
 # ID único da sessão atual
 SESSION_ID = str(uuid.uuid4())
 
 
-def criar_tabela_system_control():
-    """Cria a tabela de controle do sistema se ela não existir."""
-    conn = conectar_db()
-    cursor = conn.cursor()
+def criar_tabela_system_control() -> None:
+    """Garante a criação da tabela system_control."""
 
-    try:
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS system_control (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                type TEXT NOT NULL,
-                key TEXT UNIQUE NOT NULL,
-                value TEXT,
-                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-        )
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Erro ao criar tabela system_control: {e}")
-    finally:
-        if conn:
-            conn.close()
+    get_shared_engine()  # cria metadados compartilhados se necessário
 
 
-def registrar_sessao(usuario_nome):
+def registrar_sessao(usuario_nome: str) -> None:
     """Registra a sessão atual no banco de dados."""
+
     try:
         hostname = socket.gethostname()
-        conn = conectar_db()
-        cursor = conn.cursor()
+    except OSError as exc:
+        print(f"Erro ao registrar sessão: {exc}")
+    else:
 
-        # Remove sessão anterior do mesmo usuário se existir
-        cursor.execute(
-            """
-            DELETE FROM system_control
-            WHERE type = 'SESSION' AND value LIKE ?
-        """,
-            (f"{usuario_nome}|%",),
-        )
+        def _operacao(session) -> None:
+            try:
+                session.execute(
+                    delete(SystemControlModel)
+                    .where(SystemControlModel.type == "SESSION")
+                    .where(SystemControlModel.value.like(f"{usuario_nome}|%"))
+                )
 
-        # Registra nova sessão
-        session_value = f"{usuario_nome}|{hostname}"
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO system_control
-            (type, key, value, last_updated)
-            VALUES (?, ?, ?, ?)
-        """,
-            ("SESSION", SESSION_ID, session_value, datetime.now(timezone.utc)),
-        )
+                nova_sessao = SystemControlModel(
+                    type="SESSION",
+                    key=SESSION_ID,
+                    value=f"{usuario_nome}|{hostname}",
+                    last_updated=datetime.now(timezone.utc),
+                )
+                session.merge(nova_sessao)
+                session.commit()
+            except SQLAlchemyError:
+                session.rollback()
+                raise
 
-        conn.commit()
-        print(
-            (
-                f"Sessão registrada: {SESSION_ID} para usuário {usuario_nome} "
-                f"no host {hostname}"
+            print(
+                (
+                    f"Sessão registrada: {SESSION_ID} para usuário {usuario_nome} "
+                    f"no host {hostname}"
+                )
+            )
+
+        def _on_error(exc: SQLAlchemyError) -> None:
+            print(f"Erro ao registrar sessão: {exc}")
+
+        executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def remover_sessao() -> None:
+    """Remove a sessão atual do banco de dados ao fechar."""
+
+    def _operacao(session) -> None:
+        try:
+            session.execute(
+                delete(SystemControlModel)
+                .where(SystemControlModel.type == "SESSION")
+                .where(SystemControlModel.key == SESSION_ID)
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        print(f"Sessão removida: {SESSION_ID}")
+
+    def _on_error(exc: SQLAlchemyError) -> None:
+        print(f"Erro ao remover sessão: {exc}")
+
+    executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def atualizar_heartbeat_sessao() -> None:
+    """Atualiza o timestamp da sessão ativa para indicar que está online."""
+
+    def _operacao(session) -> None:
+        try:
+            session.execute(
+                update(SystemControlModel)
+                .where(SystemControlModel.type == "SESSION")
+                .where(SystemControlModel.key == SESSION_ID)
+                .values(last_updated=datetime.now(timezone.utc))
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+    def _on_error(exc: SQLAlchemyError) -> None:
+        print(f"Erro ao atualizar heartbeat da sessão: {exc}")
+
+    executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def obter_sessoes_ativas() -> list[dict]:
+    """Retorna lista de todas as sessões ativas."""
+
+    def _operacao(session) -> list[dict]:
+        resultados = session.execute(
+            select(SystemControlModel)
+            .where(SystemControlModel.type == "SESSION")
+            .order_by(SystemControlModel.last_updated.desc())
+        ).scalars()
+
+        sessoes: list[dict] = []
+        for registro in resultados:
+            if registro.value and "|" in registro.value:
+                usuario, hostname = registro.value.split("|", 1)
+                sessoes.append(
+                    {
+                        "session_id": registro.key,
+                        "usuario": usuario,
+                        "hostname": hostname,
+                        "last_updated": _formatar_timestamp(registro.last_updated),
+                    }
+                )
+        return sessoes
+
+    def _on_error(exc: SQLAlchemyError) -> list[dict]:
+        print(f"Erro ao obter sessões ativas: {exc}")
+        return []
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
+
+
+def definir_comando_sistema(comando: str) -> None:
+    """Define um comando do sistema (ex: 'SHUTDOWN', 'UPDATE')."""
+
+    def _operacao(session) -> None:
+        try:
+            session.merge(
+                SystemControlModel(
+                    type="COMMAND",
+                    key="SYSTEM_CMD",
+                    value=comando,
+                    last_updated=datetime.now(timezone.utc),
+                )
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+    def _on_error(exc: SQLAlchemyError) -> None:
+        print(f"Erro ao definir comando do sistema: {exc}")
+
+    executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def obter_comando_sistema() -> str | None:
+    """Busca no banco e retorna o comando atual do sistema."""
+
+    def _operacao(session) -> str | None:
+        return session.scalar(
+            select(SystemControlModel.value).where(
+                SystemControlModel.type == "COMMAND",
+                SystemControlModel.key == "SYSTEM_CMD",
             )
         )
 
-    except (sqlite3.Error, OSError) as e:
-        print(f"Erro ao registrar sessão: {e}")
-    finally:
-        if conn:
-            conn.close()
+    def _on_error(exc: SQLAlchemyError) -> str | None:
+        print(f"Erro ao obter comando do sistema: {exc}")
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
 
 
-def remover_sessao():
-    """Remove a sessão atual do banco de dados ao fechar."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            DELETE FROM system_control
-            WHERE type = 'SESSION' AND key = ?
-        """,
-            (SESSION_ID,),
-        )
-
-        conn.commit()
-        print(f"Sessão removida: {SESSION_ID}")
-
-    except sqlite3.Error as e:
-        print(f"Erro ao remover sessão: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-
-def atualizar_heartbeat_sessao():
-    """Atualiza o timestamp da sessão ativa para indicar que está online."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            UPDATE system_control
-            SET last_updated = ?
-            WHERE type = 'SESSION' AND key = ?
-        """,
-            (datetime.now(timezone.utc), SESSION_ID),
-        )
-
-        conn.commit()
-
-    except sqlite3.Error as e:
-        print(f"Erro ao atualizar heartbeat da sessão: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-
-def obter_sessoes_ativas():
-    """Retorna lista de todas as sessões ativas."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT key, value, last_updated
-            FROM system_control
-            WHERE type = 'SESSION'
-            ORDER BY last_updated DESC
-        """
-        )
-
-        sessoes = []
-        for row in cursor.fetchall():
-            session_key, session_value, last_updated = row
-            if "|" in session_value:
-                usuario, hostname = session_value.split("|", 1)
-                sessoes.append(
-                    {
-                        "session_id": session_key,
-                        "usuario": usuario,
-                        "hostname": hostname,
-                        "last_updated": last_updated,
-                    }
-                )
-
-        return sessoes
-
-    except sqlite3.Error as e:
-        print(f"Erro ao obter sessões ativas: {e}")
-        return []
-    finally:
-        if conn:
-            conn.close()
-
-
-def definir_comando_sistema(comando):
-    """Define um comando do sistema (ex: 'SHUTDOWN', 'UPDATE', etc.)."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO system_control
-            (type, key, value, last_updated)
-            VALUES (?, ?, ?, ?)
-        """,
-            ("COMMAND", "SYSTEM_CMD", comando, datetime.now(timezone.utc)),
-        )
-
-        conn.commit()
-
-    except sqlite3.Error as e:
-        print(f"Erro ao definir comando do sistema: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-
-def obter_comando_sistema():
-    """Busca no banco e retorna o comando atual do sistema."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT value FROM system_control
-            WHERE type = 'COMMAND' AND key = 'SYSTEM_CMD'
-        """
-        )
-
-        result = cursor.fetchone()
-        return result[0] if result else None
-
-    except sqlite3.Error as e:
-        print(f"Erro ao obter comando do sistema: {e}")
-        return None
-    finally:
-        if conn:
-            conn.close()
-
-
-def limpar_comando_sistema():
+def limpar_comando_sistema() -> None:
     """Limpa o comando do sistema."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            DELETE FROM system_control
-            WHERE type = 'COMMAND' AND key = 'SYSTEM_CMD'
-        """
-        )
+    def _operacao(session) -> None:
+        try:
+            session.execute(
+                delete(SystemControlModel)
+                .where(SystemControlModel.type == "COMMAND")
+                .where(SystemControlModel.key == "SYSTEM_CMD")
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
 
-        conn.commit()
+    def _on_error(exc: SQLAlchemyError) -> None:
+        print(f"Erro ao limpar comando do sistema: {exc}")
 
-    except sqlite3.Error as e:
-        print(f"Erro ao limpar comando do sistema: {e}")
-    finally:
-        if conn:
-            conn.close()
+    executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def verificar_usuario_ja_logado(usuario_nome):
+def verificar_usuario_ja_logado(usuario_nome: str) -> tuple[bool, dict | None]:
     """Verifica se o usuário já está logado em outra máquina."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT key, value FROM system_control
-            WHERE type = 'SESSION' AND value LIKE ?
-        """,
-            (f"{usuario_nome}|%",),
+    def _operacao(session) -> tuple[bool, dict | None]:
+        registro = session.scalar(
+            select(SystemControlModel)
+            .where(SystemControlModel.type == "SESSION")
+            .where(SystemControlModel.value.like(f"{usuario_nome}|%"))
         )
 
-        result = cursor.fetchone()
-        if result:
-            session_key, session_value = result
-            _, hostname = session_value.split("|", 1)
-            current_hostname = socket.gethostname()
-
-            # Se está na mesma máquina, permite
+        if registro and registro.value and "|" in registro.value:
+            _, hostname = registro.value.split("|", 1)
+            try:
+                current_hostname = socket.gethostname()
+            except OSError:
+                current_hostname = hostname
             if hostname == current_hostname:
                 return False, None
-
-            # Se está em máquina diferente, retorna info
-            return True, {"session_id": session_key, "hostname": hostname}
-
+            return True, {"session_id": registro.key, "hostname": hostname}
         return False, None
 
-    except sqlite3.Error as e:
-        print(f"Erro ao verificar usuário logado: {e}")
+    def _on_error(exc: SQLAlchemyError) -> tuple[bool, dict | None]:
+        print(f"Erro ao verificar usuário logado: {exc}")
         return False, None
-    finally:
-        if conn:
-            conn.close()
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
 
 
 def remover_sessao_por_id(session_id: str) -> bool:
-    """Remove uma sessão específica pelo seu ID. Retorna True se removeu."""
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            DELETE FROM system_control
-            WHERE type = 'SESSION' AND key = ?
-            """,
-            (session_id,),
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except sqlite3.Error as e:
-        print(f"Erro ao remover sessão por ID: {e}")
+    """Remove uma sessão específica pelo seu ID."""
+
+    def _operacao(session) -> bool:
+        try:
+            resultado = session.execute(
+                delete(SystemControlModel)
+                .where(SystemControlModel.type == "SESSION")
+                .where(SystemControlModel.key == session_id)
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        return bool(resultado.rowcount)
+
+    def _on_error(exc: SQLAlchemyError) -> bool:
+        print(f"Erro ao remover sessão por ID: {exc}")
         return False
-    finally:
-        if conn:
-            conn.close()
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
+
+
+def _formatar_timestamp(valor: datetime | None) -> str:
+    if not valor:
+        return ""
+    return valor.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")

@@ -5,30 +5,16 @@ Este módulo contém as classes LoginDialog e NovoUsuarioDialog
 para gerenciar a autenticação e criação de usuários.
 """
 
-from PySide6.QtWidgets import (
-    QCheckBox,
-    QDialog,
-    QFormLayout,
-    QHBoxLayout,
-    QInputDialog,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QSizePolicy,
-    QSpacerItem,
-)
+from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
+                               QInputDialog, QLineEdit, QMessageBox,
+                               QPushButton, QSizePolicy, QSpacerItem)
 
 from .utils import session_manager, usuario
-from .utils.ui_config import (
-    ALTURA_DIALOG_LOGIN,
-    ALTURA_DIALOG_NOVO_USUARIO,
-    ESPACAMENTO_PADRAO,
-    LARGURA_DIALOG_LOGIN,
-    LARGURA_DIALOG_NOVO_USUARIO,
-    MARGEM_DIALOG,
-    aplicar_estilo_botao,
-    configurar_widgets_entrada_uniformes,
-)
+from .utils.ui_config import (ALTURA_DIALOG_LOGIN, ALTURA_DIALOG_NOVO_USUARIO,
+                              ESPACAMENTO_PADRAO, LARGURA_DIALOG_LOGIN,
+                              LARGURA_DIALOG_NOVO_USUARIO, MARGEM_DIALOG,
+                              aplicar_estilo_botao,
+                              configurar_widgets_entrada_uniformes)
 
 
 class LoginDialog(QDialog):
@@ -61,8 +47,7 @@ class LoginDialog(QDialog):
         self.entry_senha.setPlaceholderText("Digite sua senha")
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes(
-            [self.entry_usuario, self.entry_senha])
+        configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
 
         layout.addRow("Usuário:", self.entry_usuario)
         layout.addRow("Senha:", self.entry_senha)
@@ -112,8 +97,7 @@ class LoginDialog(QDialog):
             return
 
         # Verificar se usuário já está logado em outra máquina
-        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(
-            nome)
+        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(nome)
         if ja_logado and info_sessao:
             resposta = QMessageBox.question(
                 self,
@@ -164,8 +148,7 @@ class LoginDialog(QDialog):
         )
 
         if ok and nova_senha.strip():
-            resultado = usuario.alterar_senha_usuario(
-                nome, "nova_senha", nova_senha)
+            resultado = usuario.alterar_senha_usuario(nome, "nova_senha", nova_senha)
             if "Sucesso" in resultado:
                 QMessageBox.information(
                     self, "Sucesso", "Senha alterada com sucesso. Faça login novamente."
@@ -193,8 +176,7 @@ class NovoUsuarioDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
-                          ALTURA_DIALOG_NOVO_USUARIO)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO, ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         self.init_ui()
@@ -216,8 +198,7 @@ class NovoUsuarioDialog(QDialog):
         self.entry_senha.setPlaceholderText("Digite a senha")
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes(
-            [self.entry_nome, self.entry_senha])
+        configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
 
         layout.addRow("Nome:", self.entry_nome)
         layout.addRow("Senha:", self.entry_senha)
@@ -278,8 +259,7 @@ class NovoUsuarioDialog(QDialog):
             return
 
         # Verificar se é admin
-        is_admin = hasattr(
-            self, "check_admin") and self.check_admin.isChecked()
+        is_admin = hasattr(self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario.inserir_usuario(nome, senha, is_admin)
 

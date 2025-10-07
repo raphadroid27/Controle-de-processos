@@ -1,272 +1,255 @@
 """
-Módulo para gerenciamento de usuários do sistema.
+Módulo para gerenciamento de usuários do sistema com SQLAlchemy.
 
 Este módulo fornece funcionalidades para autenticação, criação,
 edição e gerenciamento de usuários, incluindo hash de senhas
 e controle de permissões administrativas.
 """
 
+from __future__ import annotations
+
 import hashlib
-import sqlite3
 
-from .database import conectar_db
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
-def criar_tabela_usuario():
-    """Cria a tabela de usuários no banco de dados."""
-    conn = conectar_db()
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(
-            """
-        CREATE TABLE IF NOT EXISTS usuario (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL UNIQUE,
-            senha TEXT NOT NULL,
-            admin BOOLEAN DEFAULT FALSE
-        )
-        """
-        )
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Erro ao criar tabela: {e}")
-    finally:
-        if conn:
-            conn.close()
+from .database import (UsuarioModel, ensure_user_database, get_shared_engine,
+                       remover_banco_usuario)
+from .database.sessions import executar_sessao_compartilhada
 
 
-def hash_senha(senha):
+def criar_tabela_usuario() -> None:
+    """Garante a criação da tabela de usuários."""
+
+    get_shared_engine()  # Cria metadados compartilhados se necessário
+
+
+def hash_senha(senha: str) -> str:
     """Gera hash da senha para armazenamento seguro."""
+
     return hashlib.sha256(senha.encode()).hexdigest()
 
 
-def inserir_usuario(nome, senha, admin=False):
+def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
     """Insere um novo usuário na tabela."""
-    if not nome.strip() or not senha.strip():
+
+    nome_limpo = nome.strip()
+    senha_limpa = senha.strip()
+    if not nome_limpo or not senha_limpa:
         return "Nome e senha são obrigatórios."
 
-    conn = conectar_db()
-    cursor = conn.cursor()
-
-    try:
-        # Verifica se o usuário já existe
-        cursor.execute("SELECT nome FROM usuario WHERE nome = ?", (nome,))
-        if cursor.fetchone():
+    def _operacao(session) -> str:
+        existente = session.scalar(
+            select(UsuarioModel).where(UsuarioModel.nome == nome_limpo)
+        )
+        if existente:
             return "Erro: Usuário já existe."
 
-        # Hash da senha antes de salvar
-        senha_hash = hash_senha(senha)
-
-        cursor.execute(
-            """
-        INSERT INTO usuario (nome, senha, admin)
-        VALUES (?, ?, ?)
-        """,
-            (nome, senha_hash, admin),
+        usuario = UsuarioModel(
+            nome=nome_limpo,
+            senha=hash_senha(senha_limpa),
+            admin=admin,
         )
-        conn.commit()
+        session.add(usuario)
+        try:
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+        ensure_user_database(nome_limpo)
         return "Sucesso: Usuário criado com sucesso."
-    except sqlite3.Error as e:
-        return f"Erro ao inserir usuário: {e}"
-    finally:
-        if conn:
-            conn.close()
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        if isinstance(exc, IntegrityError):
+            return f"Erro: {exc.orig if exc.orig else 'Violação de integridade.'}"
+        return f"Erro ao inserir usuário: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def verificar_login(nome, senha):
+def verificar_login(nome: str, senha: str) -> dict:
     """Verifica se o login é válido."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
+    def _operacao(session):
         senha_hash = hash_senha(senha)
-        cursor.execute(
-            "SELECT nome, admin FROM usuario WHERE nome = ? AND senha = ?",
-            (nome, senha_hash),
+        usuario = session.scalar(
+            select(UsuarioModel).where(
+                UsuarioModel.nome == nome.strip(),
+                UsuarioModel.senha == senha_hash,
+            )
         )
-        usuario = cursor.fetchone()
-
         if usuario:
-            return {"sucesso": True, "nome": usuario[0], "admin": bool(usuario[1])}
+            return {
+                "sucesso": True,
+                "nome": usuario.nome,
+                "admin": bool(usuario.admin),
+            }
         return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
-    except sqlite3.Error as e:
-        return {"sucesso": False, "mensagem": f"Erro no banco de dados: {e}"}
-    finally:
-        if conn:
-            conn.close()
+
+    def _on_error(exc: SQLAlchemyError) -> dict:
+        return {"sucesso": False, "mensagem": f"Erro no banco de dados: {exc}"}
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def verificar_admin_existente():
+def verificar_admin_existente() -> bool:
     """Verifica se já existe um usuário admin no banco de dados."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
-        cursor.execute("SELECT COUNT(*) FROM usuario WHERE admin = 1")
-        count = cursor.fetchone()[0]
-        return count > 0
-    except sqlite3.Error as e:
-        print(f"Erro ao verificar admin: {e}")
-        return False
-    finally:
-        if conn:
-            conn.close()
-
-
-def listar_usuarios():
-    """Lista todos os usuários cadastrados."""
-    conn = conectar_db()
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute("SELECT id, nome, admin FROM usuario ORDER BY nome")
-        usuarios = cursor.fetchall()
-        return usuarios
-    except sqlite3.Error as e:
-        print(f"Erro ao listar usuários: {e}")
-        return []
-    finally:
-        if conn:
-            conn.close()
-
-
-def resetar_senha_usuario(nome, nova_senha="nova_senha"):
-    """Reseta a senha de um usuário pelo nome."""
-    conn = conectar_db()
-    cursor = conn.cursor()
-
-    try:
-        if nova_senha == "nova_senha":
-            # Senha padrão para reset
-            senha_hash = nova_senha
-        else:
-            # Nova senha personalizada
-            senha_hash = hash_senha(nova_senha)
-
-        cursor.execute(
-            "UPDATE usuario SET senha = ? WHERE nome = ?", (senha_hash, nome)
+    def _operacao(session) -> bool:
+        count_admin = session.scalar(
+            select(UsuarioModel).where(UsuarioModel.admin.is_(True)).limit(1)
         )
-        conn.commit()
+        return count_admin is not None
 
-        if cursor.rowcount > 0:
+    return executar_sessao_compartilhada(_operacao, fallback=False)
+
+
+def listar_usuarios() -> list[tuple[int, str, bool]]:
+    """Lista todos os usuários cadastrados."""
+
+    def _operacao(session) -> list[tuple[int, str, bool]]:
+        resultados = session.execute(
+            select(UsuarioModel.id, UsuarioModel.nome, UsuarioModel.admin).order_by(
+                UsuarioModel.nome
+            )
+        ).all()
+        return [(row.id, row.nome, bool(row.admin)) for row in resultados]
+
+    def _on_error(exc: SQLAlchemyError) -> list[tuple[int, str, bool]]:
+        print(f"Erro ao listar usuários: {exc}")
+        return []
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
+
+
+def resetar_senha_usuario(nome: str, nova_senha: str = "nova_senha") -> str:
+    """Reseta a senha de um usuário pelo nome."""
+
+    def _operacao(session) -> str:
+        senha_hash = (
+            nova_senha if nova_senha == "nova_senha" else hash_senha(nova_senha)
+        )
+        try:
+            resultado = session.execute(
+                update(UsuarioModel)
+                .where(UsuarioModel.nome == nome)
+                .values(senha=senha_hash)
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+        if resultado.rowcount and resultado.rowcount > 0:
             return "Sucesso: Senha resetada com sucesso."
         return "Erro: Usuário não encontrado."
-    except sqlite3.Error as e:
-        return f"Erro ao resetar senha: {e}"
-    finally:
-        if conn:
-            conn.close()
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao resetar senha: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def excluir_usuario_por_id(user_id):
+def excluir_usuario_por_id(user_id: int) -> str:
     """Exclui um usuário pelo ID."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
-        # Verifica se o usuário existe e se é admin
-        cursor.execute("SELECT admin FROM usuario WHERE id = ?", (user_id,))
-        usuario = cursor.fetchone()
-
+    def _operacao(session) -> str:
+        usuario = session.get(UsuarioModel, user_id)
         if not usuario:
             return "Erro: Usuário não encontrado."
-
-        if usuario[0]:  # Se for admin
+        if usuario.admin:
             return "Erro: Não é possível excluir um administrador."
 
-        cursor.execute("DELETE FROM usuario WHERE id = ?", (user_id,))
-        conn.commit()
+        try:
+            session.delete(usuario)
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
 
-        if cursor.rowcount > 0:
-            return "Sucesso: Usuário excluído com sucesso."
-        return "Erro: Não foi possível excluir o usuário."
-    except sqlite3.Error as e:
-        return f"Erro ao excluir usuário: {e}"
-    finally:
-        if conn:
-            conn.close()
+        remover_banco_usuario(usuario.nome)
+        return "Sucesso: Usuário excluído com sucesso."
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao excluir usuário: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def alterar_senha_usuario(nome, senha_atual, nova_senha):
+def alterar_senha_usuario(nome: str, senha_atual: str, nova_senha: str) -> str:
     """Permite ao usuário alterar sua própria senha."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
-        # Verifica a senha atual
-        senha_atual_hash = hash_senha(senha_atual)
-        cursor.execute(
-            "SELECT id FROM usuario WHERE nome = ? AND senha = ?",
-            (nome, senha_atual_hash),
+    def _operacao(session) -> str:
+        usuario = session.scalar(
+            select(UsuarioModel).where(
+                UsuarioModel.nome == nome,
+                UsuarioModel.senha == hash_senha(senha_atual),
+            )
         )
-
-        if not cursor.fetchone():
+        if not usuario:
             return "Erro: Senha atual incorreta."
 
-        # Atualiza para a nova senha
-        nova_senha_hash = hash_senha(nova_senha)
-        cursor.execute(
-            "UPDATE usuario SET senha = ? WHERE nome = ?", (
-                nova_senha_hash, nome)
-        )
-        conn.commit()
-
+        usuario.senha = hash_senha(nova_senha)
+        try:
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
         return "Sucesso: Senha alterada com sucesso."
-    except sqlite3.Error as e:
-        return f"Erro ao alterar senha: {e}"
-    finally:
-        if conn:
-            conn.close()
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao alterar senha: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
-def verificar_senha_reset(nome):
+def verificar_senha_reset(nome: str) -> bool:
     """Verifica se o usuário precisa redefinir a senha."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
-        cursor.execute("SELECT senha FROM usuario WHERE nome = ?", (nome,))
-        usuario = cursor.fetchone()
+    def _operacao(session) -> bool:
+        senha_atual = session.scalar(
+            select(UsuarioModel.senha).where(UsuarioModel.nome == nome)
+        )
+        return bool(senha_atual == "nova_senha")
 
-        if usuario and usuario[0] == "nova_senha":
-            return True
+    def _on_error(exc: SQLAlchemyError) -> bool:
+        print(f"Erro ao verificar senha de reset: {exc}")
         return False
-    except sqlite3.Error as e:
-        print(f"Erro ao verificar senha de reset: {e}")
-        return False
-    finally:
-        if conn:
-            conn.close()
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
 
 
-def excluir_usuario(nome):
+def excluir_usuario(nome: str) -> str:
     """Exclui um usuário pelo nome."""
-    conn = conectar_db()
-    cursor = conn.cursor()
 
-    try:
-        # Verifica se o usuário existe e se é admin
-        cursor.execute("SELECT admin FROM usuario WHERE nome = ?", (nome,))
-        usuario = cursor.fetchone()
-
+    def _operacao(session) -> str:
+        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
         if not usuario:
             return "Erro: Usuário não encontrado."
-
-        if usuario[0]:  # Se for admin
+        if usuario.admin:
             return "Erro: Não é possível excluir um administrador."
 
-        cursor.execute("DELETE FROM usuario WHERE nome = ?", (nome,))
-        conn.commit()
+        try:
+            session.execute(delete(UsuarioModel).where(UsuarioModel.nome == nome))
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
 
-        if cursor.rowcount > 0:
-            return "Sucesso: Usuário excluído com sucesso."
-        return "Erro: Usuário não encontrado."
-    except sqlite3.Error as e:
-        return f"Erro ao excluir usuário: {e}"
-    finally:
-        if conn:
-            conn.close()
+        remover_banco_usuario(usuario.nome)
+        return "Sucesso: Usuário excluído com sucesso."
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao excluir usuário: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 
 
 # Garante que a tabela seja criada na primeira vez que o módulo for importado

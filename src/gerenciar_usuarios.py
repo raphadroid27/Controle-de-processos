@@ -6,20 +6,10 @@ gerenciarem usuários, incluindo reset de senhas, exclusão de
 usuários, alteração de senhas próprias e controle de sessões ativas.
 """
 
-from PySide6.QtWidgets import (
-    QDialog,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QInputDialog,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-)
+from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
+                               QInputDialog, QLabel, QLineEdit, QMessageBox,
+                               QPushButton, QTreeWidget, QTreeWidgetItem,
+                               QVBoxLayout)
 
 from .utils import session_manager, usuario
 from .utils.ui_config import aplicar_estilo_botao
@@ -84,8 +74,7 @@ class GerenciarUsuariosDialog(QDialog):
         sessoes_layout.addWidget(QLabel("Sessões Ativas:"))
 
         self.tree_sessoes = QTreeWidget()
-        self.tree_sessoes.setHeaderLabels(
-            ["Usuário", "Computador", "Última Atividade"])
+        self.tree_sessoes.setHeaderLabels(["Usuário", "Computador", "Última Atividade"])
         self.tree_sessoes.setColumnWidth(0, 80)
         self.tree_sessoes.setColumnWidth(1, 80)
         self.tree_sessoes.setColumnWidth(2, 80)
@@ -231,8 +220,7 @@ class GerenciarUsuariosDialog(QDialog):
         """Exclui o usuário selecionado."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(
-                self, "Erro", "Selecione um usuário para excluir.")
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para excluir.")
             return
 
         nome_usuario = item_selecionado.text(1)
@@ -305,8 +293,7 @@ class GerenciarUsuariosDialog(QDialog):
         )
 
         if "Sucesso" in resultado:
-            QMessageBox.information(
-                self, "Sucesso", "Senha alterada com sucesso!")
+            QMessageBox.information(self, "Sucesso", "Senha alterada com sucesso!")
         else:
             QMessageBox.warning(self, "Erro", resultado)
 

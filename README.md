@@ -1,6 +1,6 @@
 # Controle de Processos
 
-Sistema de gerenciamento de processos para desenhistas com interface gráfica PySide6 e banco de dados SQLite.
+Sistema de gerenciamento de processos para desenhistas com interface gráfica PySide6 e persistência baseada em SQLAlchemy, mantendo bancos SQLite portáteis.
 
 ## Funcionalidades
 
@@ -15,7 +15,7 @@ Sistema de gerenciamento de processos para desenhistas com interface gráfica Py
   - Valor do Pedido
 - **Totalizadores**: Soma automática de processos, itens e valores
 - **Filtros**: Visualização por usuário (para administradores)
-- **Banco de Dados SQLite**: Armazenamento persistente e seguro
+- **Camada ORM com SQLAlchemy**: Banco compartilhado para credenciais e bancos individuais por usuário, todos em SQLite portátil
 
 ## Estrutura do Projeto
 
@@ -23,22 +23,26 @@ Sistema de gerenciamento de processos para desenhistas com interface gráfica Py
 Controle-de-processos/
 ├── .git/                    # Controle de versão Git
 ├── .gitignore              # Arquivos ignorados pelo Git
-├── processos.db            # Banco de dados SQLite (criado automaticamente)
 ├── README.md               # Documentação completa
 ├── INSTRUCOES.md          # Manual de uso detalhado
 ├── requirements.txt       # Dependências do projeto
 ├── run_app.py            # Script principal para executar o aplicativo
+├── database/              # Bancos SQLite (system.db + usuario_<slug>.db)
+├── scripts/
+│   └── (scripts utilitários)
 └── src/
     ├── main.py           # Interface gráfica principal (PySide6)
     └── utils/
-        ├── database.py   # Funções do banco de dados
-        └── usuario.py    # Gerenciamento de usuários
+      ├── database.py   # Camada SQLAlchemy (engine/sessões)
+      ├── usuario.py    # Gerenciamento de usuários
+      └── session_manager.py  # Controle de sessões e comandos
 ```
 
 ## Requisitos
 
 - Python 3.8 ou superior
 - PySide6
+- SQLAlchemy 2.x
 - SQLite3 (incluído no Python)
 
 ## Instalação
@@ -99,14 +103,26 @@ python src/main.py
 
 ## Estrutura do Banco de Dados
 
-### Tabela `usuario`
+A persistência agora é dividida em dois grupos de arquivos SQLite:
+
+- `database/system.db`: banco compartilhado utilizado pelo SQLAlchemy para as tabelas centrais (`usuario`, `system_control` e metadados).
+- `database/usuario_<slug>.db`: um banco individual por usuário autenticado contendo somente a tabela `registro`, reduzindo bloqueios quando vários usuários lançam dados simultaneamente.
+
+### Tabela `usuario` (system.db)
 - `id`: Chave primária
 - `nome`: Nome do usuário (único)
-- `senha`: Hash SHA-256 da senha
+- `senha`: Hash SHA-256 da senha (ou `nova_senha` para resets pendentes)
 - `admin`: Booleano para privilégios administrativos
+- `criado_em`: Timestamp do momento de criação
 
-### Tabela `registro`
-- `id`: Chave primária
+### Tabela `system_control` (system.db)
+- `type`: Agrupa entradas (ex.: `SESSION`, `COMMAND`)
+- `key`: Identificador único da entrada
+- `value`: Dados associados (ex.: `usuario|hostname`)
+- `last_updated`: Última atualização, em UTC
+
+### Tabela `registro` (usuario_<slug>.db)
+- `id`: Chave primária autoincremental por usuário
 - `usuario`: Nome do usuário responsável
 - `cliente`: Nome do cliente
 - `processo`: Número/identificação do processo

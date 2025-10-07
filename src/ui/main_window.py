@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
 from ..utils import session_manager
+from ..widgets.dashboard_dialog import DashboardDialog
 from ..widgets.processos_widget import ProcessosWidget
 
 
@@ -19,8 +20,7 @@ class MainWindow(QMainWindow):
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin
 
-        self.setWindowTitle(
-            f"Controle de Processos - Usuário: {usuario_logado}")
+        self.setWindowTitle(f"Controle de Processos - Usuário: {usuario_logado}")
         self.setMinimumSize(800, 600)
 
         self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
@@ -86,6 +86,10 @@ class MainWindow(QMainWindow):
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             admin_menu.addAction(usuarios_action)
 
+            dashboard_action = QAction("Dashboard", self)
+            dashboard_action.triggered.connect(self.abrir_dashboard)
+            admin_menu.addAction(dashboard_action)
+
     def abrir_gerenciar_usuarios(self):
         """Abre o diálogo de gerenciamento de usuários."""
         try:
@@ -97,6 +101,18 @@ class MainWindow(QMainWindow):
             )
         except (OSError, RuntimeError) as e:
             QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
+
+    def abrir_dashboard(self):
+        """Abre o dashboard administrativo."""
+        try:
+            dialog = DashboardDialog(self)
+            dialog.exec()
+        except Exception as exc:  # pylint: disable=broad-except
+            QMessageBox.warning(
+                self,
+                "Erro",
+                f"Não foi possível abrir o dashboard: {exc}",
+            )
 
     def fazer_logout(self):
         """Faz logout e retorna para a tela de login."""

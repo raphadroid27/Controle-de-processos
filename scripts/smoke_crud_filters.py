@@ -38,6 +38,7 @@ def run():
         data_entrada=hoje,
         data_processo="",
         valor_pedido="10,50",
+        tempo_corte="01:00:00",
     )
     print("Add:", msg)
 
@@ -54,6 +55,7 @@ def run():
             data_entrada=hoje,
             data_processo="",
             valor_pedido="20,00",
+            tempo_corte="02:30:00",
         )
         print("Update:", up)
 
