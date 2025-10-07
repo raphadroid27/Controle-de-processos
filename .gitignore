@@ -141,3 +141,4 @@ temp/
 *.old
 *_old.*
 *_backup.*
+database/*
