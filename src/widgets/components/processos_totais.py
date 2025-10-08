@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel
 
@@ -87,13 +88,18 @@ def atualizar_totais(
 
     controles.label_processos.setText(f"Total Processos: {total_processos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
-    controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
+    controles.label_valor.setText(
+        f"Total Valor: {formatar_valor(total_valor)}")
 
     if media_dias_processamento is None:
+        controles.label_media_dias.setTextFormat(Qt.TextFormat.PlainText)
         controles.label_media_dias.setText("Média dias processamento: --")
     else:
+        cor = _obter_cor_media_dias(media_dias_processamento)
+        controles.label_media_dias.setTextFormat(Qt.TextFormat.RichText)
         controles.label_media_dias.setText(
-            f"Média dias processamento: {media_dias_processamento:.1f}"
+            "Média dias processamento: "
+            f"<span style='color: {cor}; font-weight: bold'>{media_dias_processamento:.1f}</span>"
         )
 
     if media_itens_por_dia is None:
@@ -109,3 +115,13 @@ def atualizar_totais(
         controles.label_estimativa_itens.setText(
             f"Estimativa itens mês: {estimativa_itens_mes}"
         )
+
+
+def _obter_cor_media_dias(valor: float) -> str:
+    """Retorna a cor apropriada para a média de dias de processamento."""
+
+    if valor <= 2:
+        return "#2e7d32"  # verde
+    if valor <= 4:
+        return "#f9a825"  # amarelo
+    return "#c62828"  # vermelho
