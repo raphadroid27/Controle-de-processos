@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
 from ..utils import session_manager
@@ -24,8 +24,7 @@ class MainWindow(QMainWindow):
         self._theme_actions: dict[str, QAction] = {}
         self._theme_action_group: QActionGroup | None = None
 
-        self.setWindowTitle(
-            f"Controle de Processos - Usuário: {usuario_logado}")
+        self.setWindowTitle("Controle de Processos")
         self.setMinimumSize(800, 600)
 
         self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
@@ -33,9 +32,12 @@ class MainWindow(QMainWindow):
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
 
-        self.statusBar().showMessage(
-            f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}"
-        )
+        status_text = f"Logado como: {usuario_logado}"
+        if is_admin:
+            status_text += " (Admin)"
+
+        self._usuario_status_label = QLabel(status_text)
+        self.statusBar().addPermanentWidget(self._usuario_status_label)
 
         self.heartbeat_timer = QTimer()
         self.heartbeat_timer.timeout.connect(self.atualizar_heartbeat)
