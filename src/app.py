@@ -2,11 +2,11 @@
 
 import sys
 
-import qdarktheme
 from PySide6.QtWidgets import QApplication, QDialog
 
 from .login_dialog import LoginDialog
 from .ui.main_window import MainWindow
+from .ui.theme_manager import ThemeManager
 from .utils import database as db
 from .utils.session_manager import criar_tabela_system_control
 from .utils.usuario import criar_tabela_usuario
@@ -16,15 +16,13 @@ class ControleProcessosApp:
     """Classe principal da aplicação."""
 
     def __init__(self):
-        qdarktheme.enable_hi_dpi()
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Processos")
-        qdarktheme.setup_theme(
-            theme="auto",
-            custom_colors={
-                "primary": "#4CAF50",
-            },
-        )
+        self.app.setOrganizationName("Controle de Processos")
+        self.app.setOrganizationDomain("controle-de-processos.local")
+
+        self.theme_manager = ThemeManager.instance()
+        self.theme_manager.initialize()
         self.main_window = None
 
     # Inicialização explícita das tabelas para evitar ciclos de import

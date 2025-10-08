@@ -16,6 +16,8 @@ Sistema de gerenciamento de processos para desenhistas com interface gráfica Py
 - **Totalizadores**: Soma automática de processos, itens e valores
 - **Filtros**: Visualização por usuário (para administradores)
 - **Camada ORM com SQLAlchemy**: Banco compartilhado para credenciais e bancos individuais por usuário, todos em SQLite portátil
+- **Tema escuro automático**: Interface aplicada com PyQtDarkTheme-fork, sincronizada com o tema do sistema
+- **Seleção manual de tema**: Menu com opções Claro, Escuro ou Automático diretamente na aplicação
 
 ## Estrutura do Projeto
 
@@ -42,6 +44,7 @@ Controle-de-processos/
 
 - Python 3.8 ou superior
 - PySide6
+- PyQtDarkTheme-fork (qdarktheme)
 - SQLAlchemy 2.x
 - SQLite3 (incluído no Python)
 

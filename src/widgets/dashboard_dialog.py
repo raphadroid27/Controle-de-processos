@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import matplotlib as mpl
 import pandas as pd
+from cycler import cycler
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -19,11 +21,48 @@ from ..utils.formatters import (formatar_data_para_exibicao,
                                 formatar_valor_monetario)
 
 
+_FIGURE_FACE = "#202124"
+_AXES_FACE = "#2b3138"
+_AXES_EDGE = "#4a4d52"
+_TEXT_COLOR = "#f1f3f4"
+_GRID_COLOR = "#3c4043"
+_LEGEND_FACE = "#262c33"
+_ACCENT_CYCLE = [
+    "#4CAF50",
+    "#5BC0EB",
+    "#F5A623",
+    "#9C27B0",
+    "#E91E63",
+    "#00ACC1",
+]
+
+mpl.rcParams.update(
+    {
+        "figure.facecolor": _FIGURE_FACE,
+        "figure.edgecolor": _FIGURE_FACE,
+        "axes.facecolor": _AXES_FACE,
+        "axes.edgecolor": _AXES_EDGE,
+        "axes.labelcolor": _TEXT_COLOR,
+        "axes.titlecolor": _TEXT_COLOR,
+        "xtick.color": _TEXT_COLOR,
+        "ytick.color": _TEXT_COLOR,
+        "text.color": _TEXT_COLOR,
+        "grid.color": _GRID_COLOR,
+        "legend.facecolor": _LEGEND_FACE,
+        "legend.edgecolor": _AXES_EDGE,
+        "savefig.facecolor": _FIGURE_FACE,
+        "savefig.edgecolor": _FIGURE_FACE,
+        "axes.prop_cycle": cycler(color=_ACCENT_CYCLE),
+    }
+)
+
+
 class MatplotlibCanvas(FigureCanvas):
     """Canvas helper para integrar gráficos do Matplotlib ao Qt."""
 
     def __init__(self, width: float = 12, height: float = 9, dpi: int = 100):
         self.figure = Figure(figsize=(width, height), dpi=dpi)
+        self.figure.patch.set_facecolor(_FIGURE_FACE)
         super().__init__(self.figure)
 
 
@@ -93,7 +132,8 @@ class DashboardDialog(QDialog):
                 .fillna(0)
                 .astype(int)
             )
-            self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(int)
+            self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(
+                int)
             self.df_registros["qtde_itens"] = pd.to_numeric(
                 self.df_registros["qtde_itens"], errors="coerce"
             ).fillna(0)
@@ -104,7 +144,8 @@ class DashboardDialog(QDialog):
                 self.df_registros.get("os", 1), errors="coerce"
             ).fillna(0)
             self.df_registros["tempo_segundos"] = (
-                pd.to_numeric(self.df_registros["tempo_segundos"], errors="coerce")
+                pd.to_numeric(
+                    self.df_registros["tempo_segundos"], errors="coerce")
                 .fillna(0)
                 .astype(int)
             )
@@ -164,7 +205,8 @@ class DashboardDialog(QDialog):
         self.combo_ano = QComboBox()
         for ano in self.anos:
             self.combo_ano.addItem(str(ano))
-        self.combo_ano.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_ano.currentTextChanged.connect(
+            self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
@@ -172,7 +214,8 @@ class DashboardDialog(QDialog):
         self.combo_metrica = QComboBox()
         for titulo in self._METRIC_MAP:
             self.combo_metrica.addItem(titulo)
-        self.combo_metrica.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_metrica.currentTextChanged.connect(
+            self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_metrica)
         controles_layout.addStretch()
         return controles_layout
@@ -235,7 +278,8 @@ class DashboardDialog(QDialog):
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
-        self.combo_intervalo.currentIndexChanged.connect(self._atualizar_tabela_horas)
+        self.combo_intervalo.currentIndexChanged.connect(
+            self._atualizar_tabela_horas)
         horas_controles_layout.addWidget(self.combo_intervalo)
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
@@ -262,7 +306,8 @@ class DashboardDialog(QDialog):
         self.combo_grafico_usuario.addItem("Todos", None)
         for usuario in self.usuarios:
             self.combo_grafico_usuario.addItem(usuario, usuario)
-        self.combo_grafico_usuario.currentIndexChanged.connect(self._atualizar_graficos)
+        self.combo_grafico_usuario.currentIndexChanged.connect(
+            self._atualizar_graficos)
         controles_layout.addWidget(self.combo_grafico_usuario)
         controles_layout.addStretch()
 
@@ -291,10 +336,12 @@ class DashboardDialog(QDialog):
         self.tabela_mensal.setRowCount(row_count)
 
         for row, usuario in enumerate(self.usuarios):
-            self.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
+            self.tabela_mensal.setVerticalHeaderItem(
+                row, QTableWidgetItem(usuario))
             total_usuario = 0.0
             for col, (mes, _) in enumerate(self._MESES):
-                valor = dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
+                valor = dados_ano.get(usuario, {}).get(
+                    mes, {}).get(chave_metrica, 0)
                 total_usuario += valor
                 self.tabela_mensal.setItem(
                     row,
@@ -312,7 +359,8 @@ class DashboardDialog(QDialog):
             )
 
         total_row = len(self.usuarios)
-        self.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
+        self.tabela_mensal.setVerticalHeaderItem(
+            total_row, QTableWidgetItem("Total"))
 
         for col, (mes, _) in enumerate(self._MESES):
             total_mes = sum(
@@ -348,7 +396,8 @@ class DashboardDialog(QDialog):
         for row, ano in enumerate(anos_ordenados):
             dados = totais.get(ano, {})
             self.tabela_totais.setItem(
-                row, 0, self._criar_item_tabela(str(ano), alinhamento=Qt.AlignCenter)
+                row, 0, self._criar_item_tabela(
+                    str(ano), alinhamento=Qt.AlignCenter)
             )
             self.tabela_totais.setItem(
                 row,
@@ -410,8 +459,10 @@ class DashboardDialog(QDialog):
             total_row = len(self.usuarios)
             valores_total = [
                 "Todos",
-                self._formatar_media_decimal(media_geral.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(media_geral.get("os_por_dia", 0.0)),
+                self._formatar_media_decimal(
+                    media_geral.get("itens_por_dia", 0.0)),
+                self._formatar_media_decimal(
+                    media_geral.get("os_por_dia", 0.0)),
                 self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -470,7 +521,8 @@ class DashboardDialog(QDialog):
             self.tabela_horas.setItem(
                 row,
                 len(colunas) - 1,
-                self._criar_item_tabela(self._formatar_segundos(info.get("total", 0))),
+                self._criar_item_tabela(
+                    self._formatar_segundos(info.get("total", 0))),
             )
 
         self.label_total_horas.setText(
@@ -524,12 +576,13 @@ class DashboardDialog(QDialog):
             "Sem dados para o filtro selecionado.",
             ha="center",
             va="center",
+            color=_TEXT_COLOR,
         )
         self.canvas.draw_idle()
 
     def _criar_area_graficos(self, fig) -> dict[str, Any]:
         gs = fig.add_gridspec(4, 2, height_ratios=[1, 1, 1, 1.2])
-        return {
+        axes = {
             "itens_mes": fig.add_subplot(gs[0, 0]),
             "itens_ano": fig.add_subplot(gs[0, 1]),
             "valor_mes": fig.add_subplot(gs[1, 0]),
@@ -538,6 +591,11 @@ class DashboardDialog(QDialog):
             "os_ano": fig.add_subplot(gs[2, 1]),
             "horas": fig.add_subplot(gs[3, :]),
         }
+
+        for eixo in axes.values():
+            self._estilizar_axes(eixo)
+
+        return axes
 
     def _plotar_metricas_em_barras(
         self,
@@ -607,14 +665,16 @@ class DashboardDialog(QDialog):
         ax_horas,
     ) -> None:
         series_total = (
-            df_total.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_total.groupby("data")[
+                "tempo_segundos"].sum().sort_index() / 3600.0
         )
         series_usuario = (
-            df_filtrado.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_filtrado.groupby(
+                "data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
 
         if not series_total.empty:
-            cor_total = "#7f8c8d" if usuario_filtro else "#1f77b4"
+            cor_total = "#7f8c8d" if usuario_filtro else _ACCENT_CYCLE[0]
             estilo_total = "--" if usuario_filtro else "-"
             ax_horas.plot(
                 series_total.index,
@@ -629,18 +689,38 @@ class DashboardDialog(QDialog):
                 series_usuario.index,
                 series_usuario.values,
                 label=usuario_filtro,
-                color="#d62728",
+                color=_ACCENT_CYCLE[2],
             )
 
         ax_horas.set_title("Horas de corte por dia")
         ax_horas.set_ylabel("Horas")
-        ax_horas.grid(True, linestyle="--", alpha=0.3)
-        ax_horas.legend(loc="upper left")
+        ax_horas.grid(True, linestyle="--", color=_GRID_COLOR, alpha=0.4)
+        legenda = ax_horas.legend(loc="upper left")
+        self._estilizar_legenda(legenda)
         ax_horas.tick_params(axis="x", rotation=45)
+        self._estilizar_axes(ax_horas)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _estilizar_axes(self, ax) -> None:
+        ax.set_facecolor(_AXES_FACE)
+        for spine in ax.spines.values():
+            spine.set_color(_AXES_EDGE)
+        ax.tick_params(colors=_TEXT_COLOR)
+        ax.yaxis.label.set_color(_TEXT_COLOR)
+        ax.xaxis.label.set_color(_TEXT_COLOR)
+        ax.title.set_color(_TEXT_COLOR)
+
+    @staticmethod
+    def _estilizar_legenda(legenda) -> None:
+        if legenda is None:
+            return
+        legenda.get_frame().set_facecolor(_LEGEND_FACE)
+        legenda.get_frame().set_edgecolor(_AXES_EDGE)
+        for texto in legenda.get_texts():
+            texto.set_color(_TEXT_COLOR)
 
     @staticmethod
     def _formatar_segundos(segundos: int) -> str:
@@ -701,14 +781,28 @@ class DashboardDialog(QDialog):
 
         if pivot.empty or pivot.to_numpy().sum() == 0:
             ax.axis("off")
-            ax.text(0.5, 0.5, "Sem dados", ha="center", va="center")
+            ax.text(
+                0.5,
+                0.5,
+                "Sem dados",
+                ha="center",
+                va="center",
+                color=_TEXT_COLOR,
+            )
             return
 
         colunas_meses, rotulos_meses = self._obter_meses_presentes(pivot)
 
         if not colunas_meses:
             ax.axis("off")
-            ax.text(0.5, 0.5, "Sem dados", ha="center", va="center")
+            ax.text(
+                0.5,
+                0.5,
+                "Sem dados",
+                ha="center",
+                va="center",
+                color=_TEXT_COLOR,
+            )
             return
 
         num_anos = max(len(pivot.index), 1)
@@ -726,8 +820,10 @@ class DashboardDialog(QDialog):
         ax.set_xticks(base)
         ax.set_xticklabels(rotulos_meses)
         ax.yaxis.set_major_formatter(formatter)
-        ax.grid(True, axis="y", linestyle="--", alpha=0.3)
-        ax.legend(loc="upper left", fontsize="small")
+        ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
+        legenda = ax.legend(loc="upper left", fontsize="small")
+        self._estilizar_legenda(legenda)
+        self._estilizar_axes(ax)
 
     def _obter_meses_presentes(
         self,
@@ -774,12 +870,20 @@ class DashboardDialog(QDialog):
 
         if serie.empty or serie.sum() == 0:
             ax.axis("off")
-            ax.text(0.5, 0.5, "Sem dados", ha="center", va="center")
+            ax.text(
+                0.5,
+                0.5,
+                "Sem dados",
+                ha="center",
+                va="center",
+                color=_TEXT_COLOR,
+            )
             return
 
-        ax.bar(serie.index.astype(str), serie.values, color="#1f77b4")
+        ax.bar(serie.index.astype(str), serie.values, color=_ACCENT_CYCLE[0])
         ax.yaxis.set_major_formatter(formatter)
-        ax.grid(True, axis="y", linestyle="--", alpha=0.3)
+        ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
+        self._estilizar_axes(ax)
 
     @staticmethod
     def _int_tick_formatter(valor: float, _pos: int) -> str:

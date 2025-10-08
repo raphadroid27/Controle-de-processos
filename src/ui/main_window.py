@@ -1,13 +1,14 @@
 """Módulo da janela principal do aplicativo."""
 
-from PySide6.QtCore import QTimer, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QSignalBlocker, QTimer, Signal
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
 from ..utils import session_manager
 from ..widgets.dashboard_dialog import DashboardDialog
 from ..widgets.processos_widget import ProcessosWidget
+from .theme_manager import ThemeManager
 
 
 class MainWindow(QMainWindow):
@@ -19,13 +20,18 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin
+        self._theme_manager = ThemeManager.instance()
+        self._theme_actions: dict[str, QAction] = {}
+        self._theme_action_group: QActionGroup | None = None
 
-        self.setWindowTitle(f"Controle de Processos - Usuário: {usuario_logado}")
+        self.setWindowTitle(
+            f"Controle de Processos - Usuário: {usuario_logado}")
         self.setMinimumSize(800, 600)
 
         self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
 
         self.criar_menu()
+        self._theme_manager.register_listener(self._on_tema_atualizado)
 
         self.statusBar().showMessage(
             f"Logado como: {usuario_logado} {'(Admin)' if is_admin else ''}"
@@ -60,6 +66,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
+        self._theme_manager.unregister_listener(self._on_tema_atualizado)
         session_manager.remover_sessao()
         event.accept()
 
@@ -89,6 +96,8 @@ class MainWindow(QMainWindow):
             dashboard_action = QAction("Dashboard", self)
             dashboard_action.triggered.connect(self.abrir_dashboard)
             admin_menu.addAction(dashboard_action)
+
+        self._criar_menu_tema(menubar)
 
     def abrir_gerenciar_usuarios(self):
         """Abre o diálogo de gerenciamento de usuários."""
@@ -127,3 +136,47 @@ class MainWindow(QMainWindow):
             session_manager.remover_sessao()
             self.logout_requested.emit()
             self.close()
+
+    # ------------------------------------------------------------------
+    # Tema
+    # ------------------------------------------------------------------
+
+    def _criar_menu_tema(self, menubar) -> None:
+        tema_menu = menubar.addMenu("Tema")
+        self._theme_action_group = QActionGroup(self)
+        self._theme_action_group.setExclusive(True)
+        self._theme_actions.clear()
+
+        opcoes = [
+            ("Automático", "auto"),
+            ("Claro", "light"),
+            ("Escuro", "dark"),
+        ]
+
+        for rotulo, modo in opcoes:
+            action = QAction(rotulo, self, checkable=True)
+            action.setData(modo)
+            action.triggered.connect(self._on_tema_selecionado)
+            tema_menu.addAction(action)
+            self._theme_action_group.addAction(action)
+            self._theme_actions[modo] = action
+
+        self._marcar_tema(self._theme_manager.current_mode)
+
+    def _on_tema_selecionado(self) -> None:
+        action = self.sender()
+        if not isinstance(action, QAction):
+            return
+        modo = action.data()
+        if not isinstance(modo, str):
+            return
+        if modo != self._theme_manager.current_mode:
+            self._theme_manager.apply_theme(modo)
+
+    def _on_tema_atualizado(self, modo: str) -> None:
+        self._marcar_tema(modo)
+
+    def _marcar_tema(self, modo: str) -> None:
+        for chave, action in self._theme_actions.items():
+            with QSignalBlocker(action):
+                action.setChecked(chave == modo)
