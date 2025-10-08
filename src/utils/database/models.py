@@ -27,6 +27,10 @@ class UsuarioModel(SharedBase):
     nome: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     senha: Mapped[str] = mapped_column(String(255), nullable=False)
     admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ativo: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False, server_default="1"
+    )
+    arquivado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.datetime("now"), nullable=False
     )

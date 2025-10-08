@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from PySide6.QtCore import QDate
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
 from ...utils.ui_config import (aplicar_estilo_botao,
                                 configurar_widgets_entrada_uniformes)
@@ -20,7 +20,7 @@ __all__ = ["ProcessoFormControls", "criar_formulario"]
 class ProcessoFormControls:
     """Agrupa os widgets relevantes do formulário de processos."""
 
-    frame: QFrame
+    frame: QGroupBox
     cliente: NavigableLineEdit
     processo: NavigableLineEdit
     qtde_itens: NavigableLineEdit
@@ -42,30 +42,51 @@ def criar_formulario(
 
     # pylint: disable=too-many-locals
 
-    frame = QFrame(parent)
-    frame.setFrameStyle(QFrame.StyledPanel)
+    frame = QGroupBox("Novo registro", parent)
 
     entry_cliente = NavigableLineEdit(frame)
+    entry_cliente.setPlaceholderText("Informe o cliente responsável")
+    entry_cliente.setToolTip(
+        "Nome do cliente. Use Tab para avançar e Ctrl+Enter para adicionar rapidamente."
+    )
     entry_processo = NavigableLineEdit(frame)
+    entry_processo.setPlaceholderText("Descreva o processo")
+    entry_processo.setToolTip(
+        "Descrição do processo ou atividade. Campos obrigatórios são marcados."
+    )
     entry_qtde_itens = NavigableLineEdit(frame)
+    entry_qtde_itens.setPlaceholderText("0")
+    entry_qtde_itens.setToolTip(
+        "Quantidade de itens do processo. Apenas números positivos."
+    )
 
     entry_data_entrada = NavigableDateEdit(frame)
     entry_data_entrada.setDate(QDate.currentDate())
     entry_data_entrada.setCalendarPopup(True)
     entry_data_entrada.setMaximumDate(QDate.currentDate())
+    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
     entry_data_processo.setSpecialValueText("Não processado")
     entry_data_processo.setMaximumDate(QDate.currentDate())
     entry_data_processo.setDate(QDate.currentDate())
+    entry_data_processo.setToolTip(
+        "Data de processamento. Mantenha em 'Não processado' se ainda pendente."
+    )
 
     entry_tempo_corte = NavigableLineEdit(frame)
     entry_tempo_corte.setPlaceholderText("HH:MM:SS")
     entry_tempo_corte.textEdited.connect(on_tempo_editado)
+    entry_tempo_corte.setToolTip(
+        "Tempo de corte no formato HH:MM:SS. O sistema valida automaticamente."
+    )
 
     entry_valor_pedido = NavigableLineEdit(frame)
     entry_valor_pedido.setPlaceholderText("0.00")
+    entry_valor_pedido.setToolTip(
+        "Valor total em reais. Utilize vírgula ou ponto como separador decimal."
+    )
 
     widgets: Sequence[NavigableLineEdit | NavigableDateEdit] = (
         entry_cliente,

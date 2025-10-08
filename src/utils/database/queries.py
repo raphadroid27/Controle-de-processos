@@ -252,13 +252,14 @@ def _buscar_valores_unicos(
     return sorted(valores)
 
 
-def buscar_usuarios_unicos() -> List[str]:
-    """Lista todos os nomes de usuários cadastrados no banco compartilhado."""
+def buscar_usuarios_unicos(*, incluir_arquivados: bool = False) -> List[str]:
+    """Lista nomes de usuários cadastrados, opcionalmente incluindo arquivados."""
 
     with get_shared_session() as session:
-        nomes = session.scalars(
-            select(UsuarioModel.nome).order_by(UsuarioModel.nome)
-        ).all()
+        stmt = select(UsuarioModel.nome).order_by(UsuarioModel.nome)
+        if not incluir_arquivados:
+            stmt = stmt.where(UsuarioModel.ativo.is_(True))
+        nomes = session.scalars(stmt).all()
     return list(nomes)
 
 

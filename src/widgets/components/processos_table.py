@@ -59,7 +59,8 @@ def criar_tabela(
     """Cria o quadro contendo a tabela principal e o botão de exclusão."""
 
     frame = QFrame(parent)
-    frame.setFrameStyle(QFrame.StyledPanel)
+    frame.setFrameShape(QFrame.NoFrame)
+    frame.setLineWidth(0)
 
     layout = QVBoxLayout()
     layout.setContentsMargins(0, 0, 0, 0)
@@ -73,7 +74,7 @@ def criar_tabela(
 
     header = tabela.horizontalHeader()
     porcentagens_colunas = (
-        [10, 22, 18, 9, 11, 11, 8, 11] if is_admin else [28, 20, 10, 12, 12, 8, 10]
+        [10, 20, 20, 10, 10, 10, 10, 10] if is_admin else [25, 25, 10, 10, 10, 10, 10]
     )
 
     def calcular_larguras_colunas() -> List[int]:

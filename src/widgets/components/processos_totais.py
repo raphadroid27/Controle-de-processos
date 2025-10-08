@@ -87,8 +87,7 @@ def atualizar_totais(
 
     controles.label_processos.setText(f"Total Processos: {total_processos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
-    controles.label_valor.setText(
-        f"Total Valor: {formatar_valor(total_valor)}")
+    controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
 
     if media_dias_processamento is None:
         controles.label_media_dias.setText("Média dias processamento: --")

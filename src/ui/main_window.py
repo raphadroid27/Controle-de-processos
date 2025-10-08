@@ -1,7 +1,7 @@
 """Módulo da janela principal do aplicativo."""
 
 from PySide6.QtCore import QSignalBlocker, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
@@ -80,12 +80,18 @@ class MainWindow(QMainWindow):
 
         logout_action = QAction("Logout", self)
         logout_action.triggered.connect(self.fazer_logout)
+        logout_action.setShortcut(QKeySequence("Ctrl+Shift+L"))
+        logout_action.setStatusTip("Encerrar sessão atual e retornar ao login")
+        logout_action.setToolTip("Logout (Ctrl+Shift+L)")
         arquivo_menu.addAction(logout_action)
 
         arquivo_menu.addSeparator()
 
         sair_action = QAction("Sair", self)
         sair_action.triggered.connect(self.close)
+        sair_action.setShortcut(QKeySequence("Ctrl+Q"))
+        sair_action.setStatusTip("Fechar a aplicação")
+        sair_action.setToolTip("Sair do sistema (Ctrl+Q)")
         arquivo_menu.addAction(sair_action)
 
         if self.is_admin:
@@ -93,10 +99,16 @@ class MainWindow(QMainWindow):
 
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
+            usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
             dashboard_action = QAction("Dashboard", self)
             dashboard_action.triggered.connect(self.abrir_dashboard)
+            dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
+            dashboard_action.setStatusTip("Visualizar indicadores gerenciais")
+            dashboard_action.setToolTip("Abrir dashboard (Ctrl+D)")
             admin_menu.addAction(dashboard_action)
 
         self._criar_menu_tema(menubar)
@@ -159,6 +171,8 @@ class MainWindow(QMainWindow):
             action = QAction(rotulo, self, checkable=True)
             action.setData(modo)
             action.triggered.connect(self._on_tema_selecionado)
+            action.setStatusTip(f"Aplicar tema {rotulo.lower()}")
+            action.setToolTip(f"Aplicar tema {rotulo.lower()}")
             tema_menu.addAction(action)
             self._theme_action_group.addAction(action)
             self._theme_actions[modo] = action

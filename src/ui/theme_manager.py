@@ -7,6 +7,13 @@ from typing import Callable, ClassVar, List
 import qdarktheme
 from PySide6.QtCore import QSettings
 
+from ..utils.ui_config import obter_css_tooltip
+
+try:
+    from darkdetect import isDark as _is_dark_system_theme
+except ImportError:  # pragma: no cover - dependência opcional
+    _is_dark_system_theme = None
+
 
 class ThemeManager:
     """Aplica e persiste o tema visual da aplicação."""
@@ -20,9 +27,10 @@ class ThemeManager:
     def __init__(self) -> None:
         qdarktheme.enable_hi_dpi()
         self._settings = QSettings()
-        saved_mode = self._settings.value(
-            self._SETTINGS_KEY, self._DEFAULT_MODE)
-        self._mode = saved_mode if saved_mode in self._VALID_MODES else self._DEFAULT_MODE
+        saved_mode = self._settings.value(self._SETTINGS_KEY, self._DEFAULT_MODE)
+        self._mode = (
+            saved_mode if saved_mode in self._VALID_MODES else self._DEFAULT_MODE
+        )
         self._listeners: List[Callable[[str], None]] = []
 
     @classmethod
@@ -57,10 +65,21 @@ class ThemeManager:
 
     def _apply_theme(self, mode: str, *, persist: bool) -> None:
         selected = mode if mode in self._VALID_MODES else self._DEFAULT_MODE
+        resolved = self._resolve_visual_mode(selected)
         qdarktheme.setup_theme(
-            theme=selected, custom_colors=self._CUSTOM_COLORS)
+            theme=selected,
+            custom_colors=self._CUSTOM_COLORS,
+            additional_qss=obter_css_tooltip(resolved),
+        )
         self._mode = selected
         if persist:
             self._settings.setValue(self._SETTINGS_KEY, selected)
         for callback in list(self._listeners):
             callback(selected)
+
+    def _resolve_visual_mode(self, mode: str) -> str:
+        if mode == "auto" and _is_dark_system_theme is not None:
+            return "dark" if _is_dark_system_theme() else "light"
+        if mode == "auto":
+            return "dark"
+        return mode

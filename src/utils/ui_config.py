@@ -82,6 +82,20 @@ CORES_BOTOES = {
 }
 
 
+TOOLTIP_STYLES = {
+    "dark": {
+        "text": "#f5f5f5",
+        "background": "#2d2d2d",
+        "border": "#4CAF50",
+    },
+    "light": {
+        "text": "#1f1f1f",
+        "background": "#f5f5f5",
+        "border": "#4CAF50",
+    },
+}
+
+
 def aplicar_estilo_botao_desabilitado():
     """Retorna o estilo CSS para botões desabilitados."""
     return """
@@ -174,6 +188,22 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
 
     # Aplicar estilo de cor
     botao.setStyleSheet(obter_estilo_botao(cor))
+
+
+def obter_css_tooltip(modo: str) -> str:
+    """Devolve o CSS apropriado para tooltips no tema informado."""
+
+    estilo = TOOLTIP_STYLES.get(modo.lower()) or TOOLTIP_STYLES["dark"]
+    return (
+        "QToolTip {"
+        f"color: {estilo['text']};"
+        f"background-color: {estilo['background']};"
+        f"border: 1px solid {estilo['border']};"
+        "padding: 4px 6px;"
+        "border-radius: 4px;"
+        "font-size: 10pt;"
+        "}"
+    )
 
 
 def obter_estilo_botao_adicionar():

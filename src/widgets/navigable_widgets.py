@@ -6,7 +6,7 @@ usando as setas do teclado.
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDateEdit, QLineEdit
+from PySide6.QtWidgets import QComboBox, QDateEdit, QLineEdit
 
 
 class NavigableLineEdit(QLineEdit):
@@ -96,4 +96,44 @@ class NavigableDateEdit(QDateEdit):
                 pass
 
         # Passar o evento para o comportamento padrão
+        super().keyPressEvent(event)
+
+
+class NavigableComboBox(QComboBox):
+    """QComboBox com navegação lateral entre campos."""
+
+    def __init__(self, campos_navegacao=None, parent=None):
+        super().__init__(parent)
+        self.campos_navegacao = campos_navegacao or []
+
+    def set_campos_navegacao(self, campos):
+        """Define a sequência de widgets navegáveis a partir deste combo box."""
+        self.campos_navegacao = campos
+
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
+        """Permite alternar entre campos usando as setas esquerda/direita."""
+        if event.key() == Qt.Key.Key_Left and self.campos_navegacao:
+            try:
+                indice_atual = self.campos_navegacao.index(self)
+                indice_anterior = (indice_atual - 1) % len(self.campos_navegacao)
+                alvo = self.campos_navegacao[indice_anterior]
+                alvo.setFocus()
+                if isinstance(alvo, QLineEdit):
+                    alvo.setCursorPosition(len(alvo.text()))
+                return
+            except ValueError:
+                pass
+
+        if event.key() == Qt.Key.Key_Right and self.campos_navegacao:
+            try:
+                indice_atual = self.campos_navegacao.index(self)
+                proximo_indice = (indice_atual + 1) % len(self.campos_navegacao)
+                alvo = self.campos_navegacao[proximo_indice]
+                alvo.setFocus()
+                if isinstance(alvo, QLineEdit):
+                    alvo.setCursorPosition(0)
+                return
+            except ValueError:
+                pass
+
         super().keyPressEvent(event)

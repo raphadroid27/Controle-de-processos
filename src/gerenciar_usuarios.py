@@ -6,10 +6,14 @@ gerenciarem usuários, incluindo reset de senhas, exclusão de
 usuários, alteração de senhas próprias e controle de sessões ativas.
 """
 
+from datetime import datetime
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
                                QInputDialog, QLabel, QLineEdit, QMessageBox,
-                               QPushButton, QTreeWidget, QTreeWidgetItem,
-                               QVBoxLayout)
+                               QPushButton, QTabWidget, QTreeWidget,
+                               QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from .utils import session_manager, usuario
 from .utils.ui_config import aplicar_estilo_botao
@@ -29,6 +33,8 @@ class GerenciarUsuariosDialog(QDialog):
         self.entry_busca = None
         self.botoes_layout = None
         self.btn_resetar_senha = None
+        self.btn_arquivar = None
+        self.btn_restaurar = None
         self.btn_excluir = None
         self.btn_alterar_senha = None
         self.botoes_sessoes_layout = None
@@ -42,53 +48,63 @@ class GerenciarUsuariosDialog(QDialog):
         self.carregar_sessoes()
 
     def init_ui(self):
-        """Inicializa a interface do usuário."""
+        """Inicializa a interface do usuário com abas distintas."""
         layout = QVBoxLayout()
 
-        # Frame de busca
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self._criar_tab_usuarios(), "Usuários")
+        self.tabs.addTab(self._criar_tab_sessoes(), "Sessões")
+
+        layout.addWidget(self.tabs)
+        self.setLayout(layout)
+
+    def _criar_tab_usuarios(self) -> QWidget:
+        """Monta a aba de gerenciamento de usuários."""
+
+        container = QWidget()
+        tab_layout = QVBoxLayout(container)
+
         self.criar_frame_busca()
-        layout.addWidget(self.frame_busca)
-
-        # Layout horizontal para dividir usuários e sessões
-        main_layout = QHBoxLayout()
-
-        # Seção de usuários
-        usuarios_layout = QVBoxLayout()
-        usuarios_layout.addWidget(QLabel("Usuários:"))
+        tab_layout.addWidget(self.frame_busca)
 
         self.tree_usuarios = QTreeWidget()
-        self.tree_usuarios.setHeaderLabels(["ID", "Nome", "Tipo"])
+        self.tree_usuarios.setHeaderLabels(["ID", "Nome", "Tipo", "Status"])
         self.tree_usuarios.setColumnHidden(0, True)  # Esconder coluna ID
         self.tree_usuarios.setColumnWidth(1, 150)
         self.tree_usuarios.setColumnWidth(2, 80)
-        usuarios_layout.addWidget(self.tree_usuarios)
+        self.tree_usuarios.setColumnWidth(3, 200)
+        self.tree_usuarios.setToolTip(
+            "Selecione um usuário para gerenciar ações disponíveis."
+        )
+        tab_layout.addWidget(self.tree_usuarios)
+        self.tree_usuarios.currentItemChanged.connect(self.atualizar_estado_botoes)
 
-        # Botões de ação para usuários
         self.criar_botoes_acao()
-        usuarios_layout.addLayout(self.botoes_layout)
+        tab_layout.addLayout(self.botoes_layout)
 
-        main_layout.addLayout(usuarios_layout)
+        return container
 
-        # Seção de sessões ativas
-        sessoes_layout = QVBoxLayout()
-        sessoes_layout.addWidget(QLabel("Sessões Ativas:"))
+    def _criar_tab_sessoes(self) -> QWidget:
+        """Monta a aba de sessões ativas."""
+
+        container = QWidget()
+        tab_layout = QVBoxLayout(container)
+        tab_layout.addWidget(QLabel("Sessões Ativas:"))
 
         self.tree_sessoes = QTreeWidget()
         self.tree_sessoes.setHeaderLabels(["Usuário", "Computador", "Última Atividade"])
-        self.tree_sessoes.setColumnWidth(0, 80)
-        self.tree_sessoes.setColumnWidth(1, 80)
-        self.tree_sessoes.setColumnWidth(2, 80)
-        sessoes_layout.addWidget(self.tree_sessoes)
+        self.tree_sessoes.setColumnWidth(0, 120)
+        self.tree_sessoes.setColumnWidth(1, 120)
+        self.tree_sessoes.setColumnWidth(2, 160)
+        self.tree_sessoes.setToolTip(
+            "Visualize as sessões ativas e selecione uma para ações disponíveis."
+        )
+        tab_layout.addWidget(self.tree_sessoes)
 
-        # Botões de ação para sessões
         self.criar_botoes_sessoes()
-        sessoes_layout.addLayout(self.botoes_sessoes_layout)
+        tab_layout.addLayout(self.botoes_sessoes_layout)
 
-        main_layout.addLayout(sessoes_layout)
-
-        layout.addLayout(main_layout)
-
-        self.setLayout(layout)
+        return container
 
     def criar_frame_busca(self):
         """Cria o frame de busca e filtros de usuários."""
@@ -98,11 +114,19 @@ class GerenciarUsuariosDialog(QDialog):
         busca_layout.addWidget(QLabel("Nome:"), 0, 0)
 
         self.entry_busca = QLineEdit()
+        self.entry_busca.setPlaceholderText("Digite parte do nome ou status")
+        self.entry_busca.setToolTip(
+            "Digite parte do nome ou do status (ex.: ativo, arquivado) para filtrar a lista."
+            "\nUse as teclas de seta para navegar pelos resultados."
+        )
         self.entry_busca.textChanged.connect(self.filtrar_usuarios)
         busca_layout.addWidget(self.entry_busca, 0, 1)
 
         btn_limpar = QPushButton("Limpar")
         btn_limpar.clicked.connect(self.limpar_busca)
+        btn_limpar.setToolTip(
+            "Limpa o campo de busca e exibe novamente todos os usuários."
+        )
         # Aplicar estilo cinza padrão
         aplicar_estilo_botao(btn_limpar, "cinza")
         busca_layout.addWidget(btn_limpar, 0, 2)
@@ -116,16 +140,44 @@ class GerenciarUsuariosDialog(QDialog):
         self.btn_resetar_senha = QPushButton("Resetar Senha")
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
         aplicar_estilo_botao(self.btn_resetar_senha, "laranja", 80)
+        self.btn_resetar_senha.setToolTip(
+            "Resetar a senha do usuário selecionado (Ctrl+Shift+R)"
+        )
+        self.btn_resetar_senha.setShortcut(QKeySequence("Ctrl+Shift+R"))
+
+        self.btn_arquivar = QPushButton("Arquivar")
+        self.btn_arquivar.clicked.connect(self.arquivar_usuario)
+        aplicar_estilo_botao(self.btn_arquivar, "roxo", 80)
+        self.btn_arquivar.setToolTip(
+            "Arquivar usuário e revogar acesso imediato (Ctrl+Shift+A)"
+        )
+        self.btn_arquivar.setShortcut(QKeySequence("Ctrl+Shift+A"))
+
+        self.btn_restaurar = QPushButton("Restaurar")
+        self.btn_restaurar.clicked.connect(self.restaurar_usuario)
+        aplicar_estilo_botao(self.btn_restaurar, "verde", 80)
+        self.btn_restaurar.setToolTip("Restaurar usuário arquivado (Ctrl+Shift+T)")
+        self.btn_restaurar.setShortcut(QKeySequence("Ctrl+Shift+T"))
 
         self.btn_excluir = QPushButton("Excluir Usuário")
         self.btn_excluir.clicked.connect(self.excluir_usuario)
         aplicar_estilo_botao(self.btn_excluir, "vermelho", 80)
+        self.btn_excluir.setToolTip(
+            "Excluir definitivamente um usuário arquivado (Ctrl+Shift+Del)"
+        )
+        self.btn_excluir.setShortcut(QKeySequence("Ctrl+Shift+Del"))
 
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
         aplicar_estilo_botao(self.btn_alterar_senha, "azul", 80)
+        self.btn_alterar_senha.setToolTip(
+            "Alterar a senha do usuário logado (Ctrl+Alt+S)"
+        )
+        self.btn_alterar_senha.setShortcut(QKeySequence("Ctrl+Alt+S"))
 
         self.botoes_layout.addWidget(self.btn_resetar_senha)
+        self.botoes_layout.addWidget(self.btn_arquivar)
+        self.botoes_layout.addWidget(self.btn_restaurar)
         self.botoes_layout.addWidget(self.btn_excluir)
         self.botoes_layout.addWidget(self.btn_alterar_senha)
 
@@ -136,10 +188,16 @@ class GerenciarUsuariosDialog(QDialog):
         self.btn_atualizar_sessoes = QPushButton("Atualizar")
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
         aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 80)
+        self.btn_atualizar_sessoes.setToolTip("Atualizar a lista de sessões (F5)")
+        self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
 
         self.btn_shutdown_sistema = QPushButton("Shutdown Sistema")
         self.btn_shutdown_sistema.clicked.connect(self.shutdown_sistema)
         aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 80)
+        self.btn_shutdown_sistema.setToolTip(
+            "Enviar comando de desligamento para todas as instâncias (Ctrl+Shift+Q)"
+        )
+        self.btn_shutdown_sistema.setShortcut(QKeySequence("Ctrl+Shift+Q"))
 
         self.botoes_sessoes_layout.addWidget(self.btn_atualizar_sessoes)
         self.botoes_sessoes_layout.addWidget(self.btn_shutdown_sistema)
@@ -151,14 +209,36 @@ class GerenciarUsuariosDialog(QDialog):
         usuarios_list = usuario.listar_usuarios()
 
         for user in usuarios_list:
+            arquivado_em = user.get("arquivado_em")
+            if isinstance(arquivado_em, str):
+                try:
+                    arquivado_em = datetime.fromisoformat(arquivado_em)
+                except ValueError:
+                    arquivado_em = None
+
+            if user.get("ativo", False):
+                status = "Ativo"
+            else:
+                if isinstance(arquivado_em, datetime):
+                    status = f"Arquivado em {arquivado_em.strftime('%d/%m/%Y %H:%M')}"
+                else:
+                    status = "Arquivado"
+
             item = QTreeWidgetItem(
                 [
-                    str(user[0]),  # ID
-                    user[1],  # Nome
-                    "Admin" if user[2] else "Usuário",  # Tipo
+                    str(user["id"]),
+                    user["nome"],
+                    "Admin" if user.get("admin") else "Usuário",
+                    status,
                 ]
             )
+            item.setData(0, Qt.ItemDataRole.UserRole, user)
             self.tree_usuarios.addTopLevelItem(item)
+
+        if self.tree_usuarios.topLevelItemCount() > 0:
+            self.tree_usuarios.setCurrentItem(self.tree_usuarios.topLevelItem(0))
+        else:
+            self.atualizar_estado_botoes(None, None)
 
     def carregar_sessoes(self):
         """Carrega e exibe as sessões ativas."""
@@ -175,6 +255,26 @@ class GerenciarUsuariosDialog(QDialog):
             item.setData(0, 0x0100, sessao["session_id"])
             self.tree_sessoes.addTopLevelItem(item)
 
+    def atualizar_estado_botoes(self, item_atual, _item_anterior):
+        """Habilita ou desabilita botões conforme o usuário selecionado."""
+
+        dados = None
+        if item_atual is not None:
+            dados = item_atual.data(0, Qt.ItemDataRole.UserRole)
+
+        ativo = bool(dados.get("ativo")) if isinstance(dados, dict) else False
+        admin = bool(dados.get("admin")) if isinstance(dados, dict) else False
+        possui_usuario = isinstance(dados, dict)
+
+        if self.btn_resetar_senha is not None:
+            self.btn_resetar_senha.setEnabled(possui_usuario and ativo)
+        if self.btn_arquivar is not None:
+            self.btn_arquivar.setEnabled(possui_usuario and ativo and not admin)
+        if self.btn_restaurar is not None:
+            self.btn_restaurar.setEnabled(possui_usuario and not ativo)
+        if self.btn_excluir is not None:
+            self.btn_excluir.setEnabled(possui_usuario and not admin and not ativo)
+
     def filtrar_usuarios(self):
         """Filtra os usuários baseado no texto de busca."""
         filtro = self.entry_busca.text().lower()
@@ -183,8 +283,9 @@ class GerenciarUsuariosDialog(QDialog):
             item = self.tree_usuarios.topLevelItem(i)
             if item:
                 nome = item.text(1).lower()
+                status = item.text(3).lower() if item.columnCount() > 3 else ""
                 # Mostrar/esconder baseado no filtro
-                item.setHidden(filtro not in nome)
+                item.setHidden(filtro not in nome and filtro not in status)
 
     def limpar_busca(self):
         """Limpa o campo de busca."""
@@ -199,7 +300,20 @@ class GerenciarUsuariosDialog(QDialog):
             )
             return
 
-        nome_usuario = item_selecionado.text(1)
+        dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(dados_usuario, dict):
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            return
+
+        if not dados_usuario.get("ativo", False):
+            QMessageBox.warning(
+                self,
+                "Usuário arquivado",
+                "Restaure o usuário antes de resetar a senha.",
+            )
+            return
+
+        nome_usuario = dados_usuario["nome"]
 
         resposta = QMessageBox.question(
             self,
@@ -223,7 +337,12 @@ class GerenciarUsuariosDialog(QDialog):
             QMessageBox.warning(self, "Erro", "Selecione um usuário para excluir.")
             return
 
-        nome_usuario = item_selecionado.text(1)
+        dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(dados_usuario, dict):
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            return
+
+        nome_usuario = dados_usuario["nome"]
 
         resposta = QMessageBox.question(
             self,
@@ -238,8 +357,101 @@ class GerenciarUsuariosDialog(QDialog):
             if "Sucesso" in resultado:
                 QMessageBox.information(self, "Sucesso", resultado)
                 self.carregar_usuarios()  # Recarregar lista
-            else:
-                QMessageBox.warning(self, "Erro", resultado)
+                return
+            QMessageBox.warning(self, "Erro", resultado)
+            self.atualizar_estado_botoes(item_selecionado, None)
+
+    def arquivar_usuario(self):
+        """Arquiva o usuário selecionado, mantendo seus dados."""
+
+        item_selecionado = self.tree_usuarios.currentItem()
+        if not item_selecionado:
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para arquivar.")
+            return
+
+        dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(dados_usuario, dict):
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            return
+
+        if dados_usuario.get("admin"):
+            QMessageBox.warning(
+                self,
+                "Ação não permitida",
+                "Não é possível arquivar um usuário administrador.",
+            )
+            return
+
+        if not dados_usuario.get("ativo", False):
+            QMessageBox.information(
+                self,
+                "Usuário arquivado",
+                "O usuário selecionado já está arquivado.",
+            )
+            return
+
+        nome_usuario = dados_usuario["nome"]
+
+        resposta = QMessageBox.question(
+            self,
+            "Confirmar Arquivamento",
+            (
+                f"Arquivar o usuário '{nome_usuario}' irá revogar o acesso imediato,\n"
+                "mas os dados históricos serão preservados. Deseja continuar?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if resposta == QMessageBox.StandardButton.Yes:
+            resultado = usuario.arquivar_usuario(nome_usuario)
+            if "Sucesso" in resultado:
+                QMessageBox.information(self, "Usuário arquivado", resultado)
+                self.carregar_usuarios()
+                return
+            QMessageBox.warning(self, "Erro", resultado)
+            self.atualizar_estado_botoes(item_selecionado, None)
+
+    def restaurar_usuario(self):
+        """Restaura um usuário previamente arquivado."""
+
+        item_selecionado = self.tree_usuarios.currentItem()
+        if not item_selecionado:
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para restaurar.")
+            return
+
+        dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(dados_usuario, dict):
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            return
+
+        if dados_usuario.get("ativo", False):
+            QMessageBox.information(
+                self,
+                "Usuário ativo",
+                "O usuário selecionado já está ativo.",
+            )
+            return
+
+        nome_usuario = dados_usuario["nome"]
+
+        resposta = QMessageBox.question(
+            self,
+            "Confirmar Restauração",
+            (
+                f"Deseja restaurar o acesso do usuário '{nome_usuario}'?\n"
+                "O banco individual será reativado automaticamente."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if resposta == QMessageBox.StandardButton.Yes:
+            resultado = usuario.restaurar_usuario(nome_usuario)
+            if "Sucesso" in resultado:
+                QMessageBox.information(self, "Usuário restaurado", resultado)
+                self.carregar_usuarios()
+                return
+            QMessageBox.warning(self, "Erro", resultado)
+            self.atualizar_estado_botoes(item_selecionado, None)
 
     def alterar_senha(self):
         """Permite ao usuário logado alterar sua própria senha."""

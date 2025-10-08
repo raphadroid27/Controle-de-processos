@@ -266,6 +266,32 @@ def remover_sessao_por_id(session_id: str) -> bool:
     )
 
 
+def encerrar_sessoes_usuario(usuario_nome: str) -> int:
+    """Encerra todas as sessões associadas ao usuário informado."""
+
+    def _operacao(session) -> int:
+        try:
+            resultado = session.execute(
+                delete(SystemControlModel)
+                .where(SystemControlModel.type == "SESSION")
+                .where(SystemControlModel.value.like(f"{usuario_nome}|%"))
+            )
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        return int(resultado.rowcount or 0)
+
+    def _on_error(exc: SQLAlchemyError) -> int:
+        print(f"Erro ao encerrar sessões do usuário {usuario_nome}: {exc}")
+        return 0
+
+    return executar_sessao_compartilhada(
+        _operacao,
+        error_handler=_on_error,
+    )
+
+
 def _formatar_timestamp(valor: datetime | None) -> str:
     if not valor:
         return ""

@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
-import pandas as pd
 from cycler import cycler
+
+try:  # pragma: no cover - fallback executado apenas sem pandas instalado
+    import pandas as pd  # type: ignore[assignment]
+except ImportError:  # pragma: no cover
+    pd = None  # type: ignore[assignment]
+    if TYPE_CHECKING:  # pragma: no cover - apenas para análise estática
+        from pandas import DataFrame, Series  # pylint: disable=import-error
+    else:
+        DataFrame = Any  # type: ignore[assignment]
+        Series = Any  # type: ignore[assignment]
+else:
+    from pandas import DataFrame, Series
+
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -19,7 +31,6 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
 from ..utils.dashboard_metrics import obter_metricas_dashboard
 from ..utils.formatters import (formatar_data_para_exibicao,
                                 formatar_valor_monetario)
-
 
 _FIGURE_FACE = "#202124"
 _AXES_FACE = "#2b3138"
@@ -100,19 +111,12 @@ class DashboardDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Dashboard Administrativo")
-        self.resize(1100, 700)
-        self.setWindowFlag(Qt.Window, True)
-        self.setWindowFlag(Qt.WindowSystemMenuHint, True)
-        self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
-        self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
-        self.setSizeGripEnabled(True)
-
-        self.metricas = obter_metricas_dashboard()
-        self.usuarios = self.metricas.get("usuarios", [])
-        self.anos = self.metricas.get("anos", [])
-        self.df_registros = pd.DataFrame(self.metricas.get("registros", []))
-
+        self._configurar_janela()
+        self.metricas: dict[str, Any] = {}
+        self.usuarios: list[str] = []
+        self.anos: list[int] = []
+        self.df_registros = pd.DataFrame() if pd is not None else None
+        self.tabs: QTabWidget | None = None
         self.combo_ano: QComboBox | None = None
         self.combo_metrica: QComboBox | None = None
         self.tabela_mensal: QTableWidget | None = None
@@ -121,50 +125,92 @@ class DashboardDialog(QDialog):
         self.combo_intervalo: QComboBox | None = None
         self.label_total_horas: QLabel | None = None
         self.tabela_horas: QTableWidget | None = None
+        self.tab_graficos: QWidget | None = None
+        self.combo_grafico_usuario: QComboBox | None = None
+        self.canvas: MatplotlibCanvas | None = None
 
-        if not self.df_registros.empty:
-            self.df_registros["data"] = pd.to_datetime(
-                self.df_registros["data"], errors="coerce"
-            )
-            self.df_registros = self.df_registros.dropna(subset=["data"])
-            self.df_registros["ano"] = (
-                pd.to_numeric(self.df_registros["ano"], errors="coerce")
-                .fillna(0)
-                .astype(int)
-            )
-            self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(
-                int)
-            self.df_registros["qtde_itens"] = pd.to_numeric(
-                self.df_registros["qtde_itens"], errors="coerce"
-            ).fillna(0)
-            self.df_registros["valor_pedido"] = pd.to_numeric(
-                self.df_registros["valor_pedido"], errors="coerce"
-            ).fillna(0.0)
-            self.df_registros["os"] = pd.to_numeric(
-                self.df_registros.get("os", 1), errors="coerce"
-            ).fillna(0)
-            self.df_registros["tempo_segundos"] = (
-                pd.to_numeric(
-                    self.df_registros["tempo_segundos"], errors="coerce")
-                .fillna(0)
-                .astype(int)
-            )
-            self.df_registros["tempo_horas"] = (
-                self.df_registros["tempo_segundos"] / 3600.0
-            )
-        else:
-            self.df_registros = pd.DataFrame()
-
-        if not self.anos:
-            layout = QVBoxLayout()
-            layout.addWidget(
-                QLabel("Não há dados suficientes para montar o dashboard no momento.")
-            )
-            self.setLayout(layout)
+        if self._exibir_aviso_sem_pandas():
             return
 
+        self._carregar_metricas()
+        self._preparar_dataframe_registros()
+
+        if not self.anos:
+            self._exibir_aviso_sem_dados()
+            return
+
+        self._criar_abas()
+        self._atualizar_resumos()
+
+    def _configurar_janela(self) -> None:
+        self.setWindowTitle("Dashboard Administrativo")
+        self.resize(1100, 700)
+        self.setWindowFlag(Qt.Window, True)
+        self.setWindowFlag(Qt.WindowSystemMenuHint, True)
+        self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
+        self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
+        self.setSizeGripEnabled(True)
+
+    def _exibir_aviso_sem_pandas(self) -> bool:
+        if pd is not None:
+            return False
+        layout = QVBoxLayout()
+        layout.addWidget(
+            QLabel(
+                "A biblioteca pandas não está instalada. Instale o pacote 'pandas' "
+                "para visualizar o dashboard administrativo."
+            )
+        )
+        self.setLayout(layout)
+        return True
+
+    def _carregar_metricas(self) -> None:
+        self.metricas = obter_metricas_dashboard()
+        self.usuarios = self.metricas.get("usuarios", [])
+        self.anos = self.metricas.get("anos", [])
+        self.df_registros = pd.DataFrame(self.metricas.get("registros", []))
+
+    def _preparar_dataframe_registros(self) -> None:
+        if self.df_registros.empty:
+            self.df_registros = pd.DataFrame()
+            return
+
+        self.df_registros["data"] = pd.to_datetime(
+            self.df_registros["data"], errors="coerce"
+        )
+        self.df_registros = self.df_registros.dropna(subset=["data"])
+        self.df_registros["ano"] = (
+            pd.to_numeric(self.df_registros["ano"], errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
+        self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(int)
+        self.df_registros["qtde_itens"] = pd.to_numeric(
+            self.df_registros["qtde_itens"], errors="coerce"
+        ).fillna(0)
+        self.df_registros["valor_pedido"] = pd.to_numeric(
+            self.df_registros["valor_pedido"], errors="coerce"
+        ).fillna(0.0)
+        self.df_registros["os"] = pd.to_numeric(
+            self.df_registros.get("os", 1), errors="coerce"
+        ).fillna(0)
+        self.df_registros["tempo_segundos"] = (
+            pd.to_numeric(self.df_registros["tempo_segundos"], errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
+        self.df_registros["tempo_horas"] = self.df_registros["tempo_segundos"] / 3600.0
+
+    def _exibir_aviso_sem_dados(self) -> None:
+        layout = QVBoxLayout()
+        layout.addWidget(
+            QLabel("Não há dados suficientes para montar o dashboard no momento.")
+        )
+        self.setLayout(layout)
+
+    def _criar_abas(self) -> None:
         self.tabs = QTabWidget()
-        self._criar_tab_resumo()
+        self.tabs.addTab(self._criar_tab_resumo(), "Resumo")
         if not self.df_registros.empty:
             self._criar_tab_graficos()
 
@@ -172,6 +218,7 @@ class DashboardDialog(QDialog):
         layout.addWidget(self.tabs)
         self.setLayout(layout)
 
+    def _atualizar_resumos(self) -> None:
         self._atualizar_tabela_totais()
         self._atualizar_tabela_mensal()
         self._atualizar_tabela_medias()
@@ -183,20 +230,23 @@ class DashboardDialog(QDialog):
     # Construção das abas
     # ------------------------------------------------------------------
 
-    def _criar_tab_resumo(self) -> None:
-        self.tab_resumo = QWidget()
-        layout = QVBoxLayout(self.tab_resumo)
+    def _criar_tab_resumo(self) -> QWidget:
+        tab_resumo = QWidget()
+        layout = QVBoxLayout(tab_resumo)
 
+        self._adicionar_controles_resumo(layout)
+        self._adicionar_paineis_resumo(layout)
+        self._adicionar_secao_horas(layout)
+
+        return tab_resumo
+
+    def _adicionar_controles_resumo(self, layout: QVBoxLayout) -> None:
         layout.addLayout(self._montar_controles_resumo())
         layout.addWidget(self._criar_tabela_mensal())
 
-        tabelas_layout = self._montar_tabelas_resumo()
-        layout.addLayout(tabelas_layout)
-
+    def _adicionar_paineis_resumo(self, layout: QVBoxLayout) -> None:
+        layout.addLayout(self._montar_tabelas_resumo())
         layout.addSpacing(12)
-        self._adicionar_secao_horas(layout)
-
-        self.tabs.addTab(self.tab_resumo, "Resumo")
 
     def _montar_controles_resumo(self) -> QHBoxLayout:
         controles_layout = QHBoxLayout()
@@ -205,8 +255,7 @@ class DashboardDialog(QDialog):
         self.combo_ano = QComboBox()
         for ano in self.anos:
             self.combo_ano.addItem(str(ano))
-        self.combo_ano.currentTextChanged.connect(
-            self._atualizar_tabela_mensal)
+        self.combo_ano.currentTextChanged.connect(self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
@@ -214,8 +263,7 @@ class DashboardDialog(QDialog):
         self.combo_metrica = QComboBox()
         for titulo in self._METRIC_MAP:
             self.combo_metrica.addItem(titulo)
-        self.combo_metrica.currentTextChanged.connect(
-            self._atualizar_tabela_mensal)
+        self.combo_metrica.currentTextChanged.connect(self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_metrica)
         controles_layout.addStretch()
         return controles_layout
@@ -278,8 +326,7 @@ class DashboardDialog(QDialog):
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
-        self.combo_intervalo.currentIndexChanged.connect(
-            self._atualizar_tabela_horas)
+        self.combo_intervalo.currentIndexChanged.connect(self._atualizar_tabela_horas)
         horas_controles_layout.addWidget(self.combo_intervalo)
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
@@ -306,8 +353,7 @@ class DashboardDialog(QDialog):
         self.combo_grafico_usuario.addItem("Todos", None)
         for usuario in self.usuarios:
             self.combo_grafico_usuario.addItem(usuario, usuario)
-        self.combo_grafico_usuario.currentIndexChanged.connect(
-            self._atualizar_graficos)
+        self.combo_grafico_usuario.currentIndexChanged.connect(self._atualizar_graficos)
         controles_layout.addWidget(self.combo_grafico_usuario)
         controles_layout.addStretch()
 
@@ -336,12 +382,10 @@ class DashboardDialog(QDialog):
         self.tabela_mensal.setRowCount(row_count)
 
         for row, usuario in enumerate(self.usuarios):
-            self.tabela_mensal.setVerticalHeaderItem(
-                row, QTableWidgetItem(usuario))
+            self.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
             total_usuario = 0.0
             for col, (mes, _) in enumerate(self._MESES):
-                valor = dados_ano.get(usuario, {}).get(
-                    mes, {}).get(chave_metrica, 0)
+                valor = dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
                 total_usuario += valor
                 self.tabela_mensal.setItem(
                     row,
@@ -359,8 +403,7 @@ class DashboardDialog(QDialog):
             )
 
         total_row = len(self.usuarios)
-        self.tabela_mensal.setVerticalHeaderItem(
-            total_row, QTableWidgetItem("Total"))
+        self.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
 
         for col, (mes, _) in enumerate(self._MESES):
             total_mes = sum(
@@ -396,8 +439,7 @@ class DashboardDialog(QDialog):
         for row, ano in enumerate(anos_ordenados):
             dados = totais.get(ano, {})
             self.tabela_totais.setItem(
-                row, 0, self._criar_item_tabela(
-                    str(ano), alinhamento=Qt.AlignCenter)
+                row, 0, self._criar_item_tabela(str(ano), alinhamento=Qt.AlignCenter)
             )
             self.tabela_totais.setItem(
                 row,
@@ -459,10 +501,8 @@ class DashboardDialog(QDialog):
             total_row = len(self.usuarios)
             valores_total = [
                 "Todos",
-                self._formatar_media_decimal(
-                    media_geral.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(
-                    media_geral.get("os_por_dia", 0.0)),
+                self._formatar_media_decimal(media_geral.get("itens_por_dia", 0.0)),
+                self._formatar_media_decimal(media_geral.get("os_por_dia", 0.0)),
                 self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -521,8 +561,7 @@ class DashboardDialog(QDialog):
             self.tabela_horas.setItem(
                 row,
                 len(colunas) - 1,
-                self._criar_item_tabela(
-                    self._formatar_segundos(info.get("total", 0))),
+                self._criar_item_tabela(self._formatar_segundos(info.get("total", 0))),
             )
 
         self.label_total_horas.setText(
@@ -554,7 +593,7 @@ class DashboardDialog(QDialog):
         fig.tight_layout()
         self.canvas.draw_idle()
 
-    def _obter_dados_grafico(self) -> tuple[pd.DataFrame, pd.DataFrame, str | None]:
+    def _obter_dados_grafico(self) -> tuple[DataFrame, DataFrame, str | None]:
         df_total = self.df_registros.copy()
         usuario_filtro = None
         if hasattr(self, "combo_grafico_usuario"):
@@ -599,7 +638,7 @@ class DashboardDialog(QDialog):
 
     def _plotar_metricas_em_barras(
         self,
-        df: pd.DataFrame,
+        df: DataFrame,
         axes: dict[str, Any],
     ) -> None:
         pivot_itens = self._build_monthly_pivot(df, "qtde_itens")
@@ -659,18 +698,16 @@ class DashboardDialog(QDialog):
 
     def _plotar_series_de_horas(
         self,
-        df_total: pd.DataFrame,
-        df_filtrado: pd.DataFrame,
+        df_total: DataFrame,
+        df_filtrado: DataFrame,
         usuario_filtro: str | None,
         ax_horas,
     ) -> None:
         series_total = (
-            df_total.groupby("data")[
-                "tempo_segundos"].sum().sort_index() / 3600.0
+            df_total.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
         series_usuario = (
-            df_filtrado.groupby(
-                "data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_filtrado.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
 
         if not series_total.empty:
@@ -748,7 +785,10 @@ class DashboardDialog(QDialog):
     def _formatar_media_decimal(valor: float) -> str:
         return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-    def _build_monthly_pivot(self, df: pd.DataFrame, coluna: str) -> pd.DataFrame:
+    def _build_monthly_pivot(self, df: DataFrame, coluna: str) -> DataFrame:
+        if pd is None:  # pragma: no cover - tratado na inicialização
+            raise RuntimeError("Pandas não disponível para gerar o dashboard.")
+
         if df.empty:
             return pd.DataFrame()
 
@@ -769,7 +809,7 @@ class DashboardDialog(QDialog):
     def _plot_grouped_bars(
         self,
         ax,
-        pivot: pd.DataFrame,
+        pivot: DataFrame,
         *,
         titulo: str,
         rotulo_y: str,
@@ -827,7 +867,7 @@ class DashboardDialog(QDialog):
 
     def _obter_meses_presentes(
         self,
-        pivot: pd.DataFrame,
+        pivot: DataFrame,
     ) -> tuple[list[int], list[str]]:
         colunas: list[int] = []
         rotulos: list[str] = []
@@ -841,7 +881,7 @@ class DashboardDialog(QDialog):
         self,
         *,
         ax,
-        pivot: pd.DataFrame,
+        pivot: DataFrame,
         colunas_meses: list[int],
         largura: float,
         deslocamento_inicial: float,
@@ -858,7 +898,7 @@ class DashboardDialog(QDialog):
     def _plot_simple_bar(
         self,
         ax,
-        serie: pd.Series,
+        serie: Series,
         *,
         titulo: str,
         rotulo_y: str,

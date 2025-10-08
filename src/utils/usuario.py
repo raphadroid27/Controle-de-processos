@@ -9,10 +9,12 @@ e controle de permissões administrativas.
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from . import session_manager
 from .database import (UsuarioModel, ensure_user_database, get_shared_engine,
                        remover_banco_usuario)
 from .database.sessions import executar_sessao_compartilhada
@@ -43,12 +45,19 @@ def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
             select(UsuarioModel).where(UsuarioModel.nome == nome_limpo)
         )
         if existente:
+            if not existente.ativo:
+                return (
+                    "Erro: Usuário arquivado. Utilize a opção de restauração para "
+                    "reativar o acesso."
+                )
             return "Erro: Usuário já existe."
 
         usuario = UsuarioModel(
             nome=nome_limpo,
             senha=hash_senha(senha_limpa),
             admin=admin,
+            ativo=True,
+            arquivado_em=None,
         )
         session.add(usuario)
         try:
@@ -74,18 +83,25 @@ def verificar_login(nome: str, senha: str) -> dict:
     def _operacao(session):
         senha_hash = hash_senha(senha)
         usuario = session.scalar(
-            select(UsuarioModel).where(
-                UsuarioModel.nome == nome.strip(),
-                UsuarioModel.senha == senha_hash,
-            )
+            select(UsuarioModel).where(UsuarioModel.nome == nome.strip())
         )
-        if usuario:
+        if not usuario:
+            return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
+
+        if not usuario.ativo:
             return {
-                "sucesso": True,
-                "nome": usuario.nome,
-                "admin": bool(usuario.admin),
+                "sucesso": False,
+                "mensagem": "Usuário arquivado. Contate um administrador.",
             }
-        return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
+
+        if usuario.senha != senha_hash:
+            return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
+
+        return {
+            "sucesso": True,
+            "nome": usuario.nome,
+            "admin": bool(usuario.admin),
+        }
 
     def _on_error(exc: SQLAlchemyError) -> dict:
         return {"sucesso": False, "mensagem": f"Erro no banco de dados: {exc}"}
@@ -98,25 +114,36 @@ def verificar_admin_existente() -> bool:
 
     def _operacao(session) -> bool:
         count_admin = session.scalar(
-            select(UsuarioModel).where(UsuarioModel.admin.is_(True)).limit(1)
+            select(UsuarioModel)
+            .where(UsuarioModel.admin.is_(True), UsuarioModel.ativo.is_(True))
+            .limit(1)
         )
         return count_admin is not None
 
     return executar_sessao_compartilhada(_operacao, fallback=False)
 
 
-def listar_usuarios() -> list[tuple[int, str, bool]]:
-    """Lista todos os usuários cadastrados."""
+def listar_usuarios(*, incluir_arquivados: bool = True) -> list[dict]:
+    """Lista usuários cadastrados com informações completas."""
 
-    def _operacao(session) -> list[tuple[int, str, bool]]:
-        resultados = session.execute(
-            select(UsuarioModel.id, UsuarioModel.nome, UsuarioModel.admin).order_by(
-                UsuarioModel.nome
-            )
-        ).all()
-        return [(row.id, row.nome, bool(row.admin)) for row in resultados]
+    def _operacao(session) -> list[dict]:
+        stmt = select(UsuarioModel).order_by(UsuarioModel.nome)
+        if not incluir_arquivados:
+            stmt = stmt.where(UsuarioModel.ativo.is_(True))
 
-    def _on_error(exc: SQLAlchemyError) -> list[tuple[int, str, bool]]:
+        usuarios_db = session.execute(stmt).scalars().all()
+        return [
+            {
+                "id": usuario.id,
+                "nome": usuario.nome,
+                "admin": bool(usuario.admin),
+                "ativo": bool(usuario.ativo),
+                "arquivado_em": usuario.arquivado_em,
+            }
+            for usuario in usuarios_db
+        ]
+
+    def _on_error(exc: SQLAlchemyError) -> list[dict]:
         print(f"Erro ao listar usuários: {exc}")
         return []
 
@@ -163,6 +190,8 @@ def excluir_usuario_por_id(user_id: int) -> str:
             return "Erro: Usuário não encontrado."
         if usuario.admin:
             return "Erro: Não é possível excluir um administrador."
+        if usuario.ativo:
+            return "Erro: Arquive o usuário antes de excluir permanentemente."
 
         try:
             session.delete(usuario)
@@ -211,10 +240,10 @@ def verificar_senha_reset(nome: str) -> bool:
     """Verifica se o usuário precisa redefinir a senha."""
 
     def _operacao(session) -> bool:
-        senha_atual = session.scalar(
-            select(UsuarioModel.senha).where(UsuarioModel.nome == nome)
-        )
-        return bool(senha_atual == "nova_senha")
+        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        if not usuario or not usuario.ativo:
+            return False
+        return bool(usuario.senha == "nova_senha")
 
     def _on_error(exc: SQLAlchemyError) -> bool:
         print(f"Erro ao verificar senha de reset: {exc}")
@@ -235,6 +264,8 @@ def excluir_usuario(nome: str) -> str:
             return "Erro: Usuário não encontrado."
         if usuario.admin:
             return "Erro: Não é possível excluir um administrador."
+        if usuario.ativo:
+            return "Erro: Arquive o usuário antes de excluir permanentemente."
 
         try:
             session.execute(delete(UsuarioModel).where(UsuarioModel.nome == nome))
@@ -248,6 +279,62 @@ def excluir_usuario(nome: str) -> str:
 
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao excluir usuário: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def arquivar_usuario(nome: str) -> str:
+    """Arquiva um usuário mantendo seu histórico de dados."""
+
+    def _operacao(session) -> str:
+        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        if not usuario:
+            return "Erro: Usuário não encontrado."
+        if usuario.admin:
+            return "Erro: Não é possível arquivar um administrador."
+        if not usuario.ativo:
+            return "Erro: Usuário já está arquivado."
+
+        usuario.ativo = False
+        usuario.arquivado_em = datetime.utcnow()
+        try:
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+        session_manager.encerrar_sessoes_usuario(usuario.nome)
+        return "Sucesso: Usuário arquivado."
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao arquivar usuário: {exc}"
+
+    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+
+
+def restaurar_usuario(nome: str) -> str:
+    """Restaura um usuário previamente arquivado."""
+
+    def _operacao(session) -> str:
+        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        if not usuario:
+            return "Erro: Usuário não encontrado."
+        if usuario.ativo:
+            return "Erro: Usuário já está ativo."
+
+        usuario.ativo = True
+        usuario.arquivado_em = None
+        try:
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+        ensure_user_database(usuario.nome)
+        return "Sucesso: Usuário restaurado."
+
+    def _on_error(exc: SQLAlchemyError) -> str:
+        return f"Erro ao restaurar usuário: {exc}"
 
     return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
 

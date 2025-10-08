@@ -222,7 +222,9 @@ def _dias_uteis_entre(inicio: date | None, fim: date | None) -> int:
     return dias
 
 
-def _calcular_media_dias_processamento(registros: Sequence[Sequence[Any]]) -> float | None:
+def _calcular_media_dias_processamento(
+    registros: Sequence[Sequence[Any]],
+) -> float | None:
     diferencas: list[int] = []
     for registro in registros:
         data_entrada = _parse_data(registro[5])

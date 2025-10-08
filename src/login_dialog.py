@@ -5,6 +5,7 @@ Este módulo contém as classes LoginDialog e NovoUsuarioDialog
 para gerenciar a autenticação e criação de usuários.
 """
 
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
                                QInputDialog, QLineEdit, QMessageBox,
                                QPushButton, QSizePolicy, QSpacerItem)
@@ -41,10 +42,16 @@ class LoginDialog(QDialog):
         # Campos de entrada
         self.entry_usuario = QLineEdit()
         self.entry_usuario.setPlaceholderText("Digite seu nome de usuário")
+        self.entry_usuario.setToolTip(
+            "Informe seu usuário cadastrado. Use Tab para avançar para o campo de senha."
+        )
 
         self.entry_senha = QLineEdit()
         self.entry_senha.setEchoMode(QLineEdit.EchoMode.Password)
         self.entry_senha.setPlaceholderText("Digite sua senha")
+        self.entry_senha.setToolTip(
+            "Digite sua senha. Pressione Enter para tentar o login."
+        )
 
         # Aplicar altura uniforme aos campos
         configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
@@ -68,6 +75,14 @@ class LoginDialog(QDialog):
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_login, "azul", 120)
         aplicar_estilo_botao(self.btn_novo_usuario, "verde", 120)
+
+        self.btn_login.setToolTip("Autenticar no sistema (Ctrl+Enter)")
+        self.btn_login.setShortcut(QKeySequence("Ctrl+Enter"))
+
+        self.btn_novo_usuario.setToolTip(
+            "Abrir formulário para cadastrar um novo usuário (Ctrl+Shift+N)"
+        )
+        self.btn_novo_usuario.setShortcut(QKeySequence("Ctrl+Shift+N"))
 
         btn_layout.addWidget(self.btn_login)
         btn_layout.addWidget(self.btn_novo_usuario)
@@ -192,10 +207,16 @@ class NovoUsuarioDialog(QDialog):
         # Campos de entrada
         self.entry_nome = QLineEdit()
         self.entry_nome.setPlaceholderText("Digite o nome do usuário")
+        self.entry_nome.setToolTip(
+            "Nome de usuário desejado. Deve ser único e sem espaços extras nas extremidades."
+        )
 
         self.entry_senha = QLineEdit()
         self.entry_senha.setEchoMode(QLineEdit.EchoMode.Password)
         self.entry_senha.setPlaceholderText("Digite a senha")
+        self.entry_senha.setToolTip(
+            "Senha inicial do usuário. Utilize pelo menos 4 caracteres."
+        )
 
         # Aplicar altura uniforme aos campos
         configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
@@ -206,6 +227,10 @@ class NovoUsuarioDialog(QDialog):
         # Só mostra opção admin se não existir um
         if not usuario.verificar_admin_existente():
             self.check_admin = QCheckBox()
+            self.check_admin.setToolTip(
+                "Tornar este usuário administrador (recurso disponível somente até o "
+                "primeiro admin existir)."
+            )
             layout.addRow("Admin:", self.check_admin)
             self.setFixedSize(
                 LARGURA_DIALOG_NOVO_USUARIO, (ALTURA_DIALOG_NOVO_USUARIO + 20)
@@ -227,6 +252,12 @@ class NovoUsuarioDialog(QDialog):
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_cancelar, "vermelho", 110)
         aplicar_estilo_botao(self.btn_salvar, "verde", 110)
+
+        self.btn_cancelar.setToolTip("Fechar o formulário sem criar usuário (Esc)")
+        self.btn_cancelar.setShortcut(QKeySequence("Esc"))
+
+        self.btn_salvar.setToolTip("Salvar novo usuário (Ctrl+S)")
+        self.btn_salvar.setShortcut(QKeySequence("Ctrl+S"))
 
         btn_layout.addWidget(self.btn_cancelar)
         btn_layout.addWidget(self.btn_salvar)

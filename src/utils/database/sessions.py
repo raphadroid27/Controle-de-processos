@@ -6,13 +6,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, Iterator, Optional, Tuple, TypeVar
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import DATABASE_DIR, SHARED_DB_PATH, slugify_usuario, user_db_path
-from .models import SharedBase, UserBase
+from .models import SharedBase, UserBase, UsuarioModel
 
 _user_sessionmakers: Dict[Path, sessionmaker[Session]] = {}
 
@@ -34,6 +34,7 @@ def _criar_engine_sqlite(db_path: Path) -> Engine:
 def _shared_engine_cached() -> Engine:
     engine = _criar_engine_sqlite(SHARED_DB_PATH)
     SharedBase.metadata.create_all(engine)
+    _ensure_usuario_schema(engine)
     return engine
 
 
@@ -61,6 +62,26 @@ def _ensure_registro_schema(engine: Engine) -> None:
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+    except SQLAlchemyError:
+        pass
+
+
+def _ensure_usuario_schema(engine: Engine) -> None:
+    try:
+        inspector = inspect(engine)
+        colunas = {col["name"] for col in inspector.get_columns("usuario")}
+        statements: list[str] = []
+        if "ativo" not in colunas:
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
+            )
+        if "arquivado_em" not in colunas:
+            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+
+        if statements:
+            with engine.begin() as conn:
+                for stmt in statements:
+                    conn.execute(text(stmt))
     except SQLAlchemyError:
         pass
 
@@ -93,14 +114,27 @@ def get_user_session(usuario: str) -> Session:
     return session
 
 
-def iter_user_databases() -> Iterator[Tuple[str, Path]]:
-    """Itera sobre todos os bancos individuais de usuários."""
+def iter_user_databases(
+    *, incluir_arquivados: bool = False
+) -> Iterator[Tuple[str, Path]]:
+    """Itera sobre bancos individuais considerando o status do usuário."""
+
+    slugs_validos: set[str] | None = None
+    if not incluir_arquivados:
+        with get_shared_session() as session:
+            nomes_ativos = session.scalars(
+                select(UsuarioModel.nome).where(UsuarioModel.ativo.is_(True))
+            ).all()
+        slugs_validos = {slugify_usuario(nome) for nome in nomes_ativos}
 
     if DATABASE_DIR.exists():
         for path in DATABASE_DIR.glob("usuario_*.db"):
             slug = path.stem.replace("usuario_", "", 1)
-            if slug:
-                yield slug, path
+            if not slug:
+                continue
+            if slugs_validos is not None and slug not in slugs_validos:
+                continue
+            yield slug, path
 
 
 def ensure_user_database(usuario: str) -> None:
