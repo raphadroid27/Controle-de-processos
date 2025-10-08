@@ -86,12 +86,10 @@ TOOLTIP_STYLES = {
     "dark": {
         "text": "#f5f5f5",
         "background": "#2d2d2d",
-        "border": "#4CAF50",
     },
     "light": {
         "text": "#1f1f1f",
         "background": "#f5f5f5",
-        "border": "#4CAF50",
     },
 }
 
@@ -152,7 +150,8 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widget.setMinimumHeight(ALTURA_MINIMA_WIDGET_ENTRADA)
         widget.setMaximumHeight(ALTURA_WIDGET_ENTRADA)
         widget.setMinimumWidth(LARGURA_MINIMA_WIDGET_ENTRADA)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                             QSizePolicy.Policy.Fixed)
 
 
 def configurar_botao_padrao(botao, largura_minima=None):
@@ -190,16 +189,17 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
     botao.setStyleSheet(obter_estilo_botao(cor))
 
 
-def obter_css_tooltip(modo: str) -> str:
+def obter_css_tooltip(modo: str, cor_borda: str | None = None) -> str:
     """Devolve o CSS apropriado para tooltips no tema informado."""
 
     estilo = TOOLTIP_STYLES.get(modo.lower()) or TOOLTIP_STYLES["dark"]
+    cor = cor_borda or "#4CAF50"
     return (
         "QToolTip {"
         f"color: {estilo['text']};"
         f"background-color: {estilo['background']};"
-        f"border: 1px solid {estilo['border']};"
-        "padding: 4px 6px;"
+        f"border: 1px solid {cor};"
+        "padding: 2px 4px;"
         "border-radius: 4px;"
         "font-size: 10pt;"
         "}"

@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self._theme_manager = ThemeManager.instance()
         self._theme_actions: dict[str, QAction] = {}
         self._theme_action_group: QActionGroup | None = None
+        self._color_actions: dict[str, QAction] = {}
+        self._color_action_group: QActionGroup | None = None
 
         self.setWindowTitle("Controle de Processos")
         self.setMinimumSize(800, 600)
@@ -31,6 +33,8 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
+        self._theme_manager.register_color_listener(
+            self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -69,6 +73,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
+        self._theme_manager.unregister_color_listener(
+            self._on_cor_tema_atualizada)
         session_manager.remover_sessao()
         event.accept()
 
@@ -100,7 +106,8 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip(
+                "Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -177,7 +184,24 @@ class MainWindow(QMainWindow):
             self._theme_action_group.addAction(action)
             self._theme_actions[modo] = action
 
+        tema_menu.addSeparator()
+        cores_menu = tema_menu.addMenu("Cor de destaque")
+        self._color_action_group = QActionGroup(self)
+        self._color_action_group.setExclusive(True)
+        self._color_actions.clear()
+
+        for chave, (rotulo, _hex) in ThemeManager.color_options().items():
+            action = QAction(rotulo, self, checkable=True)
+            action.setData(chave)
+            action.triggered.connect(self._on_cor_tema_selecionada)
+            action.setStatusTip(f"Aplicar destaque {rotulo.lower()}")
+            action.setToolTip(f"Cor de destaque {rotulo.lower()}")
+            cores_menu.addAction(action)
+            self._color_action_group.addAction(action)
+            self._color_actions[chave] = action
+
         self._marcar_tema(self._theme_manager.current_mode)
+        self._marcar_cor(self._theme_manager.current_color)
 
     def _on_tema_selecionado(self) -> None:
         action = self.sender()
@@ -196,3 +220,21 @@ class MainWindow(QMainWindow):
         for chave, action in self._theme_actions.items():
             with QSignalBlocker(action):
                 action.setChecked(chave == modo)
+
+    def _on_cor_tema_selecionada(self) -> None:
+        action = self.sender()
+        if not isinstance(action, QAction):
+            return
+        cor = action.data()
+        if not isinstance(cor, str):
+            return
+        if cor != self._theme_manager.current_color:
+            self._theme_manager.apply_color(cor)
+
+    def _on_cor_tema_atualizada(self, cor: str) -> None:
+        self._marcar_cor(cor)
+
+    def _marcar_cor(self, cor: str) -> None:
+        for chave, action in self._color_actions.items():
+            with QSignalBlocker(action):
+                action.setChecked(chave == cor)
