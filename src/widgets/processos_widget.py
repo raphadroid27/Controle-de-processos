@@ -90,8 +90,10 @@ class ProcessosWidget(QWidget):
         self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
 
-        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
-        self.shortcut_enter_num.activated.connect(self.atalho_adicionar_processo)
+        self.shortcut_enter_num = QShortcut(
+            QKeySequence(Qt.Key.Key_Enter), self)
+        self.shortcut_enter_num.activated.connect(
+            self.atalho_adicionar_processo)
 
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
         self.shortcut_delete.activated.connect(self.excluir_processo)
@@ -369,7 +371,8 @@ class ProcessosWidget(QWidget):
 
         except (ValueError, AttributeError, TypeError) as e:
             self.aplicar_filtro(rolar_para_ultimo=False)
-            QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
+            QMessageBox.warning(
+                self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             self.tabela.blockSignals(False)
 
@@ -458,10 +461,13 @@ class ProcessosWidget(QWidget):
 
         processos_totais.atualizar_totais(
             self.controles_totais,
-            total_processos=estatisticas["total_processos"],
-            total_itens=estatisticas["total_itens"],
-            total_valor=estatisticas["total_valor"],
+            total_processos=estatisticas.total_processos,
+            total_itens=estatisticas.total_itens,
+            total_valor=estatisticas.total_valor,
             formatar_valor=formatar_valor_monetario,
+            media_dias_processamento=estatisticas.media_dias_processamento,
+            media_itens_por_dia=estatisticas.media_itens_por_dia,
+            estimativa_itens_mes=estatisticas.estimativa_itens_mes,
         )
 
     def adicionar_processo(self):
