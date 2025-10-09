@@ -1,27 +1,21 @@
-"""Gerenciador central de tema usando PyQtDarkTheme."""
+"""Gerenciador central de tema usando paletas nativas do PySide6."""
 
 from __future__ import annotations
 
 from typing import Callable, ClassVar, List
 
-import qdarktheme
 from PySide6.QtCore import QSettings
-
-from ..utils.ui_config import obter_css_tooltip
-
-try:
-    from darkdetect import isDark as _is_dark_system_theme
-except ImportError:  # pragma: no cover - dependência opcional
-    _is_dark_system_theme = None
+from PySide6.QtGui import QPalette, QColor
+from PySide6.QtWidgets import QApplication
 
 
 class ThemeManager:
-    """Aplica e persiste o tema visual da aplicação."""
+    """Aplica e persiste o tema visual da aplicação (simplificado)."""
 
     _INSTANCE: ClassVar["ThemeManager | None"] = None
-    _VALID_MODES: ClassVar[set[str]] = {"auto", "light", "dark"}
+    _VALID_MODES: ClassVar[set[str]] = {"light", "dark"}
     _SETTINGS_KEY: ClassVar[str] = "appearance/theme_mode"
-    _DEFAULT_MODE: ClassVar[str] = "auto"
+    _DEFAULT_MODE: ClassVar[str] = "light"
     _COLOR_SETTINGS_KEY: ClassVar[str] = "appearance/theme_accent"
     _DEFAULT_COLOR: ClassVar[str] = "verde"
     _COLOR_OPTIONS: ClassVar[dict[str, tuple[str, str]]] = {
@@ -37,8 +31,9 @@ class ThemeManager:
     }
 
     def __init__(self) -> None:
-        qdarktheme.enable_hi_dpi()
         self._settings = QSettings()
+        # Define o estilo Fusion para melhor suporte a paletas
+        QApplication.setStyle("Fusion")
         saved_mode = self._settings.value(
             self._SETTINGS_KEY, self._DEFAULT_MODE)
         self._mode = (
@@ -109,15 +104,57 @@ class ThemeManager:
         if callback in self._color_listeners:
             self._color_listeners.remove(callback)
 
+    def _create_light_palette(self, accent_color: QColor) -> QPalette:
+        """Cria uma paleta clara nativa com cor de destaque."""
+        palette = QPalette()
+        # Cores para tema claro
+        palette.setColor(QPalette.Window, QColor(240, 240, 240))
+        palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
+        palette.setColor(QPalette.Base, QColor(255, 255, 255))
+        palette.setColor(QPalette.AlternateBase, QColor(245, 245, 245))
+        palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 220))
+        palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
+        palette.setColor(QPalette.Text, QColor(0, 0, 0))
+        palette.setColor(QPalette.Button, QColor(240, 240, 240))
+        palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
+        palette.setColor(QPalette.BrightText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Link, accent_color)
+        palette.setColor(QPalette.Highlight, accent_color)
+        palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+        return palette
+
+    def _create_dark_palette(self, accent_color: QColor) -> QPalette:
+        """Cria uma paleta escura nativa com cor de destaque."""
+        palette = QPalette()
+        # Cores para tema escuro
+        palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ToolTipBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Text, QColor(255, 255, 255))
+        palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
+        palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+        palette.setColor(QPalette.Link, accent_color)
+        palette.setColor(QPalette.Highlight, accent_color)
+        palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        return palette
+
     def _apply_theme(self, mode: str, *, persist: bool) -> None:
         selected = mode if mode in self._VALID_MODES else self._DEFAULT_MODE
         resolved = self._resolve_visual_mode(selected)
-        accent = self._get_accent_hex()
-        qdarktheme.setup_theme(
-            theme=selected,
-            custom_colors={"primary": accent},
-            additional_qss=obter_css_tooltip(resolved, accent),
-        )
+        app = QApplication.instance()
+        accent_color = QColor(self._get_accent_hex())
+        if resolved == "dark":
+            palette = self._create_dark_palette(accent_color)
+        else:
+            palette = self._create_light_palette(accent_color)
+        app.setPalette(palette)
+        # Força atualização de todos os widgets para aplicar a nova paleta
+        for widget in app.allWidgets():
+            widget.repaint()
         self._mode = selected
         if persist:
             self._settings.setValue(self._SETTINGS_KEY, selected)
@@ -125,10 +162,6 @@ class ThemeManager:
             callback(selected)
 
     def _resolve_visual_mode(self, mode: str) -> str:
-        if mode == "auto" and _is_dark_system_theme is not None:
-            return "dark" if _is_dark_system_theme() else "light"
-        if mode == "auto":
-            return "dark"
         return mode
 
     @classmethod

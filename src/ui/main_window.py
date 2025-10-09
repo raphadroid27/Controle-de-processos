@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self._theme_manager = ThemeManager.instance()
         self._theme_actions: dict[str, QAction] = {}
         self._theme_action_group: QActionGroup | None = None
+        self._style_actions: dict[str, QAction] = {}
+        self._style_action_group: QActionGroup | None = None
         self._color_actions: dict[str, QAction] = {}
         self._color_action_group: QActionGroup | None = None
 
@@ -169,7 +171,6 @@ class MainWindow(QMainWindow):
         self._theme_actions.clear()
 
         opcoes = [
-            ("Automático", "auto"),
             ("Claro", "light"),
             ("Escuro", "dark"),
         ]
@@ -183,6 +184,32 @@ class MainWindow(QMainWindow):
             tema_menu.addAction(action)
             self._theme_action_group.addAction(action)
             self._theme_actions[modo] = action
+
+        tema_menu.addSeparator()
+        estilo_menu = tema_menu.addMenu("Estilo")
+        self._style_action_group = QActionGroup(self)
+        self._style_action_group.setExclusive(True)
+        self._style_actions.clear()
+
+        estilos_opcoes = [
+            ("Fusion", "Fusion"),
+            ("Windows", "Windows"),
+        ]
+
+        for rotulo, estilo in estilos_opcoes:
+            action = QAction(rotulo, self, checkable=True)
+            action.setData(estilo)
+            action.triggered.connect(self._on_estilo_selecionado)
+            action.setStatusTip(f"Aplicar estilo {rotulo}")
+            action.setToolTip(f"Aplicar estilo {rotulo}")
+            estilo_menu.addAction(action)
+            self._style_action_group.addAction(action)
+            self._style_actions[estilo] = action
+
+        # Marcar o estilo atual
+        current_style = QApplication.style().objectName()
+        if current_style in self._style_actions:
+            self._style_actions[current_style].setChecked(True)
 
         tema_menu.addSeparator()
         cores_menu = tema_menu.addMenu("Cor de destaque")
@@ -212,6 +239,22 @@ class MainWindow(QMainWindow):
             return
         if modo != self._theme_manager.current_mode:
             self._theme_manager.apply_theme(modo)
+
+    def _on_estilo_selecionado(self) -> None:
+        action = self.sender()
+        if not isinstance(action, QAction):
+            return
+        estilo = action.data()
+        if not isinstance(estilo, str):
+            return
+        current_style = QApplication.style().objectName()
+        if estilo != current_style:
+            if estilo:  # Se não for vazio
+                QApplication.setStyle(estilo)
+            # Para estilo padrão (vazio), não faz nada - mantém o atual
+            # Forçar repaint de todos os widgets
+            for widget in QApplication.allWidgets():
+                widget.repaint()
 
     def _on_tema_atualizado(self, modo: str) -> None:
         self._marcar_tema(modo)

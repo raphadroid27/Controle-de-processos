@@ -44,7 +44,6 @@ Controle-de-processos/
 
 - Python 3.8 ou superior
 - PySide6
-- PyQtDarkTheme-fork (qdarktheme)
 - SQLAlchemy 2.x
 - SQLite3 (incluído no Python)
 
