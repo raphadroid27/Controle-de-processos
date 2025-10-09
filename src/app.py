@@ -29,6 +29,7 @@ class ControleProcessosApp:
     db.inicializar_todas_tabelas()
     criar_tabela_usuario()
     criar_tabela_system_control()
+    db.limpar_bancos_orfaos()
 
     def run(self):
         """Executa a aplicação."""

@@ -61,7 +61,8 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(
+                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -76,7 +77,8 @@ def _ensure_usuario_schema(engine: Engine) -> None:
                 "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
             )
         if "arquivado_em" not in colunas:
-            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
 
         if statements:
             with engine.begin() as conn:
@@ -185,6 +187,30 @@ def executar_sessao_compartilhada(
         session.close()
 
 
+def limpar_bancos_orfaos() -> None:
+    """Remove bancos individuais de usuários que não existem mais na tabela compartilhada."""
+
+    if not DATABASE_DIR.exists():
+        return
+
+    # Obter todos os slugs de usuários existentes (ativos e inativos)
+    with get_shared_session() as session:
+        nomes_existentes = session.scalars(select(UsuarioModel.nome)).all()
+    slugs_existentes = {slugify_usuario(nome) for nome in nomes_existentes}
+
+    # Listar todos os arquivos usuario_*.db
+    for path in DATABASE_DIR.glob("usuario_*.db"):
+        slug = path.stem.replace("usuario_", "", 1)
+        if not slug:
+            continue
+        if slug not in slugs_existentes:
+            try:
+                path.unlink()
+                print(f"Banco órfão removido: {path}")
+            except OSError as e:
+                print(f"Erro ao remover banco órfão {path}: {e}")
+
+
 __all__ = [
     "get_shared_engine",
     "get_shared_session",
@@ -195,4 +221,5 @@ __all__ = [
     "inicializar_todas_tabelas",
     "remover_banco_usuario",
     "executar_sessao_compartilhada",
+    "limpar_bancos_orfaos",
 ]
