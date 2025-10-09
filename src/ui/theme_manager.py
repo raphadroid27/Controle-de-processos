@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Callable, ClassVar, List
 
 from PySide6.QtCore import QSettings
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 
@@ -44,8 +44,7 @@ class ThemeManager:
         # Garante que seja salvo
         self._settings.setValue(self._STYLE_SETTINGS_KEY, self._style)
         QApplication.setStyle(self._style)
-        saved_mode = self._settings.value(
-            self._SETTINGS_KEY, self._DEFAULT_MODE)
+        saved_mode = self._settings.value(self._SETTINGS_KEY, self._DEFAULT_MODE)
         self._mode = (
             saved_mode if saved_mode in self._VALID_MODES else self._DEFAULT_MODE
         )
