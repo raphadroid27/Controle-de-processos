@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from . import session_manager
@@ -42,7 +42,9 @@ def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
 
     def _operacao(session) -> str:
         existente = session.scalar(
-            select(UsuarioModel).where(UsuarioModel.nome == nome_limpo)
+            select(UsuarioModel).where(
+                func.lower(UsuarioModel.nome) == nome_limpo.lower()
+            )
         )
         if existente:
             if not existente.ativo:
@@ -82,8 +84,9 @@ def verificar_login(nome: str, senha: str) -> dict:
 
     def _operacao(session):
         senha_hash = hash_senha(senha)
+        nome_limpo = nome.strip().lower()
         usuario = session.scalar(
-            select(UsuarioModel).where(UsuarioModel.nome == nome.strip())
+            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome_limpo)
         )
         if not usuario:
             return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
@@ -163,7 +166,7 @@ def resetar_senha_usuario(nome: str, nova_senha: str = "nova_senha") -> str:
         try:
             resultado = session.execute(
                 update(UsuarioModel)
-                .where(UsuarioModel.nome == nome)
+                .where(func.lower(UsuarioModel.nome) == nome.lower())
                 .values(senha=senha_hash)
             )
             session.commit()
@@ -215,7 +218,7 @@ def alterar_senha_usuario(nome: str, senha_atual: str, nova_senha: str) -> str:
     def _operacao(session) -> str:
         usuario = session.scalar(
             select(UsuarioModel).where(
-                UsuarioModel.nome == nome,
+                func.lower(UsuarioModel.nome) == nome.lower(),
                 UsuarioModel.senha == hash_senha(senha_atual),
             )
         )
@@ -240,7 +243,9 @@ def verificar_senha_reset(nome: str) -> bool:
     """Verifica se o usuário precisa redefinir a senha."""
 
     def _operacao(session) -> bool:
-        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        usuario = session.scalar(
+            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+        )
         if not usuario or not usuario.ativo:
             return False
         return bool(usuario.senha == "nova_senha")
@@ -259,7 +264,9 @@ def excluir_usuario(nome: str) -> str:
     """Exclui um usuário pelo nome."""
 
     def _operacao(session) -> str:
-        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        usuario = session.scalar(
+            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+        )
         if not usuario:
             return "Erro: Usuário não encontrado."
         if usuario.admin:
@@ -268,7 +275,11 @@ def excluir_usuario(nome: str) -> str:
             return "Erro: Arquive o usuário antes de excluir permanentemente."
 
         try:
-            session.execute(delete(UsuarioModel).where(UsuarioModel.nome == nome))
+            session.execute(
+                delete(UsuarioModel).where(
+                    func.lower(UsuarioModel.nome) == nome.lower()
+                )
+            )
             session.commit()
         except SQLAlchemyError:
             session.rollback()
@@ -287,7 +298,9 @@ def arquivar_usuario(nome: str) -> str:
     """Arquiva um usuário mantendo seu histórico de dados."""
 
     def _operacao(session) -> str:
-        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        usuario = session.scalar(
+            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+        )
         if not usuario:
             return "Erro: Usuário não encontrado."
         if usuario.admin:
@@ -316,7 +329,9 @@ def restaurar_usuario(nome: str) -> str:
     """Restaura um usuário previamente arquivado."""
 
     def _operacao(session) -> str:
-        usuario = session.scalar(select(UsuarioModel).where(UsuarioModel.nome == nome))
+        usuario = session.scalar(
+            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+        )
         if not usuario:
             return "Erro: Usuário não encontrado."
         if usuario.ativo:
