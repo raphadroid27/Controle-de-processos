@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
             self._style_actions[estilo] = action
 
         # Marcar o estilo atual
-        current_style = QApplication.style().objectName()
+        current_style = self._theme_manager.current_style
         if current_style in self._style_actions:
             self._style_actions[current_style].setChecked(True)
 
@@ -247,14 +247,8 @@ class MainWindow(QMainWindow):
         estilo = action.data()
         if not isinstance(estilo, str):
             return
-        current_style = QApplication.style().objectName()
-        if estilo != current_style:
-            if estilo:  # Se não for vazio
-                QApplication.setStyle(estilo)
-            # Para estilo padrão (vazio), não faz nada - mantém o atual
-            # Forçar repaint de todos os widgets
-            for widget in QApplication.allWidgets():
-                widget.repaint()
+        if estilo != self._theme_manager.current_style:
+            self._theme_manager.apply_style(estilo)
 
     def _on_tema_atualizado(self, modo: str) -> None:
         self._marcar_tema(modo)

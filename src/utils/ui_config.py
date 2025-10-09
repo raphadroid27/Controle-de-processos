@@ -82,18 +82,6 @@ CORES_BOTOES = {
 }
 
 
-TOOLTIP_STYLES = {
-    "dark": {
-        "text": "#f5f5f5",
-        "background": "#2d2d2d",
-    },
-    "light": {
-        "text": "#1f1f1f",
-        "background": "#f5f5f5",
-    },
-}
-
-
 def aplicar_estilo_botao_desabilitado():
     """Retorna o estilo CSS para botões desabilitados."""
     return """
@@ -189,23 +177,6 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
     botao.setStyleSheet(obter_estilo_botao(cor))
 
 
-def obter_css_tooltip(modo: str, cor_borda: str | None = None) -> str:
-    """Devolve o CSS apropriado para tooltips no tema informado."""
-
-    estilo = TOOLTIP_STYLES.get(modo.lower()) or TOOLTIP_STYLES["dark"]
-    cor = cor_borda or "#4CAF50"
-    return (
-        "QToolTip {"
-        f"color: {estilo['text']};"
-        f"background-color: {estilo['background']};"
-        f"border: 1px solid {cor};"
-        "padding: 2px 4px;"
-        "border-radius: 4px;"
-        "font-size: 10pt;"
-        "}"
-    )
-
-
 def obter_estilo_botao_adicionar():
     """Retorna o estilo específico para botão Adicionar (verde)."""
     return obter_estilo_botao("verde")
@@ -249,14 +220,6 @@ def obter_css_correcao_widgets():
     QGroupBox::title {{
         font-size: 10pt;
         padding: 2px;
-    }}
-    QToolTip {{
-        color: white;
-        background-color: #2d2d2d;
-        border-radius: 3px;
-        padding: 4px 6px;
-        font-size: 9pt;
-        opacity: 240;
     }}
     """
 

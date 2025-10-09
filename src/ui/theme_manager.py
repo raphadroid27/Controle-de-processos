@@ -18,6 +18,8 @@ class ThemeManager:
     _DEFAULT_MODE: ClassVar[str] = "light"
     _COLOR_SETTINGS_KEY: ClassVar[str] = "appearance/theme_accent"
     _DEFAULT_COLOR: ClassVar[str] = "verde"
+    _STYLE_SETTINGS_KEY: ClassVar[str] = "appearance/theme_style"
+    _DEFAULT_STYLE: ClassVar[str] = "Fusion"
     _COLOR_OPTIONS: ClassVar[dict[str, tuple[str, str]]] = {
         "verde": ("Verde", "#4CAF50"),
         "azul": ("Azul", "#2196F3"),
@@ -33,7 +35,15 @@ class ThemeManager:
     def __init__(self) -> None:
         self._settings = QSettings()
         # Define o estilo Fusion para melhor suporte a paletas
-        QApplication.setStyle("Fusion")
+        saved_style = self._settings.value(
+            self._STYLE_SETTINGS_KEY, self._DEFAULT_STYLE
+        )
+        if not isinstance(saved_style, str):
+            saved_style = self._DEFAULT_STYLE
+        self._style = saved_style
+        # Garante que seja salvo
+        self._settings.setValue(self._STYLE_SETTINGS_KEY, self._style)
+        QApplication.setStyle(self._style)
         saved_mode = self._settings.value(
             self._SETTINGS_KEY, self._DEFAULT_MODE)
         self._mode = (
@@ -65,6 +75,11 @@ class ThemeManager:
         """Retorna a cor de destaque atualmente aplicada."""
         return self._color
 
+    @property
+    def current_style(self) -> str:
+        """Retorna o estilo atualmente aplicado."""
+        return self._style
+
     def initialize(self) -> None:
         """Aplica o tema salvo sem sobrescrever a preferência."""
         self._apply_theme(self._mode, persist=False)
@@ -83,6 +98,17 @@ class ThemeManager:
         self._settings.setValue(self._COLOR_SETTINGS_KEY, color_key)
         self._apply_theme(self._mode, persist=False)
         self._notify_color_listeners()
+
+    def apply_style(self, style: str) -> None:
+        """Aplica um novo estilo para a aplicação."""
+        if style == self._style:
+            return
+        self._style = style
+        self._settings.setValue(self._STYLE_SETTINGS_KEY, style)
+        QApplication.setStyle(style)
+        # Força atualização de todos os widgets para aplicar o novo estilo
+        for widget in QApplication.allWidgets():
+            widget.repaint()
 
     def register_listener(self, callback: Callable[[str], None]) -> None:
         """Registra um callback para ser notificado quando o tema mudar."""
