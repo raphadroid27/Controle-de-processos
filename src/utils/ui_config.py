@@ -12,7 +12,10 @@ Funcionalidades:
 - Funções utilitárias para aplicação de estilos
 """
 
-from PySide6.QtWidgets import QSizePolicy
+from pathlib import Path
+
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
 # Constantes para padronização de componentes
 ALTURA_BOTAO = 32
@@ -314,3 +317,16 @@ def obter_estilo_progress_bar():
             border-radius: 4px;
         }
     """
+
+
+def aplicar_icone_padrao(widget: QWidget) -> None:
+    """
+    Aplica o ícone padrão da aplicação a um widget (janela ou diálogo).
+
+    Args:
+        widget: O widget (QMainWindow, QDialog, etc.) ao qual aplicar o ícone.
+    """
+    icon_path = Path(__file__).parent.parent.parent / "assets" / "icone.svg"
+    if icon_path.exists():
+        icon = QIcon(str(icon_path))
+        widget.setWindowIcon(icon)

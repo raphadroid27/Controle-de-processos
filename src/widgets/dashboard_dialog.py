@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
 from ..utils.dashboard_metrics import obter_metricas_dashboard
 from ..utils.formatters import (formatar_data_para_exibicao,
                                 formatar_valor_monetario)
+from ..utils.ui_config import aplicar_icone_padrao
 
 _FIGURE_FACE = "#202124"
 _AXES_FACE = "#2b3138"
@@ -150,6 +151,9 @@ class DashboardDialog(QDialog):
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
         self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
         self.setSizeGripEnabled(True)
+
+        # Aplicar ícone padrão
+        aplicar_icone_padrao(self)
 
     def _exibir_aviso_sem_pandas(self) -> bool:
         if pd is not None:

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
 from ..utils import session_manager
+from ..utils.ui_config import aplicar_icone_padrao
 from ..widgets.dashboard_dialog import DashboardDialog
 from ..widgets.processos_widget import ProcessosWidget
 from .theme_manager import ThemeManager
@@ -30,6 +31,9 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Controle de Processos")
         self.setMinimumSize(800, 600)
+
+        # Aplicar ícone padrão
+        aplicar_icone_padrao(self)
 
         self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
 

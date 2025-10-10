@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
                                QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from .utils import session_manager, usuario
-from .utils.ui_config import aplicar_estilo_botao
+from .utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao
 
 
 class GerenciarUsuariosDialog(QDialog):
@@ -27,6 +27,10 @@ class GerenciarUsuariosDialog(QDialog):
         self.setWindowTitle("Gerenciar Usuários e Sessões")
         self.setFixedSize(600, 400)
         self.setModal(True)
+
+        # Aplicar ícone padrão
+        aplicar_icone_padrao(self)
+
         # Atributos inicializados para satisfazer Pylint
         # (definidos em métodos auxiliares)
         self.frame_busca = None
