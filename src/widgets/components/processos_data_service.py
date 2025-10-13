@@ -310,6 +310,12 @@ def obter_estatisticas_totais(
         dias_uteis_periodo,
     )
 
+    # Estimativa baseada na média do período filtrado multiplicada pelos dias úteis do período filtrado
+    estimativa = _calcular_estimativa_itens_mes(
+        media_por_dia,
+        dias_uteis_periodo,
+    )
+
     return EstatisticasTotais(
         total_processos=totais.get("total_processos", 0),
         total_itens=totais.get("total_itens", 0),
