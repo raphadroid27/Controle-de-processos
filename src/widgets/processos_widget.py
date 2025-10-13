@@ -529,6 +529,13 @@ class ProcessosWidget(QWidget):
                     "Data de processo não pode ser maior que a data atual.",
                 )
                 return
+            if data_processo_qdate < data_entrada_qdate:
+                QMessageBox.warning(
+                    self,
+                    "Erro",
+                    "Data de processo não pode ser menor que a data de entrada.",
+                )
+                return
             data_processo = data_processo_qdate.toString("yyyy-MM-dd")
         else:
             data_processo = ""
