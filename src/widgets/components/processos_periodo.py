@@ -98,6 +98,15 @@ class PeriodoFiltroController:
         """Retorna as datas de início/fim associadas ao período atual."""
 
         if self.combo_periodo.currentText() == "Todos os períodos":
+            # Quando "Todos os períodos" é selecionado, mas há um ano específico,
+            # filtra pelo ano inteiro
+            ano_selecionado = self.combo_ano.currentText()
+            if ano_selecionado and ano_selecionado != "Todos os anos":
+                try:
+                    ano_int = int(ano_selecionado)
+                    return f"{ano_int}-01-01", f"{ano_int}-12-31"
+                except ValueError:
+                    pass
             return None, None
 
         index = self.combo_periodo.currentIndex()

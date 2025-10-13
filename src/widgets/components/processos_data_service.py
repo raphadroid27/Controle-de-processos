@@ -117,6 +117,7 @@ def _ordenacao_chave(registro: Sequence[Any]) -> tuple[datetime, datetime]:
     """Chave de ordenação utilizada para ordenar registros."""
 
     data_processo = registro[6]
+    data_entrada = registro[5]
     data_lancamento = registro[9]
 
     try:
@@ -135,12 +136,15 @@ def _ordenacao_chave(registro: Sequence[Any]) -> tuple[datetime, datetime]:
         print(f"Erro ao converter timestamp '{data_lancamento}': {exc}")
         timestamp_obj = datetime.min
 
-    if not data_processo:
+    # Usar data_processo se existir, senão data_entrada
+    data_para_ordenacao = data_processo or data_entrada
+
+    if not data_para_ordenacao:
         return (datetime.min, timestamp_obj)
 
     try:
-        data_processo_obj = datetime.strptime(str(data_processo), "%Y-%m-%d")
-        return (data_processo_obj, timestamp_obj)
+        data_obj = datetime.strptime(str(data_para_ordenacao), "%Y-%m-%d")
+        return (data_obj, timestamp_obj)
     except ValueError:
         return (datetime.min, timestamp_obj)
 
@@ -152,6 +156,8 @@ def buscar_registros_filtrados(
     processo: Optional[str],
     data_inicio: Optional[str],
     data_fim: Optional[str],
+    limite: Optional[int] = None,
+    offset: Optional[int] = None,
 ) -> List[Sequence[Any]]:
     """Busca registros no banco aplicando filtros e os devolve ordenados."""
 
@@ -162,6 +168,8 @@ def buscar_registros_filtrados(
             processo=processo,
             data_inicio=data_inicio,
             data_fim=data_fim,
+            limite=limite,
+            offset=offset,
         )
     except (
         SQLAlchemyError,

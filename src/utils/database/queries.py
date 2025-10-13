@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, List, Optional, Tuple
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from .config import encode_registro_id, slugify_usuario
@@ -25,7 +25,8 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if processo:
         condicoes.append(
@@ -36,11 +37,20 @@ def _montar_condicoes(
         data_inicio_parsed = parse_iso_date(data_inicio)
         data_fim_parsed = parse_iso_date(data_fim)
         if data_inicio_parsed and data_fim_parsed:
+            # Filtrar por data_processo se existir, senão por data_entrada
             condicoes.append(
-                and_(
-                    RegistroModel.data_processo.is_not(None),
-                    RegistroModel.data_processo.between(
-                        data_inicio_parsed, data_fim_parsed
+                or_(
+                    and_(
+                        RegistroModel.data_processo.is_not(None),
+                        RegistroModel.data_processo.between(
+                            data_inicio_parsed, data_fim_parsed
+                        ),
+                    ),
+                    and_(
+                        RegistroModel.data_processo.is_(None),
+                        RegistroModel.data_entrada.between(
+                            data_inicio_parsed, data_fim_parsed
+                        ),
                     ),
                 )
             )
@@ -53,10 +63,17 @@ def _buscar_registros_em_session(
     *,
     slug: str,
     condicoes,
+    limite: Optional[int] = None,
+    offset: Optional[int] = None,
 ) -> List[Tuple[Any, ...]]:
     stmt = select(RegistroModel)
     for cond in condicoes:
         stmt = stmt.where(cond)
+
+    if limite is not None:
+        stmt = stmt.limit(limite)
+    if offset is not None:
+        stmt = stmt.offset(offset)
 
     resultados = session.execute(stmt).scalars().all()
     dados = []
@@ -90,6 +107,8 @@ def buscar_lancamentos_filtros_completos(
     processo: Optional[str] = None,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
+    limite: Optional[int] = None,
+    offset: Optional[int] = None,
 ):
     """Lista lançamentos considerando filtros de usuário, cliente, processo e datas."""
 
@@ -107,7 +126,8 @@ def buscar_lancamentos_filtros_completos(
         session = get_user_session(usuario)
         try:
             registros.extend(
-                _buscar_registros_em_session(session, slug=slug, condicoes=condicoes)
+                _buscar_registros_em_session(
+                    session, slug=slug, condicoes=condicoes, limite=limite, offset=offset)
             )
         finally:
             session.close()
@@ -117,7 +137,7 @@ def buscar_lancamentos_filtros_completos(
             try:
                 registros.extend(
                     _buscar_registros_em_session(
-                        session, slug=slug, condicoes=condicoes
+                        session, slug=slug, condicoes=condicoes, limite=limite, offset=offset
                     )
                 )
             finally:
@@ -237,7 +257,8 @@ def _buscar_valores_unicos(
         session = get_user_session(usuario)
         try:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,) in session.execute(stmt) if value)
+            valores.update(value for (value,)
+                           in session.execute(stmt) if value)
         finally:
             session.close()
     else:
@@ -245,7 +266,8 @@ def _buscar_valores_unicos(
             session = get_sessionmaker_for_slug(slug)()
             try:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,) in session.execute(stmt) if value)
+                valores.update(value for (value,)
+                               in session.execute(stmt) if value)
             finally:
                 session.close()
 
@@ -394,7 +416,8 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                 chave = (inicio, fim)
                 if chave not in vistos:
                     vistos.add(chave)
-                    periodos.append({"display": display, "inicio": inicio, "fim": fim})
+                    periodos.append(
+                        {"display": display, "inicio": inicio, "fim": fim})
 
     periodos.sort(key=lambda p: p["inicio"], reverse=True)
     return periodos

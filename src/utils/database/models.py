@@ -30,7 +30,8 @@ class UsuarioModel(SharedBase):
     ativo: Mapped[bool] = mapped_column(
         Boolean, default=True, nullable=False, server_default="1"
     )
-    arquivado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    arquivado_em: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.datetime("now"), nullable=False
     )
@@ -56,12 +57,16 @@ class RegistroModel(UserBase):
     __tablename__ = "registro"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    usuario: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    cliente: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    processo: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    usuario: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
+    cliente: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
+    processo: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
     qtde_itens: Mapped[int] = mapped_column(Integer, nullable=False)
-    data_entrada: Mapped[date] = mapped_column(Date, nullable=False)
-    data_processo: Mapped[Optional[date]] = mapped_column(Date)
+    data_entrada: Mapped[date] = mapped_column(
+        Date, nullable=False, index=True)
+    data_processo: Mapped[Optional[date]] = mapped_column(Date, index=True)
     tempo_corte: Mapped[Optional[str]] = mapped_column(String(16))
     valor_pedido: Mapped[float] = mapped_column(Float, nullable=False)
     data_lancamento: Mapped[datetime] = mapped_column(
