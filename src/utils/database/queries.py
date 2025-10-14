@@ -8,6 +8,8 @@ from typing import Any, List, Optional, Tuple
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from ..periodo_faturamento import calcular_periodo_faturamento_atual_datas
+
 from .config import encode_registro_id, slugify_usuario
 from .helpers import format_datetime, parse_iso_date
 from .models import RegistroModel, UsuarioModel
@@ -95,12 +97,6 @@ def _buscar_registros_em_session(
     return dados
 
 
-def buscar_lancamentos_filtros(usuario: Optional[str] = None):
-    """Retorna os lançamentos filtrados apenas pelo usuário informado."""
-
-    return buscar_lancamentos_filtros_completos(usuario=usuario)
-
-
 def buscar_lancamentos_filtros_completos(
     usuario: Optional[str] = None,
     cliente: Optional[str] = None,
@@ -165,10 +161,12 @@ def _agregar_em_session(session: Session, condicoes) -> Tuple[int, int, float]:
     return total_registros, total_itens, total_valor
 
 
-def buscar_estatisticas(usuario: Optional[str] = None):
-    """Obtém totais agregados globais ou por usuário para indicadores principais."""
+def _calcular_estatisticas_agregadas(
+    condicoes,
+    usuario: Optional[str] = None,
+) -> dict:
+    """Calcula estatísticas agregadas (total_processos, total_itens, total_valor) para as condições dadas."""
 
-    condicoes = _montar_condicoes()
     total_proc = total_itens = 0
     total_valor = 0.0
 
@@ -197,6 +195,13 @@ def buscar_estatisticas(usuario: Optional[str] = None):
         "total_itens": total_itens,
         "total_valor": total_valor,
     }
+
+
+def buscar_estatisticas(usuario: Optional[str] = None):
+    """Obtém totais agregados globais ou por usuário para indicadores principais."""
+
+    condicoes = _montar_condicoes()
+    return _calcular_estatisticas_agregadas(condicoes, usuario)
 
 
 def buscar_estatisticas_completas(
@@ -214,35 +219,7 @@ def buscar_estatisticas_completas(
         data_inicio=data_inicio,
         data_fim=data_fim,
     )
-
-    total_proc = total_itens = 0
-    total_valor = 0.0
-
-    if usuario:
-        session = get_user_session(usuario)
-        try:
-            tp, ti, tv = _agregar_em_session(session, condicoes)
-        finally:
-            session.close()
-        total_proc += tp
-        total_itens += ti
-        total_valor += tv
-    else:
-        for slug, _ in iter_user_databases():
-            session = get_sessionmaker_for_slug(slug)()
-            try:
-                tp, ti, tv = _agregar_em_session(session, condicoes)
-            finally:
-                session.close()
-            total_proc += tp
-            total_itens += ti
-            total_valor += tv
-
-    return {
-        "total_processos": total_proc,
-        "total_itens": total_itens,
-        "total_valor": total_valor,
-    }
+    return _calcular_estatisticas_agregadas(condicoes, usuario)
 
 
 def _buscar_valores_unicos(
@@ -287,19 +264,11 @@ def buscar_usuarios_unicos(*, incluir_arquivados: bool = False) -> List[str]:
 
 def buscar_clientes_unicos(usuario: Optional[str] = None) -> List[str]:
     """Retorna clientes distintos globalmente ou para um usuário específico."""
-
     return _buscar_valores_unicos("cliente", usuario)
-
-
-def buscar_clientes_unicos_por_usuario(usuario: Optional[str] = None) -> List[str]:
-    """Mantida por compatibilidade: encaminha para ``buscar_clientes_unicos``."""
-
-    return buscar_clientes_unicos(usuario)
 
 
 def buscar_processos_unicos_por_usuario(usuario: Optional[str] = None) -> List[str]:
     """Retorna os nomes de processo distintos para o escopo indicado."""
-
     return _buscar_valores_unicos("processo", usuario)
 
 
@@ -307,7 +276,7 @@ def buscar_meses_unicos(usuario: Optional[str] = None) -> List[str]:
     """Recupera meses (MM) com lançamentos processados para o usuário ou geral."""
 
     meses: set[str] = set()
-    registros = buscar_lancamentos_filtros(usuario=usuario)
+    registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     for registro in registros:
         data_proc = registro[6]
         if data_proc:
@@ -319,7 +288,7 @@ def buscar_anos_unicos(usuario: Optional[str] = None) -> List[str]:
     """Retorna anos distintos com lançamentos processados para o escopo fornecido."""
 
     anos: set[str] = set()
-    registros = buscar_lancamentos_filtros(usuario=usuario)
+    registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     for registro in registros:
         data_proc = registro[6]
         if data_proc:
@@ -334,7 +303,7 @@ def _listar_datas_processo_filtradas(
 ) -> List[str]:
     """Lista datas de processo filtradas por usuário e ano, podendo incluir ano seguinte."""
 
-    registros = buscar_lancamentos_filtros(usuario=usuario)
+    registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     datas = []
     for registro in registros:
         data_proc = registro[6]
@@ -399,26 +368,73 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
     """Produz os períodos de faturamento (26/25) de um ano específico."""
 
     ano_int = int(ano)
-    datas = _listar_datas_processo_filtradas(
-        usuario=usuario,
-        ano=ano_int,
-        incluir_ano_seguinte=True,
-    )
 
-    periodos = []
-    vistos = set()
-    for data in datas:
-        intervalo = _periodo_faturamento_datas(data)
-        if intervalo and int(intervalo[0][:4]) == ano_int:
-            inicio, fim = intervalo
-            display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
+    # Verificar se é o ano atual
+    data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+    ano_atual = str(data_inicio_atual.year)
+
+    if ano == ano_atual:
+        # Para o ano atual, mostrar apenas períodos que existem (com dados)
+        datas = _listar_datas_processo_filtradas(
+            usuario=usuario,
+            ano=ano_int,
+            incluir_ano_seguinte=True,
+        )
+
+        periodos = []
+        vistos = set()
+        for data in datas:
+            intervalo = _periodo_faturamento_datas(data)
+            if intervalo and int(intervalo[0][:4]) == ano_int:
+                inicio, fim = intervalo
+                display = _formatar_periodo_exibicao(
+                    inicio, fim, com_ano=False)
+                if display:
+                    chave = (inicio, fim)
+                    if chave not in vistos:
+                        vistos.add(chave)
+                        periodos.append(
+                            {"display": display, "inicio": inicio, "fim": fim})
+
+        # Garantir que o período atual seja incluído se ainda não estiver
+        inicio_atual_fmt = data_inicio_atual.strftime("%d/%m")
+        fim_atual_fmt = data_fim_atual.strftime("%d/%m")
+        periodo_atual_display = f"{inicio_atual_fmt} a {fim_atual_fmt}"
+        periodo_atual_existe = any(
+            periodo.get("display") == periodo_atual_display for periodo in periodos
+        )
+        if not periodo_atual_existe:
+            periodos.insert(
+                0,
+                {
+                    "display": periodo_atual_display,
+                    "inicio": data_inicio_atual.strftime("%Y-%m-%d"),
+                    "fim": data_fim_atual.strftime("%Y-%m-%d"),
+                },
+            )
+    else:
+        # Para anos anteriores, gerar todos os 12 períodos do ano
+        periodos = []
+        for mes in range(1, 13):
+            if mes == 1:
+                # Janeiro: 26/12/(ano-1) a 25/01/ano
+                inicio = date(ano_int - 1, 12, 26)
+                fim = date(ano_int, 1, 25)
+            else:
+                # Outros meses: 26/(mes-1) a 25/mes
+                inicio = date(ano_int, mes - 1, 26)
+                fim = date(ano_int, mes, 25)
+
+            display = _formatar_periodo_exibicao(
+                inicio.isoformat(), fim.isoformat(), com_ano=False)
             if display:
-                chave = (inicio, fim)
-                if chave not in vistos:
-                    vistos.add(chave)
-                    periodos.append(
-                        {"display": display, "inicio": inicio, "fim": fim})
+                periodos.append({
+                    "display": display,
+                    "inicio": inicio.isoformat(),
+                    "fim": fim.isoformat()
+                })
 
+    # Ordenar por início, mais recentes primeiro
     periodos.sort(key=lambda p: p["inicio"], reverse=True)
     return periodos
 
