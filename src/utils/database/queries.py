@@ -9,7 +9,6 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from ..periodo_faturamento import calcular_periodo_faturamento_atual_datas
-
 from .config import encode_registro_id, slugify_usuario
 from .helpers import format_datetime, parse_iso_date
 from .models import RegistroModel, UsuarioModel
@@ -27,8 +26,7 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(
-            RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if processo:
         condicoes.append(
@@ -123,7 +121,12 @@ def buscar_lancamentos_filtros_completos(
         try:
             registros.extend(
                 _buscar_registros_em_session(
-                    session, slug=slug, condicoes=condicoes, limite=limite, offset=offset)
+                    session,
+                    slug=slug,
+                    condicoes=condicoes,
+                    limite=limite,
+                    offset=offset,
+                )
             )
         finally:
             session.close()
@@ -133,7 +136,11 @@ def buscar_lancamentos_filtros_completos(
             try:
                 registros.extend(
                     _buscar_registros_em_session(
-                        session, slug=slug, condicoes=condicoes, limite=limite, offset=offset
+                        session,
+                        slug=slug,
+                        condicoes=condicoes,
+                        limite=limite,
+                        offset=offset,
                     )
                 )
             finally:
@@ -234,8 +241,7 @@ def _buscar_valores_unicos(
         session = get_user_session(usuario)
         try:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,)
-                           in session.execute(stmt) if value)
+            valores.update(value for (value,) in session.execute(stmt) if value)
         finally:
             session.close()
     else:
@@ -243,8 +249,7 @@ def _buscar_valores_unicos(
             session = get_sessionmaker_for_slug(slug)()
             try:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,)
-                               in session.execute(stmt) if value)
+                valores.update(value for (value,) in session.execute(stmt) if value)
             finally:
                 session.close()
 
@@ -387,14 +392,14 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
             intervalo = _periodo_faturamento_datas(data)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
-                display = _formatar_periodo_exibicao(
-                    inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
                 if display:
                     chave = (inicio, fim)
                     if chave not in vistos:
                         vistos.add(chave)
                         periodos.append(
-                            {"display": display, "inicio": inicio, "fim": fim})
+                            {"display": display, "inicio": inicio, "fim": fim}
+                        )
 
         # Garantir que o período atual seja incluído se ainda não estiver
         inicio_atual_fmt = data_inicio_atual.strftime("%d/%m")
@@ -426,13 +431,16 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                 fim = date(ano_int, mes, 25)
 
             display = _formatar_periodo_exibicao(
-                inicio.isoformat(), fim.isoformat(), com_ano=False)
+                inicio.isoformat(), fim.isoformat(), com_ano=False
+            )
             if display:
-                periodos.append({
-                    "display": display,
-                    "inicio": inicio.isoformat(),
-                    "fim": fim.isoformat()
-                })
+                periodos.append(
+                    {
+                        "display": display,
+                        "inicio": inicio.isoformat(),
+                        "fim": fim.isoformat(),
+                    }
+                )
 
     # Ordenar por início, mais recentes primeiro
     periodos.sort(key=lambda p: p["inicio"], reverse=True)

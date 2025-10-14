@@ -6,15 +6,17 @@ tabela de dados e controles de filtros.
 """
 
 from datetime import datetime
+
 from PySide6.QtCore import QDate, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
 from ..utils import database as db
-from ..utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
-from ..utils.periodo_faturamento import \
-    calcular_periodo_faturamento_atual_datas, \
-    calcular_periodo_faturamento_para_data_datas
+from ..utils.formatters import (formatar_data_para_exibicao,
+                                formatar_valor_monetario)
+from ..utils.periodo_faturamento import (
+    calcular_periodo_faturamento_atual_datas,
+    calcular_periodo_faturamento_para_data_datas)
 from ..utils.ui_config import ESPACAMENTO_PADRAO
 from .components import processos_autocomplete
 from .components import processos_data_service as processos_data
@@ -92,10 +94,8 @@ class ProcessosWidget(QWidget):
         self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
 
-        self.shortcut_enter_num = QShortcut(
-            QKeySequence(Qt.Key.Key_Enter), self)
-        self.shortcut_enter_num.activated.connect(
-            self.atalho_adicionar_processo)
+        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
+        self.shortcut_enter_num.activated.connect(self.atalho_adicionar_processo)
 
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
         self.shortcut_delete.activated.connect(self.excluir_processo)
@@ -373,8 +373,7 @@ class ProcessosWidget(QWidget):
 
         except (ValueError, AttributeError, TypeError) as e:
             self.aplicar_filtro(rolar_para_ultimo=False)
-            QMessageBox.warning(
-                self, "Erro", f"Erro ao atualizar registro: {str(e)}")
+            QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             self.tabela.blockSignals(False)
 
@@ -466,7 +465,9 @@ class ProcessosWidget(QWidget):
             self.tabela.setCurrentCell(ultima_linha, 0)
             self.tabela.setFocus()  # Dá foco à tabela para destacar a seleção
 
-    def selecionar_registro_recente(self, cliente: str, processo: str, data_entrada: str):
+    def selecionar_registro_recente(
+        self, cliente: str, processo: str, data_entrada: str
+    ):
         """Seleciona o registro recém-adicionado na tabela baseado nos dados informados."""
         offset = 1 if self.is_admin else 0
         data_entrada_formatada = formatar_data_para_exibicao(data_entrada)
@@ -477,9 +478,11 @@ class ProcessosWidget(QWidget):
             processo_tabela = self.tabela.item(row, 1 + offset).text()
             data_entrada_tabela = self.tabela.item(row, 3 + offset).text()
 
-            if (cliente_tabela.upper() == cliente.upper() and
-                processo_tabela == processo and
-                    data_entrada_tabela == data_entrada_formatada):
+            if (
+                cliente_tabela.upper() == cliente.upper()
+                and processo_tabela == processo
+                and data_entrada_tabela == data_entrada_formatada
+            ):
                 # Encontrou o registro, selecionar e rolar para ele
                 self.tabela.selectRow(row)
                 self.tabela.setCurrentCell(row, offset)
@@ -545,8 +548,7 @@ class ProcessosWidget(QWidget):
 
         # Capturar anos disponíveis antes da adição
         usuario_filtro = self._calcular_usuario_filtro()
-        anos_antes = set(
-            processos_data.listar_anos_disponiveis(usuario_filtro))
+        anos_antes = set(processos_data.listar_anos_disponiveis(usuario_filtro))
 
         resultado = db.adicionar_lancamento(
             usuario=self.usuario_logado,
@@ -566,8 +568,7 @@ class ProcessosWidget(QWidget):
             self.autocomplete_manager.refresh_all()
 
             # Verificar se novos anos foram criados e recarregar filtros se necessário
-            anos_depois = set(
-                processos_data.listar_anos_disponiveis(usuario_filtro))
+            anos_depois = set(processos_data.listar_anos_disponiveis(usuario_filtro))
             novos_anos_criados = anos_depois != anos_antes
 
             if novos_anos_criados:
@@ -577,17 +578,26 @@ class ProcessosWidget(QWidget):
             # (apenas se não for o período vigente, para poupar processamento)
             data_registro = datetime.strptime(data_entrada, "%Y-%m-%d")
             periodo_inicio, periodo_fim = calcular_periodo_faturamento_para_data_datas(
-                data_registro)
+                data_registro
+            )
 
             # Verificar se o período do registro é diferente do período vigente
-            periodo_atual_inicio, periodo_atual_fim = calcular_periodo_faturamento_atual_datas()
+            periodo_atual_inicio, periodo_atual_fim = (
+                calcular_periodo_faturamento_atual_datas()
+            )
 
-            if (periodo_inicio != periodo_atual_inicio or periodo_fim != periodo_atual_fim):
+            if (
+                periodo_inicio != periodo_atual_inicio
+                or periodo_fim != periodo_atual_fim
+            ):
                 # Selecionar o ano do período
                 ano_periodo = str(periodo_inicio.year)
                 if self.periodo_controller:
                     # Garantir que o ano esteja disponível (recarregar se necessário)
-                    if ano_periodo not in [self.periodo_controller.combo_ano.itemText(i) for i in range(self.periodo_controller.combo_ano.count())]:
+                    if ano_periodo not in [
+                        self.periodo_controller.combo_ano.itemText(i)
+                        for i in range(self.periodo_controller.combo_ano.count())
+                    ]:
                         if novos_anos_criados:
                             self.configurar_filtros_ano_periodo()
 
@@ -597,12 +607,17 @@ class ProcessosWidget(QWidget):
                     # Tentar selecionar o período específico (só funciona se o período existir na lista)
                     periodo_display = f"{periodo_inicio.strftime('%d/%m')} a {periodo_fim.strftime('%d/%m')}"
                     self.periodo_controller.selecionar_periodo_por_datas(
-                        periodo_display)
+                        periodo_display
+                    )
                     # Se o período específico não foi encontrado, ficará em "Todos os períodos"
 
                 # Selecionar o registro específico após a tabela ser atualizada
-                QTimer.singleShot(100, lambda: self.selecionar_registro_recente(
-                    cliente, processo, data_entrada))
+                QTimer.singleShot(
+                    100,
+                    lambda: self.selecionar_registro_recente(
+                        cliente, processo, data_entrada
+                    ),
+                )
 
             self.aplicar_filtro()
             self.entry_cliente.setFocus()
