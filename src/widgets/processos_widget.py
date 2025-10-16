@@ -5,31 +5,24 @@ Contém a interface principal do sistema com formulário de entrada,
 tabela de dados e controles de filtros.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 from PySide6.QtCore import QDate, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
 from ..utils import database as db
-from ..utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
+from ..utils.formatters import (formatar_data_para_exibicao,
+                                formatar_valor_monetario)
 from ..utils.periodo_faturamento import (
     calcular_periodo_faturamento_atual_datas,
-    calcular_periodo_faturamento_para_data_datas,
-)
+    calcular_periodo_faturamento_para_data_datas)
 from ..utils.ui_config import ESPACAMENTO_PADRAO
-from .components import (
-    processos_autocomplete,
-)
+from .components import processos_autocomplete
 from .components import processos_data_service as processos_data
-from .components import (
-    processos_filters,
-    processos_form,
-    processos_periodo,
-    processos_table,
-    processos_table_edit,
-    processos_totais,
-)
+from .components import (processos_filters, processos_form, processos_periodo,
+                         processos_table, processos_table_edit,
+                         processos_totais)
 
 
 class ProcessosWidget(QWidget):
@@ -327,6 +320,8 @@ class ProcessosWidget(QWidget):
         self.aplicar_filtro()
         QTimer.singleShot(100, self.rolar_para_ultimo_item)
 
+    # pylint: disable=R0912,R0914
+
     def on_item_changed(self, item):
         """Aplica validações e persiste alterações ao editar a tabela."""
         if not item:
@@ -366,6 +361,16 @@ class ProcessosWidget(QWidget):
                 col_offset,
             )
 
+            # Validação cruzada de datas
+            if col_editada in (3, 4):  # data_entrada ou data_processo
+                ok_datas, msg_datas = self._validar_datas_entrada_processo(
+                    dados_linha.data_entrada, dados_linha.data_processo
+                )
+                if not ok_datas:
+                    QMessageBox.warning(self, "Erro", msg_datas)
+                    self.aplicar_filtro(rolar_para_ultimo=False)
+                    return
+
             resultado = db.atualizar_lancamento(
                 registro_id,
                 **dados_linha.to_update_kwargs(),
@@ -373,6 +378,41 @@ class ProcessosWidget(QWidget):
 
             if "Sucesso" in resultado and col_editada == 3:
                 self.configurar_filtros_ano_periodo()
+
+            if "Sucesso" in resultado:
+                # Verificar se o período do registro editado precisa ajustar o filtro
+                if col_editada in (3, 4):  # data_entrada ou data_processo
+                    # Usar data_processo se disponível, senão data_entrada
+                    data_registro_str = (
+                        dados_linha.data_processo or dados_linha.data_entrada
+                    )
+                    if data_registro_str:
+                        data_registro = datetime.strptime(data_registro_str, "%Y-%m-%d")
+                        periodo_inicio, periodo_fim = (
+                            calcular_periodo_faturamento_para_data_datas(data_registro)
+                        )
+
+                        # Verificar se o filtro já está no período do registro
+                        periodo_selecionado_inicio, periodo_selecionado_fim = (
+                            self.periodo_controller.obter_periodo_selecionado()
+                            if self.periodo_controller
+                            else (None, None)
+                        )
+                        filtro_no_periodo_registro = (
+                            periodo_selecionado_inicio
+                            == periodo_inicio.strftime("%Y-%m-%d")
+                            and periodo_selecionado_fim
+                            == periodo_fim.strftime("%Y-%m-%d")
+                        )
+
+                        if not filtro_no_periodo_registro:
+                            self._ajustar_periodo_para_registro(
+                                periodo_inicio,
+                                periodo_fim,
+                                dados_linha.cliente,
+                                dados_linha.processo,
+                                dados_linha.data_entrada,
+                            )
 
             if "Sucesso" not in resultado:
                 QMessageBox.warning(self, "Erro", resultado)
@@ -384,6 +424,82 @@ class ProcessosWidget(QWidget):
             QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             self.tabela.blockSignals(False)
+
+    def _validar_datas_entrada_processo(
+        self, data_entrada: str | None, data_processo: str | None
+    ) -> tuple[bool, str | None]:
+        """Valida se data de entrada não é maior que data de processo."""
+        if not data_entrada or not data_processo:
+            return True, None
+        try:
+            dt_entrada = datetime.strptime(data_entrada, "%Y-%m-%d").date()
+            dt_processo = datetime.strptime(data_processo, "%Y-%m-%d").date()
+            if dt_entrada > dt_processo:
+                return (
+                    False,
+                    "Data de entrada não pode ser maior que a data de processo.",
+                )
+        except ValueError:
+            return False, "Datas inválidas."
+        return True, None
+
+    # pylint: disable=R0914,R0917
+
+    def _ajustar_periodo_para_registro(
+        self,
+        periodo_inicio: date,
+        periodo_fim: date,
+        cliente: str,
+        processo: str,
+        data_entrada: str,
+    ) -> None:
+        """Ajusta o filtro de período se necessário para o registro."""
+        if not self.periodo_controller:
+            return
+
+        periodo_selecionado_inicio, periodo_selecionado_fim = (
+            self.periodo_controller.obter_periodo_selecionado()
+        )
+        filtro_no_periodo_registro = (
+            periodo_selecionado_inicio == periodo_inicio.strftime("%Y-%m-%d")
+            and periodo_selecionado_fim == periodo_fim.strftime("%Y-%m-%d")
+        )
+
+        if not filtro_no_periodo_registro:
+            # Garantir que o ano esteja disponível
+            ano_periodo = str(periodo_inicio.year)
+            combo_ano = self.periodo_controller.combo_ano
+            if ano_periodo not in [
+                combo_ano.itemText(i) for i in range(combo_ano.count())
+            ]:
+                combo_ano.addItem(ano_periodo)
+                # Ordenar os anos
+                anos = []
+                for i in range(1, combo_ano.count()):
+                    anos.append(combo_ano.itemText(i))
+                anos.sort(reverse=True)
+                combo_ano.clear()
+                combo_ano.addItem("Todos os anos")
+                for ano in anos:
+                    combo_ano.addItem(ano)
+
+            controller = self.periodo_controller
+            controller.selecionar_ano(ano_periodo)
+            controller.atualizar_periodos()
+
+            # Selecionar o período
+            periodo_display = (
+                f"{periodo_inicio.strftime('%d/%m')} a {periodo_fim.strftime('%d/%m')}"
+            )
+            controller.selecionar_periodo_por_datas(periodo_display)
+
+            # Destacar o item
+            QTimer.singleShot(
+                100,
+                lambda: self.selecionar_registro_recente(
+                    cliente, processo, data_entrada
+                ),
+            )
 
     def _calcular_usuario_filtro(self):
         """Determina o filtro de usuário considerando admin/usuário."""
@@ -520,6 +636,8 @@ class ProcessosWidget(QWidget):
             estimativa_itens_mes=estatisticas.estimativa_itens_mes,
         )
 
+    # pylint: disable=R0914
+
     def adicionar_processo(self):
         """Valida campos e insere novo processo no banco."""
         form_data = {
@@ -587,7 +705,6 @@ class ProcessosWidget(QWidget):
                 self.configurar_filtros_ano_periodo()
 
             # Selecionar automaticamente o período correspondente ao novo registro
-            # (apenas se não for o período vigente, para poupar processamento)
             # Usar data de processo se disponível, senão usar data de entrada
             data_registro = datetime.strptime(
                 data_processo if data_processo else data_entrada, "%Y-%m-%d"
@@ -596,47 +713,24 @@ class ProcessosWidget(QWidget):
                 data_registro
             )
 
-            # Verificar se o período do registro é diferente do período vigente
-            periodo_atual_inicio, periodo_atual_fim = (
-                calcular_periodo_faturamento_atual_datas()
+            # Verificar se o filtro já está no período do registro
+            periodo_selecionado_inicio, periodo_selecionado_fim = (
+                self.periodo_controller.obter_periodo_selecionado()
+                if self.periodo_controller
+                else (None, None)
+            )
+            filtro_no_periodo_registro = (
+                periodo_selecionado_inicio == periodo_inicio.strftime("%Y-%m-%d")
+                and periodo_selecionado_fim == periodo_fim.strftime("%Y-%m-%d")
             )
 
-            if (
-                periodo_inicio != periodo_atual_inicio
-                or periodo_fim != periodo_atual_fim
-            ):
-                # Selecionar o ano do período
-                ano_periodo = str(periodo_inicio.year)
-                if self.periodo_controller:
-                    # Garantir que o ano esteja disponível (recarregar se necessário)
-                    if ano_periodo not in [
-                        self.periodo_controller.combo_ano.itemText(i)
-                        for i in range(self.periodo_controller.combo_ano.count())
-                    ]:
-                        if novos_anos_criados:
-                            self.configurar_filtros_ano_periodo()
-
-                    controller = self.periodo_controller
-                    controller.selecionar_ano(ano_periodo)
-                    controller.on_ano_changed()
-
-                    # Tentar selecionar o período específico
-                    # (só funciona se o período existir na lista)
-                    periodo_display = (
-                        f"{periodo_inicio.strftime('%d/%m')} a "
-                        f"{periodo_fim.strftime('%d/%m')}"
-                    )
-                    select_period = controller.selecionar_periodo_por_datas
-                    select_period(periodo_display)
-                    # Se o período específico não foi encontrado,
-                    # ficará em "Todos os períodos"
-
-                # Selecionar o registro específico após a tabela ser atualizada
-                QTimer.singleShot(
-                    100,
-                    lambda: self.selecionar_registro_recente(
-                        form_data["cliente"], form_data["processo"], data_entrada
-                    ),
+            if not filtro_no_periodo_registro:
+                self._ajustar_periodo_para_registro(
+                    periodo_inicio,
+                    periodo_fim,
+                    form_data["cliente"],
+                    form_data["processo"],
+                    data_entrada,
                 )
 
             self.aplicar_filtro()
