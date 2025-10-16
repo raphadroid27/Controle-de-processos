@@ -130,9 +130,7 @@ def obter_estilo_botao(cor, _largura=None):
 
 
 def configurar_widgets_entrada_uniformes(widgets_list):
-    """
-    Configura widgets de entrada (LineEdit, ComboBox, DateEdit, etc.)
-    para ter tamanho e comportamento uniformes.
+    """Configura widgets de entrada para ter tamanho e comportamento uniformes.
 
     Args:
         widgets_list: Lista de widgets para configurar
@@ -145,9 +143,7 @@ def configurar_widgets_entrada_uniformes(widgets_list):
 
 
 def configurar_botao_padrao(botao, largura_minima=None):
-    """
-    Função global para configurar botão com padrão uniforme
-    de altura e largura.
+    """Configure button with uniform height and width standards.
 
     Args:
         botao: O botão QPushButton a ser configurado

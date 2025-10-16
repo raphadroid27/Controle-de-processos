@@ -1,6 +1,4 @@
-"""
-Gerenciamento de sessões do sistema com SQLAlchemy.
-"""
+"""Gerenciamento de sessões do sistema com SQLAlchemy."""
 
 from __future__ import annotations
 
@@ -20,13 +18,11 @@ SESSION_ID = str(uuid.uuid4())
 
 def criar_tabela_system_control() -> None:
     """Garante a criação da tabela system_control."""
-
     get_shared_engine()  # cria metadados compartilhados se necessário
 
 
 def registrar_sessao(usuario_nome: str) -> None:
     """Registra a sessão atual no banco de dados."""
-
     try:
         hostname = socket.gethostname()
     except OSError as exc:
@@ -181,6 +177,7 @@ def obter_comando_sistema() -> str | None:
 
     def _on_error(exc: SQLAlchemyError) -> str | None:
         print(f"Erro ao obter comando do sistema: {exc}")
+        return None
 
     return executar_sessao_compartilhada(
         _operacao,

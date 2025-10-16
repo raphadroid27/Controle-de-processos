@@ -33,7 +33,6 @@ class LinhaProcessoEdicao:
 
     def to_update_kwargs(self) -> dict[str, str]:
         """Retorna os campos prontos para atualização no banco."""
-
         return {
             "cliente": self.cliente,
             "processo": self.processo,
@@ -49,7 +48,6 @@ def validar_edicao_celula(
     col_editada: int, valor_editado: str
 ) -> Tuple[bool, str | None]:
     """Valida o conteúdo da célula editada."""
-
     validators = {
         2: _validar_qtde,
         3: _validar_data_entrada,
@@ -70,7 +68,6 @@ def extrair_campos_linha(
     col_offset: int,
 ) -> LinhaProcessoEdicao:
     """Extrai os campos da linha informada, convertendo para formatos de banco."""
-
     cliente = _texto_item(tabela, row, col_offset).upper()
     processo = _texto_item(tabela, row, col_offset + 1)
     qtde_itens = _texto_item(tabela, row, col_offset + 2)
@@ -102,12 +99,11 @@ def extrair_campos_linha(
 
 def obter_registro_id(tabela: QTableWidget, row: int, is_admin: bool) -> int | None:
     """Obtém o ID do registro armazenado na linha da tabela."""
-
     coluna_id = 1 if is_admin else 0
     item = tabela.item(row, coluna_id)
     if not item:
         return None
-    return item.data(Qt.UserRole)
+    return item.data(Qt.ItemDataRole.UserRole)
 
 
 def _texto_item(tabela: QTableWidget, row: int, col: int) -> str:

@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
     logout_requested = Signal()
 
     def __init__(self, usuario_logado, is_admin):
+        """Inicializa a janela principal."""
         super().__init__()
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin

@@ -15,26 +15,27 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from . import session_manager
-from .database import (UsuarioModel, ensure_user_database, get_shared_engine,
-                       remover_banco_usuario)
+from .database import (
+    UsuarioModel,
+    ensure_user_database,
+    get_shared_engine,
+    remover_banco_usuario,
+)
 from .database.sessions import executar_sessao_compartilhada
 
 
 def criar_tabela_usuario() -> None:
     """Garante a criação da tabela de usuários."""
-
     get_shared_engine()  # Cria metadados compartilhados se necessário
 
 
 def hash_senha(senha: str) -> str:
     """Gera hash da senha para armazenamento seguro."""
-
     return hashlib.sha256(senha.encode()).hexdigest()
 
 
 def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
     """Insere um novo usuário na tabela."""
-
     nome_limpo = nome.strip()
     senha_limpa = senha.strip()
     if not nome_limpo or not senha_limpa:

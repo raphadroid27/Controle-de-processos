@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, ClassVar, List
+from typing import Callable, ClassVar, List, cast
 
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QColor, QPalette
@@ -33,6 +33,7 @@ class ThemeManager:
     }
 
     def __init__(self) -> None:
+        """Inicializa o gerenciador de temas."""
         self._settings = QSettings()
         # Define o estilo Fusion para melhor suporte a paletas
         saved_style = self._settings.value(
@@ -46,7 +47,9 @@ class ThemeManager:
         QApplication.setStyle(self._style)
         saved_mode = self._settings.value(self._SETTINGS_KEY, self._DEFAULT_MODE)
         self._mode = (
-            saved_mode if saved_mode in self._VALID_MODES else self._DEFAULT_MODE
+            saved_mode
+            if isinstance(saved_mode, str) and saved_mode in self._VALID_MODES
+            else self._DEFAULT_MODE
         )
         saved_color = self._settings.value(
             self._COLOR_SETTINGS_KEY, self._DEFAULT_COLOR
@@ -133,44 +136,47 @@ class ThemeManager:
         """Cria uma paleta clara nativa com cor de destaque."""
         palette = QPalette()
         # Cores para tema claro
-        palette.setColor(QPalette.Window, QColor(240, 240, 240))
-        palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
-        palette.setColor(QPalette.Base, QColor(255, 255, 255))
-        palette.setColor(QPalette.AlternateBase, QColor(245, 245, 245))
-        palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 220))
-        palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
-        palette.setColor(QPalette.Text, QColor(0, 0, 0))
-        palette.setColor(QPalette.Button, QColor(240, 240, 240))
-        palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
-        palette.setColor(QPalette.BrightText, QColor(255, 255, 255))
-        palette.setColor(QPalette.Link, accent_color)
-        palette.setColor(QPalette.Highlight, accent_color)
-        palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.Window, QColor(240, 240, 240))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Base, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(245, 245, 245))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(255, 255, 220))
+        palette.setColor(QPalette.ColorRole.ToolTipText, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Text, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Button, QColor(240, 240, 240))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.BrightText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.Link, accent_color)
+        palette.setColor(QPalette.ColorRole.Highlight, accent_color)
+        palette.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
         return palette
 
     def _create_dark_palette(self, accent_color: QColor) -> QPalette:
         """Cria uma paleta escura nativa com cor de destaque."""
         palette = QPalette()
         # Cores para tema escuro
-        palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
-        palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        palette.setColor(QPalette.ToolTipBase, QColor(53, 53, 53))
-        palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
-        palette.setColor(QPalette.Text, QColor(255, 255, 255))
-        palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        palette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-        palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
-        palette.setColor(QPalette.Link, accent_color)
-        palette.setColor(QPalette.Highlight, accent_color)
-        palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.Base, QColor(25, 25, 25))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ColorRole.ToolTipText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.Text, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.BrightText, QColor(255, 0, 0))
+        palette.setColor(QPalette.ColorRole.Link, accent_color)
+        palette.setColor(QPalette.ColorRole.Highlight, accent_color)
+        palette.setColor(QPalette.ColorRole.HighlightedText, QColor(0, 0, 0))
         return palette
 
     def _apply_theme(self, mode: str, *, persist: bool) -> None:
         selected = mode if mode in self._VALID_MODES else self._DEFAULT_MODE
         resolved = self._resolve_visual_mode(selected)
         app = QApplication.instance()
+        if app is None:
+            return
+        app = cast(QApplication, app)
         accent_color = QColor(self._get_accent_hex())
         if resolved == "dark":
             palette = self._create_dark_palette(accent_color)
@@ -178,7 +184,7 @@ class ThemeManager:
             palette = self._create_light_palette(accent_color)
         app.setPalette(palette)
         # Força atualização de todos os widgets para aplicar a nova paleta
-        for widget in app.allWidgets():
+        for widget in QApplication.allWidgets():
             widget.repaint()
         self._mode = selected
         if persist:

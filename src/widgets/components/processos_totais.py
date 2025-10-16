@@ -25,9 +25,8 @@ class TotaisControls:
 
 def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     """Cria o frame com os rótulos de totais."""
-
     frame = QFrame(parent)
-    frame.setFrameStyle(QFrame.StyledPanel)
+    frame.setFrameStyle(QFrame.Shape.StyledPanel)
 
     layout = QHBoxLayout()
     layout.setSpacing(espacamento)
@@ -85,7 +84,6 @@ def atualizar_totais(
     estimativa_itens_mes: int | None,
 ) -> None:
     """Atualiza os rótulos de totais com os valores fornecidos."""
-
     controles.label_processos.setText(f"Total Processos: {total_processos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
     controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
@@ -97,8 +95,8 @@ def atualizar_totais(
         cor = _obter_cor_media_dias(media_dias_processamento)
         controles.label_media_dias.setTextFormat(Qt.TextFormat.RichText)
         controles.label_media_dias.setText(
-            "Média dias processamento: "
-            f"<span style='color: {cor}; font-weight: bold'>{media_dias_processamento:.1f}</span>"
+            f"Média dias processamento: <span style='color: {cor}; font-weight: bold'>"
+            f"{media_dias_processamento:.1f}</span>"
         )
 
     if media_itens_por_dia is None:
@@ -109,16 +107,15 @@ def atualizar_totais(
         )
 
     if estimativa_itens_mes is None:
-        controles.label_estimativa_itens.setText("Estimativa itens mês: --")
+        controles.label_estimativa_itens.setText("Estimativa itens: --")
     else:
         controles.label_estimativa_itens.setText(
-            f"Estimativa itens mês: {estimativa_itens_mes}"
+            f"Estimativa itens: {estimativa_itens_mes}"
         )
 
 
 def _obter_cor_media_dias(valor: float) -> str:
     """Retorna a cor apropriada para a média de dias de processamento."""
-
     if valor <= 2:
         return "#2e7d32"  # verde
     if valor <= 4:

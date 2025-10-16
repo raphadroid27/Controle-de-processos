@@ -40,7 +40,6 @@ def _shared_engine_cached() -> Engine:
 
 def get_shared_engine() -> Engine:
     """Retorna (lazy) o engine do banco compartilhado."""
-
     return _shared_engine_cached()
 
 
@@ -51,7 +50,6 @@ def _shared_sessionmaker_cached() -> sessionmaker[Session]:
 
 def get_shared_session() -> Session:
     """Obtém uma sessão para o banco compartilhado."""
-
     return _shared_sessionmaker_cached()()
 
 
@@ -100,13 +98,11 @@ def _get_user_sessionmaker(slug: str) -> sessionmaker[Session]:
 
 def get_sessionmaker_for_slug(slug: str) -> sessionmaker[Session]:
     """Retorna o *sessionmaker* associado ao banco individual do slug."""
-
     return _get_user_sessionmaker(slug)
 
 
 def get_user_session(usuario: str) -> Session:
     """Obtém sessão para o banco individual do usuário informado."""
-
     slug = slugify_usuario(usuario)
     session_factory = _get_user_sessionmaker(slug)
     session = session_factory()
@@ -118,7 +114,6 @@ def iter_user_databases(
     *, incluir_arquivados: bool = False
 ) -> Iterator[Tuple[str, Path]]:
     """Itera sobre bancos individuais considerando o status do usuário."""
-
     slugs_validos: set[str] | None = None
     if not incluir_arquivados:
         with get_shared_session() as session:
@@ -139,20 +134,17 @@ def iter_user_databases(
 
 def ensure_user_database(usuario: str) -> None:
     """Garante que o banco individual do usuário exista."""
-
     session = get_user_session(usuario)
     session.close()
 
 
 def inicializar_todas_tabelas() -> None:
     """Mantida por compatibilidade: garante criação de schemas."""
-
     get_shared_engine()  # cria tabelas compartilhadas
 
 
 def remover_banco_usuario(usuario: str) -> bool:
     """Remove o banco individual de um usuário (se existir)."""
-
     path = user_db_path(usuario=usuario)
     if path.exists():
         try:
@@ -171,7 +163,6 @@ def executar_sessao_compartilhada(
     error_handler: Callable[[SQLAlchemyError], T] | None = None,
 ) -> T:
     """Executa ``operacao`` gerenciando abertura/fechamento da sessão."""
-
     session = get_shared_session()
     try:
         return operacao(session)
@@ -186,8 +177,10 @@ def executar_sessao_compartilhada(
 
 
 def limpar_bancos_orfaos() -> None:
-    """Remove bancos individuais de usuários que não existem mais na tabela compartilhada."""
+    """Remove bancos individuais de usuários que não existem mais.
 
+    Na tabela compartilhada.
+    """
     if not DATABASE_DIR.exists():
         return
 

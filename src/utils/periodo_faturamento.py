@@ -9,9 +9,7 @@ from datetime import datetime
 
 
 def _calcular_periodo_faturamento_base(data: datetime):
-    """
-    Função auxiliar que calcula o período de faturamento para qualquer data.
-    """
+    """Função auxiliar que calcula o período de faturamento para qualquer data."""
     if data.day >= 26:
         # Se o dia é 26 ou depois, o período é do próximo mês
         if data.month == 12:
@@ -29,8 +27,8 @@ def _calcular_periodo_faturamento_base(data: datetime):
 
 
 def calcular_periodo_faturamento_atual():
-    """
-    Calcula o período de faturamento atual baseado na regra da empresa:
+    """Calcula o período de faturamento atual baseado na regra da empresa.
+
     Do dia 26 do mês anterior até o dia 25 do mês corrente.
 
     Exemplos:
@@ -54,8 +52,8 @@ def calcular_periodo_faturamento_atual():
 
 
 def calcular_periodo_faturamento_atual_datas():
-    """
-    Calcula as datas de início e fim do período de faturamento atual.
+    """Calcula as datas de início e fim do período de faturamento atual.
+
     Retorna objetos datetime para facilitar manipulação.
     """
     hoje = datetime.now()
@@ -101,8 +99,8 @@ def calcular_periodo_faturamento_para_data(data: datetime):
 
 
 def calcular_periodo_faturamento_para_data_datas(data: datetime):
-    """
-    Calcula as datas de início e fim do período de faturamento para uma data específica.
+    """Calcula período de faturamento para uma data específica.
+
     Retorna objetos datetime para facilitar manipulação.
     """
     mes_faturamento, ano_faturamento = _calcular_periodo_faturamento_base(data)

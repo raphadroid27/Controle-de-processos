@@ -10,10 +10,22 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
-                               QInputDialog, QLabel, QLineEdit, QMessageBox,
-                               QPushButton, QTabWidget, QTreeWidget,
-                               QTreeWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTabWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .utils import session_manager, usuario
 from .utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao
@@ -23,6 +35,7 @@ class GerenciarUsuariosDialog(QDialog):
     """Dialog para gerenciamento de usuários e sessões do sistema."""
 
     def __init__(self, parent=None):
+        """Inicializa o diálogo de gerenciamento de usuários."""
         super().__init__(parent)
         self.setWindowTitle("Gerenciar Usuários e Sessões")
         self.setFixedSize(600, 400)
@@ -64,7 +77,6 @@ class GerenciarUsuariosDialog(QDialog):
 
     def _criar_tab_usuarios(self) -> QWidget:
         """Monta a aba de gerenciamento de usuários."""
-
         container = QWidget()
         tab_layout = QVBoxLayout(container)
 
@@ -90,7 +102,6 @@ class GerenciarUsuariosDialog(QDialog):
 
     def _criar_tab_sessoes(self) -> QWidget:
         """Monta a aba de sessões ativas."""
-
         container = QWidget()
         tab_layout = QVBoxLayout(container)
         tab_layout.addWidget(QLabel("Sessões Ativas:"))
@@ -120,8 +131,9 @@ class GerenciarUsuariosDialog(QDialog):
         self.entry_busca = QLineEdit()
         self.entry_busca.setPlaceholderText("Digite parte do nome ou status")
         self.entry_busca.setToolTip(
-            "Digite parte do nome ou do status (ex.: ativo, arquivado) para filtrar a lista."
-            "\nUse as teclas de seta para navegar pelos resultados."
+            """Digite parte do nome ou do status (ex.: ativo, arquivado)
+para filtrar a lista.
+Use as teclas de seta para navegar pelos resultados."""
         )
         self.entry_busca.textChanged.connect(self.filtrar_usuarios)
         busca_layout.addWidget(self.entry_busca, 0, 1)
@@ -261,7 +273,6 @@ class GerenciarUsuariosDialog(QDialog):
 
     def atualizar_estado_botoes(self, item_atual, _item_anterior):
         """Habilita ou desabilita botões conforme o usuário selecionado."""
-
         dados = None
         if item_atual is not None:
             dados = item_atual.data(0, Qt.ItemDataRole.UserRole)
@@ -367,7 +378,6 @@ class GerenciarUsuariosDialog(QDialog):
 
     def arquivar_usuario(self):
         """Arquiva o usuário selecionado, mantendo seus dados."""
-
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
             QMessageBox.warning(self, "Erro", "Selecione um usuário para arquivar.")
@@ -417,7 +427,6 @@ class GerenciarUsuariosDialog(QDialog):
 
     def restaurar_usuario(self):
         """Restaura um usuário previamente arquivado."""
-
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
             QMessageBox.warning(self, "Erro", "Selecione um usuário para restaurar.")

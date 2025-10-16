@@ -13,6 +13,7 @@ class NavigableLineEdit(QLineEdit):
     """QLineEdit personalizado que permite navegação entre campos com setas."""
 
     def __init__(self, campos_navegacao=None, parent=None):
+        """Inicializa o campo de texto navegável com campos de navegação opcionais."""
         super().__init__(parent)
         self.campos_navegacao = campos_navegacao or []
 
@@ -60,6 +61,7 @@ class NavigableDateEdit(QDateEdit):
     """QDateEdit personalizado que permite navegação entre campos com setas."""
 
     def __init__(self, campos_navegacao=None, parent=None):
+        """Inicializa o campo de data navegável com campos de navegação opcionais."""
         super().__init__(parent)
         self.campos_navegacao = campos_navegacao or []
 
@@ -103,6 +105,7 @@ class NavigableComboBox(QComboBox):
     """QComboBox com navegação lateral entre campos."""
 
     def __init__(self, campos_navegacao=None, parent=None):
+        """Inicializa o combo box navegável com campos de navegação opcionais."""
         super().__init__(parent)
         self.campos_navegacao = campos_navegacao or []
 

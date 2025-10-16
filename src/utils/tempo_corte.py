@@ -15,7 +15,6 @@ def normalizar_tempo_corte(valor: Optional[str]) -> Tuple[Optional[str], Optiona
     erro. Se o valor não estiver em um formato válido, o valor normalizado será
     ``None`` e a mensagem conterá o motivo da falha.
     """
-
     if valor is None:
         return None, None
 
@@ -41,8 +40,7 @@ def normalizar_tempo_corte(valor: Optional[str]) -> Tuple[Optional[str], Optiona
 
 
 def tempo_corte_para_segundos(valor: Optional[str]) -> int:
-    """Converte um tempo de corte no formato ``HH:MM:SS`` para segundos."""
-
+    """Convert time duration from ``HH:MM:SS`` format to seconds."""
     if not valor:
         return 0
 

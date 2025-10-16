@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import (QComboBox, QGroupBox, QHBoxLayout, QLineEdit,
-                               QPushButton)
+from PySide6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLineEdit, QPushButton
 
-from ...utils.ui_config import (aplicar_estilo_botao,
-                                aplicar_estilo_botao_desabilitado,
-                                configurar_widgets_entrada_uniformes)
+from ...utils.ui_config import (
+    aplicar_estilo_botao,
+    aplicar_estilo_botao_desabilitado,
+    configurar_widgets_entrada_uniformes,
+)
 from ..navigable_widgets import NavigableComboBox, NavigableLineEdit
 from .processos_layout import criar_coluna_rotulo, criar_layout_botao_padrao
 
@@ -45,7 +46,6 @@ def criar_filtros(
     on_limpar: Callable[[], None],
 ) -> FiltroControls:
     """Cria o frame e widgets do painel de filtros."""
-
     # pylint: disable=too-many-locals, too-many-statements
 
     frame = QGroupBox("Buscar registros", parent)
@@ -68,7 +68,8 @@ def criar_filtros(
     entry_cliente = NavigableLineEdit(frame)
     entry_cliente.setPlaceholderText("Digite o nome do cliente")
     entry_cliente.setToolTip(
-        "Filtrar registros pelo prefixo do nome do cliente. O filtro é aplicado automaticamente."
+        """Filtrar registros pelo prefixo do nome do cliente.
+O filtro é aplicado automaticamente."""
     )
     timer_cliente = QTimer(frame)
     timer_cliente.setSingleShot(True)

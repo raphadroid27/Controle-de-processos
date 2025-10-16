@@ -7,11 +7,9 @@ from typing import Optional
 from sqlalchemy.exc import SQLAlchemyError
 
 from .config import decode_registro_id
-from .helpers import (preparar_lancamento_para_insert,
-                      preparar_lancamento_para_update)
+from .helpers import preparar_lancamento_para_insert, preparar_lancamento_para_update
 from .models import Lancamento, RegistroModel
-from .sessions import (ensure_user_database, get_sessionmaker_for_slug,
-                       get_user_session)
+from .sessions import ensure_user_database, get_sessionmaker_for_slug, get_user_session
 
 
 def adicionar_lancamento(
@@ -27,7 +25,6 @@ def adicionar_lancamento(
     tempo_corte: Optional[str] = None,
 ) -> str:
     """Adiciona um novo registro no banco individual do usuário."""
-
     if lancamento is None:
         if None in (usuario, cliente, processo, qtde_itens, data_entrada, valor_pedido):
             return (
@@ -68,7 +65,6 @@ def adicionar_lancamento(
 
 def excluir_lancamento(identificador: str | int) -> str:
     """Exclui um lançamento dado o identificador composto slug:id."""
-
     if isinstance(identificador, int):
         return "Erro: Identificador de registro inválido para o novo formato."
 
@@ -106,7 +102,6 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
     tempo_corte: Optional[str] = None,
 ) -> str:
     """Atualiza um lançamento existente."""
-
     if isinstance(identificador, int):
         return "Erro: Identificador de registro inválido para o novo formato."
 

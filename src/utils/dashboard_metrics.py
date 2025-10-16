@@ -14,7 +14,6 @@ from . import database as db
 
 def _novo_pacote_mensal() -> Dict[str, float]:
     """Gera a estrutura inicial para acumular dados mensais."""
-
     return {"itens": 0, "valor": 0.0, "os": 0}
 
 
@@ -31,19 +30,16 @@ class RegistroResumo:
     @property
     def ano(self) -> int:
         """Ano associado ao lançamento."""
-
         return self.data_base.year
 
     @property
     def mes(self) -> int:
         """Mês numérico do lançamento."""
-
         return self.data_base.month
 
     @property
     def dia_iso(self) -> str:
         """Retorna a data base em formato ISO (``YYYY-MM-DD``)."""
-
         return self.data_base.isoformat()
 
 
@@ -52,7 +48,6 @@ class DashboardAccumulator:
 
     def __init__(self) -> None:
         """Inicializa contadores e coleções auxiliares."""
-
         self.dados_mensais: DefaultDict[
             int, DefaultDict[str, DefaultDict[int, Dict[str, float]]]
         ] = defaultdict(lambda: defaultdict(lambda: defaultdict(_novo_pacote_mensal)))
@@ -74,7 +69,6 @@ class DashboardAccumulator:
 
     def acumular(self, registro: RegistroResumo) -> None:
         """Incorpora um registro agregado nas estruturas de cálculo."""
-
         usuario = registro.usuario
         dia_iso = registro.dia_iso
         ano = registro.ano
@@ -122,7 +116,6 @@ class DashboardAccumulator:
 
     def finalizar(self) -> Dict[str, Any]:
         """Compila o pacote de métricas pronto para consumo no dashboard."""
-
         horas_ordenadas = self._ordenar_horas_por_dia()
         medias_por_usuario = self._calcular_medias_por_usuario()
         media_geral = self._calcular_media_geral()
@@ -143,7 +136,6 @@ class DashboardAccumulator:
 
     def _ordenar_horas_por_dia(self) -> Dict[str, Dict[str, Any]]:
         """Ordena o dicionário de horas diárias em ordem decrescente de data."""
-
         horas_ordenadas = {
             dia: {
                 "total": info["total"],
@@ -157,7 +149,6 @@ class DashboardAccumulator:
 
     def _calcular_medias_por_usuario(self) -> Dict[str, Dict[str, Any]]:
         """Calcula médias diárias e totais específicos por usuário."""
-
         medias_por_usuario: Dict[str, Dict[str, Any]] = {}
         for usuario in sorted(self.usuarios_registrados):
             dias_ativos = len(self.dias_por_usuario.get(usuario, set()))
@@ -181,7 +172,6 @@ class DashboardAccumulator:
 
     def _calcular_media_geral(self) -> Dict[str, Any]:
         """Calcula métricas médias considerando todos os usuários."""
-
         total_itens_geral = sum(
             valor.get("itens", 0.0) for valor in self.totais_por_usuario.values()
         )
@@ -214,7 +204,6 @@ class DashboardAccumulator:
 
 def _converter_registro(modelo: db.RegistroModel) -> RegistroResumo | None:
     """Transforma um modelo ORM em ``RegistroResumo`` seguro para agregações."""
-
     data_base = modelo.data_processo or modelo.data_entrada
     if not data_base:
         return None
@@ -231,7 +220,6 @@ def _converter_registro(modelo: db.RegistroModel) -> RegistroResumo | None:
 
 def _carregar_registros() -> Iterable[RegistroResumo]:
     """Percorre todos os bancos de usuários gerando ``RegistroResumo``."""
-
     for slug, _ in db.iter_user_databases():
         session = db.get_sessionmaker_for_slug(slug)()
         try:
@@ -245,7 +233,6 @@ def _carregar_registros() -> Iterable[RegistroResumo]:
 
 def obter_metricas_dashboard() -> Dict[str, Any]:
     """Reúne métricas consolidadas para o dashboard administrativo."""
-
     acumulador = DashboardAccumulator()
     for registro in _carregar_registros():
         acumulador.acumular(registro)

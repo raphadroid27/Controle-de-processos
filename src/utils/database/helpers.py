@@ -10,8 +10,7 @@ from .models import Lancamento
 
 
 def parse_iso_date(value: Optional[str]) -> Optional[date]:
-    """Converte uma string ISO (YYYY-MM-DD) em ``date`` ou ``None``."""
-
+    """Convert ISO string (YYYY-MM-DD) to ``date`` or ``None``."""
     if not value:
         return None
     try:
@@ -22,7 +21,6 @@ def parse_iso_date(value: Optional[str]) -> Optional[date]:
 
 def format_datetime(value: Optional[datetime]) -> Optional[str]:
     """Formata ``datetime`` para ISO sem microssegundos."""
-
     if value is None:
         return None
     return value.replace(microsecond=0).isoformat(sep=" ")
@@ -30,7 +28,6 @@ def format_datetime(value: Optional[datetime]) -> Optional[str]:
 
 def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
     """Valida e normaliza dados para inserção."""
-
     if not all(
         [
             (lanc.usuario or "").strip(),
@@ -49,12 +46,15 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
     try:
         qtde = int(lanc.qtde_itens)
         if qtde <= 0:
-            return "Erro: A quantidade de itens deve ser um número positivo."
+            msg = "Erro: A quantidade de itens deve ser um número positivo."
+            return msg
     except ValueError:
         return "Erro: A quantidade de itens deve ser um número válido."
 
     try:
-        valor = float(lanc.valor_pedido.replace(",", "."))
+        # Remover pontos de milhares e trocar vírgula por ponto
+        valor_limpo = lanc.valor_pedido.replace(".", "").replace(",", ".")
+        valor = float(valor_limpo)
         if valor <= 0:
             return "Erro: O valor do pedido deve ser maior que zero."
     except ValueError:
@@ -84,7 +84,6 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
 
 def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
     """Valida e normaliza dados antes de atualizar um registro."""
-
     if not lanc.cliente or not lanc.processo:
         return "Erro: Cliente e processo são obrigatórios."
 
@@ -93,10 +92,13 @@ def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
         if qtde <= 0:
             return "Erro: Quantidade de itens deve ser um número positivo."
     except ValueError:
-        return "Erro: Quantidade de itens deve ser um número válido."
+        msg = "Erro: Quantidade de itens deve ser um número válido."
+        return msg
 
     try:
-        valor = float(lanc.valor_pedido.replace(",", "."))
+        # Remover pontos de milhares e trocar vírgula por ponto
+        valor_limpo = lanc.valor_pedido.replace(".", "").replace(",", ".")
+        valor = float(valor_limpo)
         if valor < 0:
             return "Erro: Valor do pedido não pode ser negativo."
     except ValueError:

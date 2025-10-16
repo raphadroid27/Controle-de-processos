@@ -12,13 +12,12 @@ __all__ = ["criar_coluna_rotulo", "criar_layout_botao_padrao"]
 
 def criar_coluna_rotulo(label_texto: str, widget, peso: int) -> Tuple[QVBoxLayout, int]:
     """Cria um layout vertical com rótulo associado a um widget."""
-
     layout = QVBoxLayout()
     layout.setSpacing(3)
     layout.setContentsMargins(0, 0, 0, 0)
 
     label = QLabel(label_texto)
-    label.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
     label.setMinimumHeight(16)
     label.setMaximumHeight(18)
 
@@ -29,7 +28,6 @@ def criar_coluna_rotulo(label_texto: str, widget, peso: int) -> Tuple[QVBoxLayou
 
 def criar_layout_botao_padrao(botao: QPushButton) -> QVBoxLayout:
     """Cria um layout vertical padrão para botões alinhados a campos."""
-
     layout = QVBoxLayout()
     layout.setSpacing(3)
     layout.setContentsMargins(0, 0, 0, 0)

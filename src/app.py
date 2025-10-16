@@ -16,6 +16,7 @@ class ControleProcessosApp:
     """Classe principal da aplicação."""
 
     def __init__(self):
+        """Inicializa a aplicação."""
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Processos")
         self.app.setOrganizationName("Controle de Processos")
@@ -56,7 +57,6 @@ class ControleProcessosApp:
 
 def main():
     """Ponto de entrada para execução direta da aplicação."""
-
     app = ControleProcessosApp()
     sys.exit(app.run())
 

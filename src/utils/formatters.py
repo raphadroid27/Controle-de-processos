@@ -7,7 +7,7 @@ Contém funções utilitárias para formatação de valores monetários, datas e
 from datetime import datetime
 
 
-def formatar_valor_monetario(valor):
+def formatar_valor_monetario(valor: float | str) -> str:
     """Formata valor monetário com separador de milhares e vírgula decimal."""
     try:
         if isinstance(valor, str):
@@ -30,7 +30,7 @@ def formatar_valor_monetario(valor):
 
 
 def converter_data_para_banco(data_str):
-    """Converte data do formato DD/MM/AAAA para AAAA-MM-DD para o banco."""
+    """Convert data from DD/MM/YYYY format to YYYY-MM-DD for database."""
     if not data_str or data_str == "Não processado":
         return ""
 
@@ -47,8 +47,8 @@ def converter_data_para_banco(data_str):
         return str(data_str)
 
 
-def formatar_data_para_exibicao(data_str):
-    """Converte data do formato AAAA-MM-DD para DD/MM/AAAA."""
+def formatar_data_para_exibicao(data_str: str) -> str:
+    """Convert data from YYYY-MM-DD format to DD/MM/YYYY for display."""
     if not data_str:
         return ""
 

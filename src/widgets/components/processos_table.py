@@ -6,15 +6,20 @@ from dataclasses import dataclass
 from typing import Callable, List, Sequence
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout,
-                               QHeaderView, QPushButton, QTableWidget,
-                               QTableWidgetItem, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 from ...ui.delegates import DateEditDelegate
-from ...utils.formatters import (formatar_data_para_exibicao,
-                                 formatar_valor_monetario)
-from ...utils.ui_config import (aplicar_estilo_botao,
-                                aplicar_estilo_botao_desabilitado)
+from ...utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
+from ...utils.ui_config import aplicar_estilo_botao, aplicar_estilo_botao_desabilitado
 
 __all__ = ["TabelaControls", "criar_tabela", "preencher_tabela"]
 
@@ -57,9 +62,8 @@ def criar_tabela(
 ) -> TabelaControls:
     # pylint: disable=too-many-locals, too-many-statements
     """Cria o quadro contendo a tabela principal e o botão de exclusão."""
-
     frame = QFrame(parent)
-    frame.setFrameShape(QFrame.NoFrame)
+    frame.setFrameShape(QFrame.Shape.NoFrame)
     frame.setLineWidth(0)
 
     layout = QVBoxLayout()
@@ -69,8 +73,8 @@ def criar_tabela(
     tabela = QTableWidget(frame)
     colunas = _definir_colunas(tabela, is_admin)
 
-    tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
-    tabela.setSelectionMode(QAbstractItemView.SingleSelection)
+    tabela.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    tabela.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
     header = tabela.horizontalHeader()
     porcentagens_colunas = (
@@ -96,7 +100,7 @@ def criar_tabela(
     def aplicar_larguras() -> None:
         for indice, largura in enumerate(calcular_larguras_colunas()):
             if indice < tabela.columnCount():
-                header.setSectionResizeMode(indice, QHeaderView.Fixed)
+                header.setSectionResizeMode(indice, QHeaderView.ResizeMode.Fixed)
                 tabela.setColumnWidth(indice, largura)
 
     aplicar_larguras()
@@ -105,32 +109,44 @@ def criar_tabela(
 
     processo_col_index = 1 + offset
     processo_header_item = QTableWidgetItem("Processo")
-    processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+    processo_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(processo_col_index, processo_header_item)
 
     qtd_col_index = 2 + offset
     qtd_header_item = QTableWidgetItem("Qtd Itens")
-    qtd_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+    qtd_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(qtd_col_index, qtd_header_item)
 
     data_entrada_col_index = 3 + offset
     data_entrada_header_item = QTableWidgetItem("Data Entrada")
-    data_entrada_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+    data_entrada_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(data_entrada_col_index, data_entrada_header_item)
 
     data_processo_col_index = 4 + offset
     data_processo_header_item = QTableWidgetItem("Data Processo")
-    data_processo_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+    data_processo_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(data_processo_col_index, data_processo_header_item)
 
     tempo_corte_col_index = 5 + offset
     tempo_corte_header_item = QTableWidgetItem("Tempo Corte")
-    tempo_corte_header_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+    tempo_corte_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(tempo_corte_col_index, tempo_corte_header_item)
 
     valor_col_index = len(colunas) - 1
     valor_header_item = QTableWidgetItem("Valor (R$)")
-    valor_header_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    valor_header_item.setTextAlignment(
+        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+    )
     tabela.setHorizontalHeaderItem(valor_col_index, valor_header_item)
 
     date_delegate = DateEditDelegate(tabela)
@@ -184,7 +200,6 @@ def preencher_tabela(
 ) -> None:
     # pylint: disable=too-many-locals
     """Preenche a tabela com os registros fornecidos."""
-
     tabela.blockSignals(True)
     try:
         tabela.setRowCount(len(registros))
@@ -193,43 +208,66 @@ def preencher_tabela(
         for row, registro in enumerate(registros):
             if is_admin:
                 item_usuario = QTableWidgetItem(str(registro[1]))
-                item_usuario.setFlags(item_usuario.flags() & ~Qt.ItemIsEditable)
+                item_usuario.setFlags(
+                    item_usuario.flags() & ~Qt.ItemFlag.ItemIsEditable
+                )
                 tabela.setItem(row, 0, item_usuario)
 
             item_cliente = QTableWidgetItem(str(registro[2]).upper())
             tabela.setItem(row, offset + 0, item_cliente)
 
             item_processo = QTableWidgetItem(str(registro[3]))
-            item_processo.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_processo.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 1, item_processo)
 
             item_qtde = QTableWidgetItem(str(registro[4]))
-            item_qtde.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_qtde.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 2, item_qtde)
 
-            data_entrada_formatada = formatar_data_para_exibicao(registro[5])
+            data_entrada_formatada = str(formatar_data_para_exibicao(str(registro[5])))
             item_data_entrada = QTableWidgetItem(data_entrada_formatada)
-            item_data_entrada.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_data_entrada.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 3, item_data_entrada)
 
-            data_processo_formatada = (
-                formatar_data_para_exibicao(registro[6])
-                if registro[6]
-                else "Não processado"
+            if registro[6]:
+                data_processo_formatada: str = str(
+                    formatar_data_para_exibicao(str(registro[6]))
+                )
+            else:
+                data_processo_formatada = "Não processado"
+            item_data_processo: QTableWidgetItem = QTableWidgetItem(
+                data_processo_formatada
             )
-            item_data_processo = QTableWidgetItem(data_processo_formatada)
-            item_data_processo.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_data_processo.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 4, item_data_processo)
 
             tempo_corte_display = registro[7] or ""
             item_tempo_corte = QTableWidgetItem(tempo_corte_display)
-            item_tempo_corte.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            item_tempo_corte.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 5, item_tempo_corte)
 
-            item_valor = QTableWidgetItem(formatar_valor_monetario(registro[8]))
-            item_valor.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_valor = QTableWidgetItem(
+                formatar_valor_monetario(
+                    str(registro[8]) if registro[8] is not None else "0"
+                )
+            )
+            item_valor.setTextAlignment(
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+            )
             tabela.setItem(row, offset + 6, item_valor)
 
-            tabela.item(row, offset + 0).setData(Qt.UserRole, registro[0])
+            item = tabela.item(row, offset + 0)
+            if item is not None:
+                item.setData(Qt.ItemDataRole.UserRole, registro[0])
     finally:
         tabela.blockSignals(False)

@@ -20,7 +20,6 @@ class PeriodoFiltroController:
 
     def configurar(self, *, fallback_ano: str | None = None) -> None:
         """Recarrega os combos de ano e período."""
-
         usuario_filtro = self.obter_usuario()
 
         self.combo_ano.blockSignals(True)
@@ -42,7 +41,6 @@ class PeriodoFiltroController:
 
     def atualizar_periodos(self) -> None:
         """Atualiza o combo de períodos conforme o ano selecionado."""
-
         usuario_filtro = self.obter_usuario()
         ano_selecionado = self.combo_ano.currentText()
 
@@ -62,7 +60,6 @@ class PeriodoFiltroController:
 
     def on_ano_changed(self) -> None:
         """Manipula a mudança de ano disparada pelo combo."""
-
         self.combo_periodo.blockSignals(True)
         try:
             self.atualizar_periodos()
@@ -71,7 +68,6 @@ class PeriodoFiltroController:
 
     def selecionar_ano(self, ano: str) -> None:
         """Seleciona o ano informado, se existir."""
-
         if not ano:
             return
 
@@ -85,7 +81,6 @@ class PeriodoFiltroController:
 
     def selecionar_periodo_por_datas(self, display: str) -> None:
         """Seleciona um período a partir de sua representação textual."""
-
         self.combo_periodo.blockSignals(True)
         try:
             index = self.combo_periodo.findText(display)
@@ -96,7 +91,6 @@ class PeriodoFiltroController:
 
     def obter_periodo_selecionado(self) -> tuple[str | None, str | None]:
         """Retorna as datas de início/fim associadas ao período atual."""
-
         if self.combo_periodo.currentText() == "Todos os períodos":
             # Quando "Todos os períodos" é selecionado, mas há um ano específico,
             # filtra pelo ano inteiro
@@ -121,7 +115,6 @@ class PeriodoFiltroController:
 
     def _restaurar_ano(self, selecionado: str, fallback: str | None) -> None:
         """Restaura o ano previamente selecionado ou usa o fallback informado."""
-
         index_atual = self.combo_ano.findText(selecionado)
         if index_atual >= 0:
             self.combo_ano.setCurrentIndex(index_atual)

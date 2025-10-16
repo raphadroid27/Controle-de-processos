@@ -12,23 +12,31 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
 from ..utils import database as db
-from ..utils.formatters import (formatar_data_para_exibicao,
-                                formatar_valor_monetario)
+from ..utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
 from ..utils.periodo_faturamento import (
     calcular_periodo_faturamento_atual_datas,
-    calcular_periodo_faturamento_para_data_datas)
+    calcular_periodo_faturamento_para_data_datas,
+)
 from ..utils.ui_config import ESPACAMENTO_PADRAO
-from .components import processos_autocomplete
+from .components import (
+    processos_autocomplete,
+)
 from .components import processos_data_service as processos_data
-from .components import (processos_filters, processos_form, processos_periodo,
-                         processos_table, processos_table_edit,
-                         processos_totais)
+from .components import (
+    processos_filters,
+    processos_form,
+    processos_periodo,
+    processos_table,
+    processos_table_edit,
+    processos_totais,
+)
 
 
 class ProcessosWidget(QWidget):
     """Widget principal para gerenciamento de processos."""
 
     def __init__(self, usuario_logado, is_admin):
+        """Inicializa o widget principal com configurações do usuário."""
         super().__init__()
         self.is_admin = is_admin
         self.usuario_logado = usuario_logado
@@ -76,13 +84,13 @@ class ProcessosWidget(QWidget):
         """Inicializa a interface do usuário."""
         main_layout = QVBoxLayout()
 
-        self.criar_frame_entrada()
+        self._criar_frame_entrada()
         main_layout.addWidget(self.frame_entrada)
 
-        self.criar_tabela()
+        self._criar_tabela()
         main_layout.addLayout(self.tabela_layout)
 
-        self.criar_frame_totais()
+        self._criar_frame_totais()
         main_layout.addWidget(self.frame_totais)
 
         self.setLayout(main_layout)
@@ -119,8 +127,8 @@ class ProcessosWidget(QWidget):
             self.periodo_controller.on_ano_changed()
         self.aplicar_filtro()
 
-    def converter_cliente_maiuscula(self, texto):
-        """Converte automaticamente o texto do campo cliente para maiúscula."""
+    def _converter_cliente_maiuscula(self, texto):
+        """Convert the client field text to uppercase automatically."""
         self.entry_cliente.blockSignals(True)
         posicao_cursor = self.entry_cliente.cursorPosition()
         texto_maiusculo = texto.upper()
@@ -177,12 +185,12 @@ class ProcessosWidget(QWidget):
             elif not valor_pedido:
                 self.entry_valor_pedido.setFocus()
 
-    def criar_frame_entrada(self):
+    def _criar_frame_entrada(self):
         """Cria o frame de entrada de dados."""
         controles = processos_form.criar_formulario(
             parent=self,
             on_tempo_editado=self._on_tempo_corte_editado,
-            on_cliente_editado=self.converter_cliente_maiuscula,
+            on_cliente_editado=self._converter_cliente_maiuscula,
             on_submit=self.adicionar_processo,
         )
 
@@ -198,7 +206,7 @@ class ProcessosWidget(QWidget):
 
         self.autocomplete_manager.configure_form(self.entry_cliente)
 
-    def criar_tabela(self):
+    def _criar_tabela(self):
         """Cria a interface da tabela de processos com filtros."""
         self.tabela_layout = QVBoxLayout()
         filtros = processos_filters.criar_filtros(
@@ -245,7 +253,7 @@ class ProcessosWidget(QWidget):
 
         self.tabela_layout.addWidget(tabela_controls.frame)
 
-    def criar_frame_totais(self):
+    def _criar_frame_totais(self):
         """Cria o frame que exibe os totais (processos, itens, valores)."""
         controles_totais = processos_totais.criar_totais(
             parent=self,
@@ -468,7 +476,10 @@ class ProcessosWidget(QWidget):
     def selecionar_registro_recente(
         self, cliente: str, processo: str, data_entrada: str
     ):
-        """Seleciona o registro recém-adicionado na tabela baseado nos dados informados."""
+        """Select the recently added record in the table.
+
+        Based on the provided data.
+        """
         offset = 1 if self.is_admin else 0
         data_entrada_formatada = formatar_data_para_exibicao(data_entrada)
 
@@ -511,9 +522,13 @@ class ProcessosWidget(QWidget):
 
     def adicionar_processo(self):
         """Valida campos e insere novo processo no banco."""
-        cliente = self.entry_cliente.text().strip().upper()
-        processo = self.entry_processo.text().strip()
-        qtde_itens = self.entry_qtde_itens.text().strip()
+        form_data = {
+            "cliente": self.entry_cliente.text().strip().upper(),
+            "processo": self.entry_processo.text().strip(),
+            "qtde_itens": self.entry_qtde_itens.text().strip(),
+            "valor_pedido": self.entry_valor_pedido.text().strip(),
+            "tempo_corte": self.entry_tempo_corte.text().strip(),
+        }
 
         data_entrada_qdate = self.entry_data_entrada.date()
         if data_entrada_qdate > QDate.currentDate():
@@ -543,22 +558,19 @@ class ProcessosWidget(QWidget):
         else:
             data_processo = ""
 
-        valor_pedido = self.entry_valor_pedido.text().strip()
-        tempo_corte = self.entry_tempo_corte.text().strip()
-
         # Capturar anos disponíveis antes da adição
         usuario_filtro = self._calcular_usuario_filtro()
         anos_antes = set(processos_data.listar_anos_disponiveis(usuario_filtro))
 
         resultado = db.adicionar_lancamento(
             usuario=self.usuario_logado,
-            cliente=cliente,
-            processo=processo,
-            qtde_itens=qtde_itens,
+            cliente=form_data["cliente"],
+            processo=form_data["processo"],
+            qtde_itens=form_data["qtde_itens"],
             data_entrada=data_entrada,
             data_processo=data_processo,
-            valor_pedido=valor_pedido,
-            tempo_corte=tempo_corte,
+            valor_pedido=form_data["valor_pedido"],
+            tempo_corte=form_data["tempo_corte"],
         )
 
         if "Sucesso" in resultado:
@@ -576,7 +588,10 @@ class ProcessosWidget(QWidget):
 
             # Selecionar automaticamente o período correspondente ao novo registro
             # (apenas se não for o período vigente, para poupar processamento)
-            data_registro = datetime.strptime(data_entrada, "%Y-%m-%d")
+            # Usar data de processo se disponível, senão usar data de entrada
+            data_registro = datetime.strptime(
+                data_processo if data_processo else data_entrada, "%Y-%m-%d"
+            )
             periodo_inicio, periodo_fim = calcular_periodo_faturamento_para_data_datas(
                 data_registro
             )
@@ -601,21 +616,26 @@ class ProcessosWidget(QWidget):
                         if novos_anos_criados:
                             self.configurar_filtros_ano_periodo()
 
-                    self.periodo_controller.selecionar_ano(ano_periodo)
-                    self.periodo_controller.on_ano_changed()
+                    controller = self.periodo_controller
+                    controller.selecionar_ano(ano_periodo)
+                    controller.on_ano_changed()
 
-                    # Tentar selecionar o período específico (só funciona se o período existir na lista)
-                    periodo_display = f"{periodo_inicio.strftime('%d/%m')} a {periodo_fim.strftime('%d/%m')}"
-                    self.periodo_controller.selecionar_periodo_por_datas(
-                        periodo_display
+                    # Tentar selecionar o período específico
+                    # (só funciona se o período existir na lista)
+                    periodo_display = (
+                        f"{periodo_inicio.strftime('%d/%m')} a "
+                        f"{periodo_fim.strftime('%d/%m')}"
                     )
-                    # Se o período específico não foi encontrado, ficará em "Todos os períodos"
+                    select_period = controller.selecionar_periodo_por_datas
+                    select_period(periodo_display)
+                    # Se o período específico não foi encontrado,
+                    # ficará em "Todos os períodos"
 
                 # Selecionar o registro específico após a tabela ser atualizada
                 QTimer.singleShot(
                     100,
                     lambda: self.selecionar_registro_recente(
-                        cliente, processo, data_entrada
+                        form_data["cliente"], form_data["processo"], data_entrada
                     ),
                 )
 
@@ -667,7 +687,8 @@ class ProcessosWidget(QWidget):
                 resultado = db.excluir_lancamento(registro_id)
                 if "Sucesso" in resultado:
                     QMessageBox.information(self, "Sucesso", resultado)
-                    # Removido: self.configurar_filtros_ano_periodo() - não é necessário recarregar filtros após excluir um registro
+                    # Removido: self.configurar_filtros_ano_periodo() - não é necessário
+                    # recarregar filtros após excluir um registro
                     self.aplicar_filtro(rolar_para_ultimo=False)
                 else:
                     QMessageBox.warning(self, "Erro", resultado)

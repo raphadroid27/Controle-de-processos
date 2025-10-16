@@ -19,18 +19,25 @@ except ImportError:  # pragma: no cover
 else:
     from pandas import DataFrame, Series
 
-from matplotlib.backends.backend_qt5agg import \
-    FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTableWidgetItem,
-                               QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ..utils.dashboard_metrics import obter_metricas_dashboard
-from ..utils.formatters import (formatar_data_para_exibicao,
-                                formatar_valor_monetario)
+from ..utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
 from ..utils.ui_config import aplicar_icone_padrao
 
 _FIGURE_FACE = "#202124"
@@ -73,6 +80,7 @@ class MatplotlibCanvas(FigureCanvas):
     """Canvas helper para integrar gráficos do Matplotlib ao Qt."""
 
     def __init__(self, width: float = 12, height: float = 9, dpi: int = 100):
+        """Inicializa o canvas do Matplotlib com as dimensões especificadas."""
         self.figure = Figure(figsize=(width, height), dpi=dpi)
         self.figure.patch.set_facecolor(_FIGURE_FACE)
         super().__init__(self.figure)
@@ -111,6 +119,7 @@ class DashboardDialog(QDialog):
     ]
 
     def __init__(self, parent=None):
+        """Inicializa o diálogo do dashboard com configurações padrão."""
         super().__init__(parent)
         self._configurar_janela()
         self.metricas: dict[str, Any] = {}
@@ -146,10 +155,10 @@ class DashboardDialog(QDialog):
     def _configurar_janela(self) -> None:
         self.setWindowTitle("Dashboard Administrativo")
         self.resize(1100, 700)
-        self.setWindowFlag(Qt.Window, True)
-        self.setWindowFlag(Qt.WindowSystemMenuHint, True)
-        self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
-        self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
+        self.setWindowFlag(Qt.WindowType.Window, True)
+        self.setWindowFlag(Qt.WindowType.WindowSystemMenuHint, True)
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, True)
+        self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, True)
         self.setSizeGripEnabled(True)
 
         # Aplicar ícone padrão
@@ -278,8 +287,10 @@ class DashboardDialog(QDialog):
         self.tabela_mensal.setHorizontalHeaderLabels(
             [nome for _, nome in self._MESES] + ["Total"]
         )
-        self.tabela_mensal.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tabela_mensal.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabela_mensal.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.tabela_mensal.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_mensal.setAlternatingRowColors(True)
         return self.tabela_mensal
 
@@ -293,8 +304,10 @@ class DashboardDialog(QDialog):
         self.tabela_totais.setHorizontalHeaderLabels(
             ["Ano", "Itens", "Valor (R$)", "OS"]
         )
-        self.tabela_totais.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tabela_totais.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabela_totais.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.tabela_totais.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_totais.setAlternatingRowColors(True)
         totais_layout.addWidget(self.tabela_totais)
 
@@ -310,8 +323,10 @@ class DashboardDialog(QDialog):
                 "Horas/dia",
             ]
         )
-        self.tabela_medias.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tabela_medias.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabela_medias.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.tabela_medias.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_medias.setAlternatingRowColors(True)
         medias_layout.addWidget(self.tabela_medias)
 
@@ -339,14 +354,18 @@ class DashboardDialog(QDialog):
         layout.addWidget(self.label_total_horas)
 
         self.tabela_horas = QTableWidget()
-        self.tabela_horas.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabela_horas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_horas.setAlternatingRowColors(True)
-        self.tabela_horas.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabela_horas.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
         layout.addWidget(self.tabela_horas)
 
     def _criar_tab_graficos(self) -> None:
         if self.df_registros.empty:
             return
+
+        assert self.tabs is not None
 
         self.tab_graficos = QWidget()
         layout = QVBoxLayout(self.tab_graficos)
@@ -373,6 +392,10 @@ class DashboardDialog(QDialog):
     # ------------------------------------------------------------------
 
     def _atualizar_tabela_mensal(self) -> None:
+        assert self.combo_ano is not None
+        assert self.combo_metrica is not None
+        assert self.tabela_mensal is not None
+
         ano_texto = self.combo_ano.currentText()
         if not ano_texto:
             self.tabela_mensal.setRowCount(0)
@@ -436,6 +459,8 @@ class DashboardDialog(QDialog):
         )
 
     def _atualizar_tabela_totais(self) -> None:
+        assert self.tabela_totais is not None
+
         totais = self.metricas.get("totais_ano", {})
         anos_ordenados = sorted(totais.keys())
         self.tabela_totais.setRowCount(len(anos_ordenados))
@@ -443,7 +468,11 @@ class DashboardDialog(QDialog):
         for row, ano in enumerate(anos_ordenados):
             dados = totais.get(ano, {})
             self.tabela_totais.setItem(
-                row, 0, self._criar_item_tabela(str(ano), alinhamento=Qt.AlignCenter)
+                row,
+                0,
+                self._criar_item_tabela(
+                    str(ano), alinhamento=Qt.AlignmentFlag.AlignCenter
+                ),
             )
             self.tabela_totais.setItem(
                 row,
@@ -464,6 +493,8 @@ class DashboardDialog(QDialog):
             )
 
     def _atualizar_tabela_medias(self) -> None:
+        assert self.tabela_medias is not None
+
         medias = self.metricas.get("medias_por_usuario", {})
         media_geral = self.metricas.get("media_geral", {})
 
@@ -491,9 +522,9 @@ class DashboardDialog(QDialog):
 
             for col, texto in enumerate(valores):
                 alinhamento = (
-                    Qt.AlignLeft | Qt.AlignVCenter
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
                     if col == 0
-                    else Qt.AlignRight | Qt.AlignVCenter
+                    else Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                 )
                 self.tabela_medias.setItem(
                     row,
@@ -512,9 +543,9 @@ class DashboardDialog(QDialog):
 
             for col, texto in enumerate(valores_total):
                 alinhamento = (
-                    Qt.AlignLeft | Qt.AlignVCenter
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
                     if col == 0
-                    else Qt.AlignRight | Qt.AlignVCenter
+                    else Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                 )
                 self.tabela_medias.setItem(
                     total_row,
@@ -523,6 +554,10 @@ class DashboardDialog(QDialog):
                 )
 
     def _atualizar_tabela_horas(self) -> None:
+        assert self.combo_intervalo is not None
+        assert self.label_total_horas is not None
+        assert self.tabela_horas is not None
+
         dados_horas = self.metricas.get("horas_por_dia", {})
         dias_ordenados = list(dados_horas.keys())
         if not dias_ordenados:
@@ -552,7 +587,8 @@ class DashboardDialog(QDialog):
                 row,
                 0,
                 self._criar_item_tabela(
-                    formatar_data_para_exibicao(dia), alinhamento=Qt.AlignCenter
+                    formatar_data_para_exibicao(dia),
+                    alinhamento=Qt.AlignmentFlag.AlignCenter,
                 ),
             )
             for col, usuario in enumerate(self.usuarios, start=1):
@@ -575,6 +611,8 @@ class DashboardDialog(QDialog):
     def _atualizar_graficos(self) -> None:
         if self.df_registros.empty or not hasattr(self, "canvas"):
             return
+
+        assert self.canvas is not None
 
         df_total, df_filtrado, usuario_filtro = self._obter_dados_grafico()
 
@@ -601,6 +639,7 @@ class DashboardDialog(QDialog):
         df_total = self.df_registros.copy()
         usuario_filtro = None
         if hasattr(self, "combo_grafico_usuario"):
+            assert self.combo_grafico_usuario is not None
             usuario_filtro = self.combo_grafico_usuario.currentData()
 
         if usuario_filtro:
@@ -611,6 +650,8 @@ class DashboardDialog(QDialog):
         return df_total, df_filtrado, usuario_filtro
 
     def _mostrar_mensagem_sem_dados(self, fig) -> None:
+        assert self.canvas is not None
+
         ax = fig.add_subplot(111)
         ax.axis("off")
         ax.text(
@@ -772,11 +813,11 @@ class DashboardDialog(QDialog):
     @staticmethod
     def _criar_item_tabela(
         texto: str,
-        alinhamento: int = Qt.AlignRight | Qt.AlignVCenter,
+        alinhamento: int = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
     ) -> QTableWidgetItem:
         item = QTableWidgetItem(texto)
         item.setTextAlignment(alinhamento)
-        item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         return item
 
     @staticmethod

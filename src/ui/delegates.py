@@ -14,6 +14,7 @@ class DateEditDelegate(QStyledItemDelegate):
     """Delegate personalizado para edição de datas com calendário."""
 
     def __init__(self, parent=None):  # pylint: disable=useless-parent-delegation
+        """Inicializa o delegate de edição de data."""
         super().__init__(parent)
 
     def createEditor(
