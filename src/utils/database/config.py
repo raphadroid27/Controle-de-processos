@@ -12,7 +12,6 @@ from typing import Optional, Tuple
 
 def resolve_runtime_root() -> Path:
     """Determina o diretório base da aplicação em tempo de execução."""
-
     if getattr(sys, "frozen", False):  # PyInstaller ou similar
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[3]
@@ -27,7 +26,6 @@ DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
 def slugify_usuario(usuario: str) -> str:
     """Cria um slug estável para nome de usuário (para nomear arquivos)."""
-
     if not usuario:
         usuario = "usuario"
 
@@ -37,13 +35,12 @@ def slugify_usuario(usuario: str) -> str:
     if not ascii_name:
         ascii_name = "usuario"
 
-    hash_suffix = hashlib.sha1(usuario.encode("utf-8")).hexdigest()[:8]
+    hash_suffix = hashlib.sha256(usuario.encode("utf-8")).hexdigest()[:8]
     return f"{ascii_name}-{hash_suffix}"
 
 
 def user_db_path(*, usuario: Optional[str] = None, slug: Optional[str] = None) -> Path:
     """Resolve o caminho para o banco individual do usuário informado."""
-
     if slug is None:
         if usuario is None:
             raise ValueError("Informe 'usuario' ou 'slug' para localizar o banco.")
@@ -53,13 +50,11 @@ def user_db_path(*, usuario: Optional[str] = None, slug: Optional[str] = None) -
 
 def encode_registro_id(slug: str, registro_id: int) -> str:
     """Codifica o identificador composto slug:id usado externamente."""
-
     return f"{slug}:{registro_id}"
 
 
 def decode_registro_id(identificador: str) -> Optional[Tuple[str, int]]:
     """Decodifica o identificador composto ``slug:id`` utilizado na UI."""
-
     if not identificador or ":" not in identificador:
         return None
     slug, _, id_str = identificador.partition(":")
