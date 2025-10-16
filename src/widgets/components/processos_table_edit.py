@@ -83,8 +83,7 @@ def extrair_campos_linha(
     else:
         data_processo = converter_data_para_banco(data_processo_text)
 
-    valor_limpo = valor_text.replace("R$", "").replace(" ", "").replace(".", "")
-    valor_pedido = valor_limpo.replace(",", ".") if "," in valor_limpo else valor_limpo
+    valor_pedido = valor_text.replace("R$", "").strip()
 
     return LinhaProcessoEdicao(
         cliente,
