@@ -177,7 +177,6 @@ def obter_comando_sistema() -> str | None:
 
     def _on_error(exc: SQLAlchemyError) -> str | None:
         print(f"Erro ao obter comando do sistema: {exc}")
-        return None
 
     return executar_sessao_compartilhada(
         _operacao,
