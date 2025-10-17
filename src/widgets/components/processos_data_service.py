@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from sqlalchemy.exc import SQLAlchemyError
 
 from ...utils import database as db
+from ...utils.database.queries import _garantir_periodo_atual
 from ...utils.periodo_faturamento import \
     calcular_periodo_faturamento_atual_datas
 
@@ -90,25 +91,11 @@ def listar_periodos_do_ano(
         print(f"Erro ao buscar períodos de faturamento: {exc}")
         return []
 
-    data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+    data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
     ano_atual = str(data_inicio_atual.year)
 
     if ano == ano_atual:
-        inicio_atual_fmt = data_inicio_atual.strftime("%d/%m")
-        fim_atual_fmt = data_fim_atual.strftime("%d/%m")
-        periodo_atual_display = f"{inicio_atual_fmt} a {fim_atual_fmt}"
-        periodo_atual_existe = any(
-            periodo.get("display") == periodo_atual_display for periodo in periodos
-        )
-        if not periodo_atual_existe:
-            periodos.insert(
-                0,
-                {
-                    "display": periodo_atual_display,
-                    "inicio": data_inicio_atual.strftime("%Y-%m-%d"),
-                    "fim": data_fim_atual.strftime("%Y-%m-%d"),
-                },
-            )
+        _garantir_periodo_atual(periodos)
 
     return periodos
 

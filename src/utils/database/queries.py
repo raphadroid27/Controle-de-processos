@@ -16,6 +16,32 @@ from .sessions import (get_sessionmaker_for_slug, get_shared_session,
                        get_user_session, iter_user_databases)
 
 
+def _garantir_periodo_atual(periodos: List[dict]) -> None:
+    """Garante que o período atual de faturamento esteja na lista de períodos.
+
+    Se o período atual não estiver presente, ele é inserido no início da lista.
+    """
+    data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+
+    inicio_atual_fmt = data_inicio_atual.strftime("%d/%m")
+    fim_atual_fmt = data_fim_atual.strftime("%d/%m")
+    periodo_atual_display = f"{inicio_atual_fmt} a {fim_atual_fmt}"
+
+    periodo_atual_existe = any(
+        periodo.get("display") == periodo_atual_display for periodo in periodos
+    )
+
+    if not periodo_atual_existe:
+        periodos.insert(
+            0,
+            {
+                "display": periodo_atual_display,
+                "inicio": data_inicio_atual.strftime("%Y-%m-%d"),
+                "fim": data_fim_atual.strftime("%Y-%m-%d"),
+            },
+        )
+
+
 def _montar_condicoes(
     *,
     cliente: Optional[str] = None,
@@ -26,7 +52,8 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if processo:
         condicoes.append(
@@ -94,6 +121,8 @@ def _buscar_registros_em_session(
             )
         )
     return dados
+
+# pylint: disable=R0917,R0914
 
 
 def buscar_lancamentos_filtros_completos(
@@ -243,7 +272,8 @@ def _buscar_valores_unicos(
         session = get_user_session(usuario)
         try:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,) in session.execute(stmt) if value)
+            valores.update(value for (value,)
+                           in session.execute(stmt) if value)
         finally:
             session.close()
     else:
@@ -251,7 +281,8 @@ def _buscar_valores_unicos(
             session = get_sessionmaker_for_slug(slug)()
             try:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,) in session.execute(stmt) if value)
+                valores.update(value for (value,)
+                               in session.execute(stmt) if value)
             finally:
                 session.close()
 
@@ -377,7 +408,7 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
     ano_int = int(ano)
 
     # Verificar se é o ano atual
-    data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+    data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
     ano_atual = str(data_inicio_atual.year)
 
     if ano == ano_atual:
@@ -394,7 +425,8 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
             intervalo = _periodo_faturamento_datas(data)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
-                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(
+                    inicio, fim, com_ano=False)
                 if display:
                     chave = (inicio, fim)
                     if chave not in vistos:
@@ -404,21 +436,7 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                         )
 
         # Garantir que o período atual seja incluído se ainda não estiver
-        inicio_atual_fmt = data_inicio_atual.strftime("%d/%m")
-        fim_atual_fmt = data_fim_atual.strftime("%d/%m")
-        periodo_atual_display = f"{inicio_atual_fmt} a {fim_atual_fmt}"
-        periodo_atual_existe = any(
-            periodo.get("display") == periodo_atual_display for periodo in periodos
-        )
-        if not periodo_atual_existe:
-            periodos.insert(
-                0,
-                {
-                    "display": periodo_atual_display,
-                    "inicio": data_inicio_atual.strftime("%Y-%m-%d"),
-                    "fim": data_fim_atual.strftime("%Y-%m-%d"),
-                },
-            )
+        _garantir_periodo_atual(periodos)
     else:
         # Para anos anteriores, gerar todos os 12 períodos do ano
         periodos = []
