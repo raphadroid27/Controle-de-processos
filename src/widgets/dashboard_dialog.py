@@ -19,25 +19,18 @@ except ImportError:  # pragma: no cover
 else:
     from pandas import DataFrame, Series
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QTableWidget,
-    QTableWidgetItem,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
+                               QLabel, QTableWidget, QTableWidgetItem,
+                               QTabWidget, QVBoxLayout, QWidget)
 
 from ..utils.dashboard_metrics import obter_metricas_dashboard
-from ..utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
+from ..utils.formatters import (formatar_data_para_exibicao,
+                                formatar_valor_monetario)
 from ..utils.ui_config import aplicar_icone_padrao
 
 _FIGURE_FACE = "#202124"

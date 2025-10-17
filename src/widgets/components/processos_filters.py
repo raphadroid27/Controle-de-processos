@@ -6,13 +6,12 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLineEdit, QPushButton
+from PySide6.QtWidgets import (QComboBox, QGroupBox, QHBoxLayout, QLineEdit,
+                               QPushButton)
 
-from ...utils.ui_config import (
-    aplicar_estilo_botao,
-    aplicar_estilo_botao_desabilitado,
-    configurar_widgets_entrada_uniformes,
-)
+from ...utils.ui_config import (aplicar_estilo_botao,
+                                aplicar_estilo_botao_desabilitado,
+                                configurar_widgets_entrada_uniformes)
 from ..navigable_widgets import NavigableComboBox, NavigableLineEdit
 from .processos_layout import criar_coluna_rotulo, criar_layout_botao_padrao
 

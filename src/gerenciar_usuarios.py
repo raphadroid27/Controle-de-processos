@@ -10,22 +10,10 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import (
-    QDialog,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QInputDialog,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QTabWidget,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
+                               QInputDialog, QLabel, QLineEdit, QMessageBox,
+                               QPushButton, QTabWidget, QTreeWidget,
+                               QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from .utils import session_manager, usuario
 from .utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao

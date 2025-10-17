@@ -6,31 +6,16 @@ para gerenciar a autenticação e criação de usuários.
 """
 
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import (
-    QCheckBox,
-    QDialog,
-    QFormLayout,
-    QHBoxLayout,
-    QInputDialog,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QSizePolicy,
-    QSpacerItem,
-)
+from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
+                               QInputDialog, QLineEdit, QMessageBox,
+                               QPushButton, QSizePolicy, QSpacerItem)
 
 from .utils import session_manager, usuario
-from .utils.ui_config import (
-    ALTURA_DIALOG_LOGIN,
-    ALTURA_DIALOG_NOVO_USUARIO,
-    ESPACAMENTO_PADRAO,
-    LARGURA_DIALOG_LOGIN,
-    LARGURA_DIALOG_NOVO_USUARIO,
-    MARGEM_DIALOG,
-    aplicar_estilo_botao,
-    aplicar_icone_padrao,
-    configurar_widgets_entrada_uniformes,
-)
+from .utils.ui_config import (ALTURA_DIALOG_LOGIN, ALTURA_DIALOG_NOVO_USUARIO,
+                              ESPACAMENTO_PADRAO, LARGURA_DIALOG_LOGIN,
+                              LARGURA_DIALOG_NOVO_USUARIO, MARGEM_DIALOG,
+                              aplicar_estilo_botao, aplicar_icone_padrao,
+                              configurar_widgets_entrada_uniformes)
 
 
 class LoginDialog(QDialog):
