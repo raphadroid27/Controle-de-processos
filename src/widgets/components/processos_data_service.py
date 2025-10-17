@@ -118,7 +118,7 @@ def _ordenacao_chave(registro: Sequence[Any]) -> tuple[datetime, datetime]:
 
     data_processo = registro[6]
     data_entrada = registro[5]
-    data_lancamento = registro[9]
+    data_lancamento = registro[10]
 
     try:
         if data_lancamento:
@@ -318,7 +318,8 @@ def obter_estatisticas_totais(
         dias_uteis_periodo,
     )
 
-    # Estimativa baseada na média do período filtrado multiplicada pelos dias úteis do período filtrado
+    # Estimativa baseada na média do período filtrado
+    # multiplicada pelos dias úteis do período filtrado
     estimativa = _calcular_estimativa_itens_mes(
         media_por_dia,
         dias_uteis_periodo,

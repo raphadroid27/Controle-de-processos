@@ -6,20 +6,15 @@ from dataclasses import dataclass
 from typing import Callable, List, Sequence
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QFrame,
-    QHBoxLayout,
-    QHeaderView,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-)
+from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout,
+                               QHeaderView, QPushButton, QTableWidget,
+                               QTableWidgetItem, QVBoxLayout)
 
 from ...ui.delegates import DateEditDelegate
-from ...utils.formatters import formatar_data_para_exibicao, formatar_valor_monetario
-from ...utils.ui_config import aplicar_estilo_botao, aplicar_estilo_botao_desabilitado
+from ...utils.formatters import (formatar_data_para_exibicao,
+                                 formatar_valor_monetario)
+from ...utils.ui_config import (aplicar_estilo_botao,
+                                aplicar_estilo_botao_desabilitado)
 
 __all__ = ["TabelaControls", "criar_tabela", "preencher_tabela"]
 
@@ -38,10 +33,11 @@ def _definir_colunas(tabela: QTableWidget, is_admin: bool) -> List[str]:
     colunas = [
         "Cliente",
         "Processo",
-        "Qtd Itens",
+        "Itens",
         "Data Entrada",
         "Data Processo",
         "Tempo Corte",
+        "Observações",
         "Valor (R$)",
     ]
 
@@ -78,8 +74,8 @@ def criar_tabela(
 
     header = tabela.horizontalHeader()
     porcentagens_colunas = (
-        [10, 20, 20, 10, 10, 10, 10, 10] if is_admin else [
-            25, 25, 10, 10, 10, 10, 10]
+        [10, 12, 12, 6, 10, 10, 10, 20, 10] if is_admin else [
+            15, 15, 10, 10, 10, 10, 20, 10]
     )
 
     def calcular_larguras_colunas() -> List[int]:
@@ -117,7 +113,7 @@ def criar_tabela(
     tabela.setHorizontalHeaderItem(processo_col_index, processo_header_item)
 
     qtd_col_index = 2 + offset
-    qtd_header_item = QTableWidgetItem("Qtd Itens")
+    qtd_header_item = QTableWidgetItem("Itens")
     qtd_header_item.setTextAlignment(
         Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
     )
@@ -263,15 +259,19 @@ def preencher_tabela(
             )
             tabela.setItem(row, offset + 5, item_tempo_corte)
 
+            observacoes_display = registro[8] or ""
+            item_observacoes = QTableWidgetItem(observacoes_display)
+            tabela.setItem(row, offset + 6, item_observacoes)
+
             item_valor = QTableWidgetItem(
                 formatar_valor_monetario(
-                    registro[8] if registro[8] is not None else 0.0
+                    registro[9] if registro[9] is not None else 0.0
                 )
             )
             item_valor.setTextAlignment(
                 Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
             )
-            tabela.setItem(row, offset + 6, item_valor)
+            tabela.setItem(row, offset + 7, item_valor)
 
             item = tabela.item(row, offset + 0)
             if item is not None:

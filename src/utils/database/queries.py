@@ -88,6 +88,7 @@ def _buscar_registros_em_session(
                 registro.data_entrada.isoformat(),
                 registro.data_processo.isoformat() if registro.data_processo else None,
                 registro.tempo_corte,
+                registro.observacoes,
                 float(registro.valor_pedido),
                 format_datetime(registro.data_lancamento),
             )
@@ -172,7 +173,8 @@ def _calcular_estatisticas_agregadas(
     condicoes,
     usuario: Optional[str] = None,
 ) -> dict:
-    """Calcula estatísticas agregadas (total_processos, total_itens, total_valor) para as condições dadas."""
+    """Calcula estatísticas agregadas (total_processos,
+    total_itens, total_valor) para as condições dadas."""
 
     total_proc = total_itens = 0
     total_valor = 0.0

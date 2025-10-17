@@ -7,9 +7,11 @@ from typing import Optional
 from sqlalchemy.exc import SQLAlchemyError
 
 from .config import decode_registro_id
-from .helpers import preparar_lancamento_para_insert, preparar_lancamento_para_update
+from .helpers import (preparar_lancamento_para_insert,
+                      preparar_lancamento_para_update)
 from .models import Lancamento, RegistroModel
-from .sessions import ensure_user_database, get_sessionmaker_for_slug, get_user_session
+from .sessions import (ensure_user_database, get_sessionmaker_for_slug,
+                       get_user_session)
 
 
 def adicionar_lancamento(
@@ -23,6 +25,7 @@ def adicionar_lancamento(
     data_processo: Optional[str] = None,
     valor_pedido: Optional[str] = None,
     tempo_corte: Optional[str] = None,
+    observacoes: Optional[str] = None,
 ) -> str:
     """Adiciona um novo registro no banco individual do usuário."""
     if lancamento is None:
@@ -40,6 +43,7 @@ def adicionar_lancamento(
             data_processo=data_processo or "",
             valor_pedido=valor_pedido or "",
             tempo_corte=tempo_corte or "",
+            observacoes=observacoes or "",
         )
     else:
         lanc = lancamento
@@ -100,6 +104,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
     data_processo: Optional[str] = None,
     valor_pedido: Optional[str] = None,
     tempo_corte: Optional[str] = None,
+    observacoes: Optional[str] = None,
 ) -> str:
     """Atualiza um lançamento existente."""
     if isinstance(identificador, int):
@@ -121,6 +126,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
             data_processo=data_processo or "",
             valor_pedido=valor_pedido or "",
             tempo_corte=tempo_corte or "",
+            observacoes=observacoes or "",
         )
     else:
         lanc = lancamento

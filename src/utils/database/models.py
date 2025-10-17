@@ -63,6 +63,7 @@ class RegistroModel(UserBase):
     data_entrada: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     data_processo: Mapped[Optional[date]] = mapped_column(Date, index=True)
     tempo_corte: Mapped[Optional[str]] = mapped_column(String(16))
+    observacoes: Mapped[Optional[str]] = mapped_column(String(500))
     valor_pedido: Mapped[float] = mapped_column(Float, nullable=False)
     data_lancamento: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.datetime("now"), nullable=False
@@ -81,6 +82,7 @@ class Lancamento:
     data_processo: Optional[str]
     valor_pedido: str
     tempo_corte: Optional[str] = None
+    observacoes: Optional[str] = None
 
 
 __all__ = [

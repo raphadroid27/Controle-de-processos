@@ -29,6 +29,7 @@ class LinhaProcessoEdicao:
     data_entrada: str
     data_processo: str
     tempo_corte: str
+    observacoes: str
     valor_pedido: str
 
     def to_update_kwargs(self) -> dict[str, str]:
@@ -40,6 +41,7 @@ class LinhaProcessoEdicao:
             "data_entrada": self.data_entrada,
             "data_processo": self.data_processo,
             "tempo_corte": self.tempo_corte,
+            "observacoes": self.observacoes,
             "valor_pedido": self.valor_pedido,
         }
 
@@ -53,7 +55,8 @@ def validar_edicao_celula(
         3: _validar_data_entrada,
         4: _validar_data_processo,
         5: _validar_tempo_corte,
-        6: _validar_valor,
+        6: _validar_observacoes,
+        7: _validar_valor,
     }
 
     validador = validators.get(col_editada)
@@ -75,7 +78,8 @@ def extrair_campos_linha(
     data_entrada_text = _texto_item(tabela, row, col_offset + 3)
     data_processo_text = _texto_item(tabela, row, col_offset + 4)
     tempo_corte_text = _texto_item(tabela, row, col_offset + 5)
-    valor_text = _texto_item(tabela, row, col_offset + 6)
+    observacoes_text = _texto_item(tabela, row, col_offset + 6)
+    valor_text = _texto_item(tabela, row, col_offset + 7)
 
     data_entrada = converter_data_para_banco(data_entrada_text)
     if data_processo_text == "Não processado" or not data_processo_text:
@@ -92,6 +96,7 @@ def extrair_campos_linha(
         data_entrada,
         data_processo,
         tempo_corte_text,
+        observacoes_text,
         valor_pedido,
     )
 
@@ -163,6 +168,12 @@ def _validar_tempo_corte(valor_editado: str) -> Tuple[bool, str | None]:
     if horas < 0 or not 0 <= minutos < 60 or not 0 <= segundos < 60:
         return False, "Tempo de corte deve estar no formato HH:MM:SS."
 
+    return True, None
+
+
+def _validar_observacoes(observacoes_editadas: str) -> Tuple[bool, str | None]:
+    if len(observacoes_editadas) > 500:
+        return False, "Observações devem ter no máximo 500 caracteres."
     return True, None
 
 

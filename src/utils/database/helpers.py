@@ -78,6 +78,7 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
         "data_entrada": data_entrada,
         "data_processo": data_processo,
         "tempo_corte": tempo_corte,
+        "observacoes": lanc.observacoes.strip() if lanc.observacoes else None,
         "valor_pedido": valor,
     }
 
@@ -121,6 +122,7 @@ def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
         "data_entrada": data_entrada,
         "data_processo": data_processo,
         "tempo_corte": tempo_corte,
+        "observacoes": lanc.observacoes.strip() if lanc.observacoes else None,
         "valor_pedido": valor,
     }
 
