@@ -4,6 +4,7 @@ from PySide6.QtCore import QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
+from ..forms.form_sobre import main as mostrar_sobre
 from ..gerenciar_usuarios import GerenciarUsuariosDialog
 from ..utils import session_manager
 from ..utils.ui_config import aplicar_icone_padrao
@@ -40,7 +41,8 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(
+            self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -79,7 +81,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.unregister_color_listener(
+            self._on_cor_tema_atualizada)
         session_manager.remover_sessao()
         event.accept()
 
@@ -111,7 +114,8 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip(
+                "Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -123,6 +127,14 @@ class MainWindow(QMainWindow):
             admin_menu.addAction(dashboard_action)
 
         self._criar_menu_tema(menubar)
+
+        ajuda_menu = menubar.addMenu("Ajuda")
+
+        sobre_action = QAction("Sobre", self)
+        sobre_action.triggered.connect(self.abrir_sobre)
+        sobre_action.setStatusTip("Informações sobre a aplicação")
+        sobre_action.setToolTip("Sobre")
+        ajuda_menu.addAction(sobre_action)
 
     def abrir_gerenciar_usuarios(self):
         """Abre o diálogo de gerenciamento de usuários."""
@@ -146,6 +158,17 @@ class MainWindow(QMainWindow):
                 self,
                 "Erro",
                 f"Não foi possível abrir o dashboard: {exc}",
+            )
+
+    def abrir_sobre(self):
+        """Abre o diálogo Sobre."""
+        try:
+            mostrar_sobre(self)
+        except Exception as exc:  # pylint: disable=broad-except
+            QMessageBox.warning(
+                self,
+                "Erro",
+                f"Não foi possível abrir a janela Sobre: {exc}",
             )
 
     def fazer_logout(self):
