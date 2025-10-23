@@ -22,15 +22,15 @@ def get_latest_tag():
             ["git", "tag", "--sort=-v:refname"], text=True
         ).strip()
         if not tags_raw:
-            return "v0.0.0"  # Se não existir tag, começa do zero
+            return None  # Nenhuma tag encontrada
 
         tags = tags_raw.split("\n")
         latest_tag = tags[0]
         print(f"Tag mais recente encontrada: {latest_tag}")
         return latest_tag
-    except ValueError as e:
+    except subprocess.CalledProcessError as e:
         print(f"Erro ao obter tags: {e}")
-        return "v0.0.0"
+        return None
 
 
 def parse_version(version_str):
@@ -49,6 +49,8 @@ def generate_next_version(auto_increment="patch"):
     definir qual número incrementar automaticamente.
     """
     latest_tag = get_latest_tag()
+    if latest_tag is None:
+        return "1.0.0"  # Versão inicial
     major, minor, patch = parse_version(latest_tag)
 
     if auto_increment == "major":
@@ -68,15 +70,21 @@ def get_commit_messages_since_last_tag():
     """Obtém as mensagens de commit desde a última tag, sem número do commit e autor."""
     try:
         latest_tag = get_latest_tag()
-        output = subprocess.check_output(
-            ["git", "log", f"{latest_tag}..HEAD", "--pretty=format:%s"], text=True
-        ).strip()  # Apenas a mensagem do commit
+        if latest_tag is None:
+            # Se não há tags, obter todos os commits
+            output = subprocess.check_output(
+                ["git", "log", "--pretty=format:%s"], text=True
+            ).strip()
+        else:
+            output = subprocess.check_output(
+                ["git", "log", f"{latest_tag}..HEAD", "--pretty=format:%s"], text=True
+            ).strip()
 
         if not output:
-            return ["Não há commits desde a última tag."]
+            return ["Versão inicial - sem commits anteriores."]
 
         return output.split("\n")
-    except ValueError as e:
+    except subprocess.CalledProcessError as e:
         print(f"Erro ao obter mensagens de commit: {e}")
         return ["Erro ao obter mensagens de commit."]
 
@@ -123,6 +131,9 @@ def update_version_info(version):
 
         print(f"Arquivo version_info.txt atualizado com a versão: {version}")
         return True
+    except FileNotFoundError:
+        print("Arquivo version_info.txt não encontrado. Pulando atualização.")
+        return False
     except ValueError as e:
         print(f"Erro ao atualizar o arquivo version_info.txt: {e}")
         return False
@@ -156,13 +167,13 @@ def generate_changelog(version):
         if "# Changelog" in existing_content:
             # Verifica se já tem a descrição
             if (
-                "Histórico de mudanças do aplicativo Calculadora de Dobras"
+                "Histórico de mudanças do aplicativo Controle de Processos"
                 in existing_content
             ):
                 # Adiciona a nova versão após o cabeçalho com descrição
                 replacement = (
                     f"# Changelog\n\n"
-                    f"Histórico de mudanças do aplicativo Calculadora de Dobras\n\n"
+                    f"Histórico de mudanças do aplicativo Controle de Processos\n\n"
                     f"{new_version_content}"
                 )
                 replacement = replacement.replace("\\", r"\\")
@@ -175,24 +186,25 @@ def generate_changelog(version):
                 # Adiciona descrição e nova versão após o cabeçalho
                 updated_content = re.sub(
                     r"# Changelog\n\n",
-                    f"# Changelog\n\nHistórico de mudanças do aplicativo Calculadora de Dobras\n\n"
+                    f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
                     f"{new_version_content}",
                     existing_content,
                 )
         else:
             # Adiciona cabeçalho, descrição e a nova versão
             updated_content = (
-                f"# Changelog\n\nHistórico de mudanças do aplicativo Calculadora de Dobras\n\n"
+                f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
                 f"{new_version_content}{existing_content}"
             )
     else:
         # Cria um novo arquivo changelog
         updated_content = (
-            f"# Changelog\n\nHistórico de mudanças do aplicativo Calculadora de Dobras\n\n"
+            f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
             f"{new_version_content}"
         )
 
     try:
+        os.makedirs(os.path.dirname(changelog_path), exist_ok=True)
         with open(changelog_path, "w", encoding="utf-8") as f:
             f.write(updated_content)
         print(f"Arquivo CHANGELOG.md atualizado com a versão {version}")
@@ -207,7 +219,8 @@ def main():
     print("=== Atualizador de Versão ===")
 
     # Obtém a próxima versão
-    auto_increment = input("Incrementar [p]atch, [m]inor ou [M]ajor? (p/m/M) [p]: ")
+    auto_increment = input(
+        "Incrementar [p]atch, [m]inor ou [M]ajor? (p/m/M) [p]: ")
 
     if auto_increment == "m":
         increment_type = "minor"
@@ -229,7 +242,8 @@ def main():
         version = next_version
 
     # Confirma se deseja continuar
-    confirm = input(f"Confirma atualização para versão {version}? (s/n): ").lower()
+    confirm = input(
+        f"Confirma atualização para versão {version}? (s/n): ").lower()
     if confirm != "s":
         print("Atualização de versão cancelada.")
         return
@@ -262,7 +276,8 @@ def main():
     # Gera o changelog
     generate_changelog(version)
 
-    print(f"\n✅ Processo de atualização para versão {version} concluído com sucesso!")
+    print(
+        f"\n✅ Processo de atualização para versão {version} concluído com sucesso!")
 
 
 if __name__ == "__main__":
