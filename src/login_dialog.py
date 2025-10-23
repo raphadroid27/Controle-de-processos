@@ -107,10 +107,6 @@ Use Tab para avançar para o campo de senha."""
         nome = self.entry_usuario.text().strip()
         senha = self.entry_senha.text().strip()
 
-        if not nome or not senha:
-            QMessageBox.warning(self, "Erro", "Preencha usuário e senha.")
-            return
-
         # Verificar se precisa redefinir senha
         if usuario.verificar_senha_reset(nome):
             self.solicitar_nova_senha(nome)
