@@ -4,12 +4,12 @@ import sys
 
 from PySide6.QtWidgets import QApplication, QDialog
 
-from .login_dialog import LoginDialog
-from .ui.main_window import MainWindow
-from .ui.theme_manager import ThemeManager
-from .utils import database as db
-from .utils.session_manager import criar_tabela_system_control
-from .utils.usuario import criar_tabela_usuario
+from src.login_dialog import LoginDialog
+from src.ui.main_window import MainWindow
+from src.ui.theme_manager import ThemeManager
+from src.utils import database as db
+from src.utils.session_manager import criar_tabela_system_control
+from src.utils.usuario import criar_tabela_usuario
 
 
 class ControleProcessosApp:

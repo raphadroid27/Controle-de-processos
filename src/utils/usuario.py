@@ -14,10 +14,10 @@ from datetime import datetime
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from . import session_manager
-from .database import (UsuarioModel, ensure_user_database, get_shared_engine,
-                       remover_banco_usuario)
-from .database.sessions import executar_sessao_compartilhada
+from src.utils import session_manager
+from src.utils.database import (UsuarioModel, ensure_user_database,
+                                get_shared_engine, remover_banco_usuario)
+from src.utils.database.sessions import executar_sessao_compartilhada
 
 
 def criar_tabela_usuario() -> None:

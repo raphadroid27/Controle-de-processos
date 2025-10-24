@@ -8,10 +8,11 @@ from typing import Callable, Sequence
 from PySide6.QtCore import QDate
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
-from ...utils.ui_config import (aplicar_estilo_botao,
-                                configurar_widgets_entrada_uniformes)
-from ..navigable_widgets import NavigableDateEdit, NavigableLineEdit
-from .processos_layout import criar_coluna_rotulo, criar_layout_botao_padrao
+from src.utils.ui_config import (aplicar_estilo_botao,
+                                 configurar_widgets_entrada_uniformes)
+from src.widgets.components.processos_layout import (criar_coluna_rotulo,
+                                                     criar_layout_botao_padrao)
+from src.widgets.navigable_widgets import NavigableDateEdit, NavigableLineEdit
 
 __all__ = ["ProcessoFormControls", "criar_formulario"]
 

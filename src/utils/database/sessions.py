@@ -11,8 +11,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from .config import DATABASE_DIR, SHARED_DB_PATH, slugify_usuario, user_db_path
-from .models import SharedBase, UserBase, UsuarioModel
+from src.utils.database.config import (DATABASE_DIR, SHARED_DB_PATH,
+                                       slugify_usuario, user_db_path)
+from src.utils.database.models import SharedBase, UserBase, UsuarioModel
 
 _user_sessionmakers: Dict[Path, sessionmaker[Session]] = {}
 

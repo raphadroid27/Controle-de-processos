@@ -2,18 +2,33 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any, List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
-from ..periodo_faturamento import calcular_periodo_faturamento_atual_datas
-from .config import encode_registro_id, slugify_usuario
-from .helpers import format_datetime, parse_iso_date
-from .models import RegistroModel, UsuarioModel
-from .sessions import (get_sessionmaker_for_slug, get_shared_session,
-                       get_user_session, iter_user_databases)
+from src.utils.database.config import encode_registro_id, slugify_usuario
+from src.utils.database.helpers import format_datetime, parse_iso_date
+from src.utils.database.models import RegistroModel, UsuarioModel
+from src.utils.database.sessions import (get_sessionmaker_for_slug,
+                                         get_shared_session, get_user_session,
+                                         iter_user_databases)
+from src.utils.periodo_faturamento import \
+    calcular_periodo_faturamento_atual_datas
+
+
+@dataclass
+class FiltrosLancamentos:
+    """Classe para encapsular filtros de lançamentos."""
+    usuario: Optional[str] = None
+    cliente: Optional[str] = None
+    processo: Optional[str] = None
+    data_inicio: Optional[str] = None
+    data_fim: Optional[str] = None
+    limite: Optional[int] = None
+    offset: Optional[int] = None
 
 
 def _garantir_periodo_atual(periodos: List[dict]) -> None:
@@ -122,10 +137,13 @@ def _buscar_registros_em_session(
         )
     return dados
 
+
 # pylint: disable=R0917,R0914
 
 
 def buscar_lancamentos_filtros_completos(
+    filtros: Optional[FiltrosLancamentos] = None,
+    *,
     usuario: Optional[str] = None,
     cliente: Optional[str] = None,
     processo: Optional[str] = None,
@@ -135,6 +153,15 @@ def buscar_lancamentos_filtros_completos(
     offset: Optional[int] = None,
 ):
     """Lista lançamentos considerando filtros de usuário, cliente, processo e datas."""
+
+    if filtros:
+        usuario = filtros.usuario or usuario
+        cliente = filtros.cliente or cliente
+        processo = filtros.processo or processo
+        data_inicio = filtros.data_inicio or data_inicio
+        data_fim = filtros.data_fim or data_fim
+        limite = filtros.limite or limite
+        offset = filtros.offset or offset
 
     condicoes = _montar_condicoes(
         cliente=cliente,

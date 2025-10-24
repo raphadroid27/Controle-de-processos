@@ -9,7 +9,7 @@ from typing import Any, DefaultDict, Dict, Iterable, List, Set
 
 from sqlalchemy import select
 
-from . import database as db
+from src.utils import database as db
 
 
 def _novo_pacote_mensal() -> Dict[str, float]:

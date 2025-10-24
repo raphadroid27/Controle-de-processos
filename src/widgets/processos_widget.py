@@ -11,18 +11,18 @@ from PySide6.QtCore import QDate, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
-from ..utils import database as db
-from ..utils.formatters import (formatar_data_para_exibicao,
-                                formatar_valor_monetario)
-from ..utils.periodo_faturamento import (
+from src.utils import database as db
+from src.utils.formatters import (formatar_data_para_exibicao,
+                                  formatar_valor_monetario)
+from src.utils.periodo_faturamento import (
     calcular_periodo_faturamento_atual_datas,
     calcular_periodo_faturamento_para_data_datas)
-from ..utils.ui_config import ESPACAMENTO_PADRAO
-from .components import processos_autocomplete
-from .components import processos_data_service as processos_data
-from .components import (processos_filters, processos_form, processos_periodo,
-                         processos_table, processos_table_edit,
-                         processos_totais)
+from src.utils.ui_config import ESPACAMENTO_PADRAO
+from src.widgets.components import processos_autocomplete
+from src.widgets.components import processos_data_service as processos_data
+from src.widgets.components import (processos_filters, processos_form,
+                                    processos_periodo, processos_table,
+                                    processos_table_edit, processos_totais)
 
 
 class ProcessosWidget(QWidget):

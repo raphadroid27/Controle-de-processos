@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
                                QPushButton, QTabWidget, QTreeWidget,
                                QTreeWidgetItem, QVBoxLayout, QWidget)
 
-from .utils import session_manager, usuario
-from .utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao
+from src.utils import session_manager, usuario
+from src.utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao
 
 
 class GerenciarUsuariosDialog(QDialog):

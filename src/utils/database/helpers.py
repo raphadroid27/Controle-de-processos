@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
-from ..tempo_corte import normalizar_tempo_corte
-from .models import Lancamento
+from src.utils.database.models import Lancamento
+from src.utils.tempo_corte import normalizar_tempo_corte
 
 
 def parse_iso_date(value: Optional[str]) -> Optional[date]:
@@ -55,7 +55,9 @@ def validar_e_processar_valor(valor_str: str) -> str | float:
             return "Erro: O valor do pedido deve ser um número válido."
 
 
-def processar_datas(data_entrada_str: str, data_processo_str: Optional[str] = None) -> tuple[str | date, Optional[date]]:
+def processar_datas(
+    data_entrada_str: str, data_processo_str: Optional[str] = None
+) -> tuple[str | date, Optional[date]]:
     """Processa datas de entrada e processo."""
     data_entrada = parse_iso_date(data_entrada_str.strip())
     if data_entrada is None:
@@ -97,8 +99,7 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
         return valor_result
     valor = valor_result
 
-    data_result = processar_datas(
-        lanc.data_entrada.strip(), lanc.data_processo)
+    data_result = processar_datas(lanc.data_entrada.strip(), lanc.data_processo)
     if isinstance(data_result[0], str):
         return data_result[0]
     data_entrada, data_processo = data_result

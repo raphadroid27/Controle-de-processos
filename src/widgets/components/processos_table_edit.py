@@ -9,7 +9,7 @@ from typing import Tuple
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
-from ...utils.formatters import converter_data_para_banco
+from src.utils.formatters import converter_data_para_banco
 
 __all__ = [
     "LinhaProcessoEdicao",

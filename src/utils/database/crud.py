@@ -6,12 +6,13 @@ from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from .config import decode_registro_id
-from .helpers import (preparar_lancamento_para_insert,
-                      preparar_lancamento_para_update)
-from .models import Lancamento, RegistroModel
-from .sessions import (ensure_user_database, get_sessionmaker_for_slug,
-                       get_user_session)
+from src.utils.database.config import decode_registro_id
+from src.utils.database.helpers import (preparar_lancamento_para_insert,
+                                        preparar_lancamento_para_update)
+from src.utils.database.models import Lancamento, RegistroModel
+from src.utils.database.sessions import (ensure_user_database,
+                                         get_sessionmaker_for_slug,
+                                         get_user_session)
 
 
 def adicionar_lancamento(

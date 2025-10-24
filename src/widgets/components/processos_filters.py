@@ -9,11 +9,12 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QComboBox, QGroupBox, QHBoxLayout, QLineEdit,
                                QPushButton)
 
-from ...utils.ui_config import (aplicar_estilo_botao,
-                                aplicar_estilo_botao_desabilitado,
-                                configurar_widgets_entrada_uniformes)
-from ..navigable_widgets import NavigableComboBox, NavigableLineEdit
-from .processos_layout import criar_coluna_rotulo, criar_layout_botao_padrao
+from src.utils.ui_config import (aplicar_estilo_botao,
+                                 aplicar_estilo_botao_desabilitado,
+                                 configurar_widgets_entrada_uniformes)
+from src.widgets.components.processos_layout import (criar_coluna_rotulo,
+                                                     criar_layout_botao_padrao)
+from src.widgets.navigable_widgets import NavigableComboBox, NavigableLineEdit
 
 __all__ = ["FiltroControls", "criar_filtros"]
 

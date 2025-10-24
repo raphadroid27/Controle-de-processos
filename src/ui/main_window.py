@@ -4,13 +4,13 @@ from PySide6.QtCore import QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
-from ..forms.form_sobre import main as mostrar_sobre
-from ..gerenciar_usuarios import GerenciarUsuariosDialog
-from ..utils import session_manager
-from ..utils.ui_config import aplicar_icone_padrao
-from ..widgets.dashboard_dialog import DashboardDialog
-from ..widgets.processos_widget import ProcessosWidget
-from .theme_manager import ThemeManager
+from src.forms.form_sobre import main as mostrar_sobre
+from src.gerenciar_usuarios import GerenciarUsuariosDialog
+from src.ui.theme_manager import ThemeManager
+from src.utils import session_manager
+from src.utils.ui_config import aplicar_icone_padrao
+from src.widgets.dashboard_dialog import DashboardDialog
+from src.widgets.processos_widget import ProcessosWidget
 
 
 class MainWindow(QMainWindow):
@@ -41,8 +41,7 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -81,8 +80,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
         session_manager.remover_sessao()
         event.accept()
 
@@ -114,8 +112,7 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip(
-                "Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 

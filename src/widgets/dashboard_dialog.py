@@ -28,10 +28,10 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
                                QLabel, QTableWidget, QTableWidgetItem,
                                QTabWidget, QVBoxLayout, QWidget)
 
-from ..utils.dashboard_metrics import obter_metricas_dashboard
-from ..utils.formatters import (formatar_data_para_exibicao,
-                                formatar_valor_monetario)
-from ..utils.ui_config import aplicar_icone_padrao
+from src.utils.dashboard_metrics import obter_metricas_dashboard
+from src.utils.formatters import (formatar_data_para_exibicao,
+                                  formatar_valor_monetario)
+from src.utils.ui_config import aplicar_icone_padrao
 
 _FIGURE_FACE = "#202124"
 _AXES_FACE = "#2b3138"

@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from .database import SystemControlModel, get_shared_engine
-from .database.sessions import executar_sessao_compartilhada
+from src.utils.database import SystemControlModel, get_shared_engine
+from src.utils.database.sessions import executar_sessao_compartilhada
 
 # ID único da sessão atual
 SESSION_ID = str(uuid.uuid4())

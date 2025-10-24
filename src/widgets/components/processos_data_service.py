@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from ...utils import database as db
-from ...utils.database.queries import _garantir_periodo_atual
-from ...utils.periodo_faturamento import \
+from src.utils import database as db
+from src.utils.database.queries import _garantir_periodo_atual
+from src.utils.periodo_faturamento import \
     calcular_periodo_faturamento_atual_datas
 
 __all__ = [
