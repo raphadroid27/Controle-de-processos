@@ -34,7 +34,8 @@ class ControleProcessosApp:
 
     def run(self):
         """Executa a aplicação."""
-        self.mostrar_login()
+        if self.mostrar_login() == 0:
+            return 0
         return self.app.exec()
 
     def mostrar_login(self):
@@ -51,8 +52,9 @@ class ControleProcessosApp:
             )
             self.main_window.logout_requested.connect(self.mostrar_login)
             self.main_window.show()
+            return 1
         else:
-            QApplication.quit()
+            return 0
 
 
 def main():
