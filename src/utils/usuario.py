@@ -78,14 +78,17 @@ def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
 
 def verificar_login(nome: str, senha: str) -> dict:
     """Verifica se o login é válido."""
+    if not nome.strip() or not senha.strip():
+        return {"sucesso": False, "mensagem": "Usuário e senha obrigatórios"}
 
     def _operacao(session):
         senha_hash = hash_senha(senha)
         nome_limpo = nome.strip().lower()
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome_limpo)
+            select(UsuarioModel).where(
+                func.lower(UsuarioModel.nome) == nome_limpo)
         )
-        if not usuario:
+        if not usuario or usuario.senha != senha_hash:
             return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
 
         if not usuario.ativo:
@@ -93,9 +96,6 @@ def verificar_login(nome: str, senha: str) -> dict:
                 "sucesso": False,
                 "mensagem": "Usuário arquivado. Contate um administrador.",
             }
-
-        if usuario.senha != senha_hash:
-            return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
 
         return {
             "sucesso": True,
@@ -158,7 +158,8 @@ def resetar_senha_usuario(nome: str, nova_senha: str = "nova_senha") -> str:
 
     def _operacao(session) -> str:
         senha_hash = (
-            nova_senha if nova_senha == "nova_senha" else hash_senha(nova_senha)
+            nova_senha if nova_senha == "nova_senha" else hash_senha(
+                nova_senha)
         )
         try:
             resultado = session.execute(
@@ -241,7 +242,8 @@ def verificar_senha_reset(nome: str) -> bool:
 
     def _operacao(session) -> bool:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario or not usuario.ativo:
             return False
@@ -262,7 +264,8 @@ def excluir_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -296,7 +299,8 @@ def arquivar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -327,7 +331,8 @@ def restaurar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."

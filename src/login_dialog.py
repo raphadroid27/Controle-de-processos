@@ -60,7 +60,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_usuario, self.entry_senha])
 
         layout.addRow("Usuário:", self.entry_usuario)
         layout.addRow("Senha:", self.entry_senha)
@@ -82,8 +83,10 @@ Use Tab para avançar para o campo de senha."""
         aplicar_estilo_botao(self.btn_login, "azul", 120)
         aplicar_estilo_botao(self.btn_novo_usuario, "verde", 120)
 
-        self.btn_login.setToolTip("Autenticar no sistema (Ctrl+Enter)")
-        self.btn_login.setShortcut(QKeySequence("Ctrl+Enter"))
+        self.btn_login.setDefault(True)
+        self.btn_login.setToolTip(
+            "Autenticar no sistema (Enter)")
+        # self.btn_login.setShortcut(QKeySequence("Ctrl+Enter"))  # Removido para usar apenas Enter
 
         self.btn_novo_usuario.setToolTip(
             "Abrir formulário para cadastrar um novo usuário (Ctrl+Shift+N)"
@@ -100,7 +103,6 @@ Use Tab para avançar para o campo de senha."""
         # Conectar eventos
         self.btn_login.clicked.connect(self.fazer_login)
         self.btn_novo_usuario.clicked.connect(self.abrir_novo_usuario)
-        self.entry_senha.returnPressed.connect(self.fazer_login)
         self.entry_usuario.returnPressed.connect(self.entry_senha.setFocus)
 
     def fazer_login(self):
@@ -114,7 +116,8 @@ Use Tab para avançar para o campo de senha."""
             return
 
         # Verificar se usuário já está logado em outra máquina
-        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(nome)
+        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(
+            nome)
         if ja_logado and info_sessao:
             resposta = QMessageBox.question(
                 self,
@@ -165,7 +168,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         if ok and nova_senha.strip():
-            resultado = usuario.alterar_senha_usuario(nome, "nova_senha", nova_senha)
+            resultado = usuario.alterar_senha_usuario(
+                nome, "nova_senha", nova_senha)
             if "Sucesso" in resultado:
                 QMessageBox.information(
                     self, "Sucesso", "Senha alterada com sucesso. Faça login novamente."
@@ -194,7 +198,8 @@ class NovoUsuarioDialog(QDialog):
         """Inicializa o diálogo de novo usuário."""
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO, ALTURA_DIALOG_NOVO_USUARIO)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                          ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         # Aplicar ícone padrão
@@ -226,7 +231,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_nome, self.entry_senha])
 
         layout.addRow("Nome:", self.entry_nome)
         layout.addRow("Senha:", self.entry_senha)
@@ -260,7 +266,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         aplicar_estilo_botao(self.btn_cancelar, "vermelho", 110)
         aplicar_estilo_botao(self.btn_salvar, "verde", 110)
 
-        self.btn_cancelar.setToolTip("Fechar o formulário sem criar usuário (Esc)")
+        self.btn_cancelar.setToolTip(
+            "Fechar o formulário sem criar usuário (Esc)")
         self.btn_cancelar.setShortcut(QKeySequence("Esc"))
 
         self.btn_salvar.setToolTip("Salvar novo usuário (Ctrl+S)")
@@ -297,7 +304,8 @@ Deve ser único e sem espaços extras nas extremidades."""
             return
 
         # Verificar se é admin
-        is_admin = hasattr(self, "check_admin") and self.check_admin.isChecked()
+        is_admin = hasattr(
+            self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario.inserir_usuario(nome, senha, is_admin)
 
