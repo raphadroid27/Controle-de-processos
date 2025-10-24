@@ -179,7 +179,7 @@ def apply_auto_formatting(tools, src_path, report_file):
 
     if tools.get("black"):
         success = run_command(
-            f"python -m black {src_path}/ --line-length=88 --extend-exclude='\.pyc$'",
+            f"python -m black {src_path}/ --line-length=88 --extend-exclude='\\.pyc$'",
             "Formatando código (Black)",
             60,
             True,
@@ -227,7 +227,7 @@ def create_summary_report(report_file, tools, formatting_results, analysis_resul
         f.write(f"{'='*80}\n")
 
 
-# pylint: disable=R0912,R0914,R0915
+# pylint: disable=R0912,R0914,R0915,C0301
 def main():
     """
     Função principal que orquestra a execução da análise.
@@ -304,9 +304,10 @@ def main():
         print("\n🔍 EXECUTANDO ANÁLISE DE QUALIDADE E ESTILO")
 
         if tools_to_run.get("pylint"):
+
             success = run_command(
                 f"python -m pylint {src_path} --disable=C0114,C0115,C0116,R0903,R0913 "
-                f"--output-format=text --reports=n --score=y --jobs=0 --ignore-patterns='.*\.pyc$'",
+                f"--output-format=text --reports=n --score=y --jobs=0 --ignore-patterns='.*\\.pyc$'",
                 "Análise completa com Pylint",
                 300,
                 not args.no_report,
@@ -350,7 +351,7 @@ def main():
         if tools_to_run.get("mypy"):
             success = run_command(
                 f"python -m mypy {src_path}/ --ignore-missing-imports "
-                f"--no-strict-optional --exclude='.*\.pyc$'",
+                f"--no-strict-optional --exclude='.*\\.pyc$'",
                 "Verificação de tipos (MyPy)",
                 120,
                 not args.no_report,
