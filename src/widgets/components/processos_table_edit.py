@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Tuple
 
 from PySide6.QtCore import Qt
@@ -145,7 +145,7 @@ def _validar_data(valor_editado: str, tipo: str) -> Tuple[bool, str | None]:
         mensagem = "Data de entrada" if tipo == "entrada" else "Data de processo"
         return False, f"{mensagem} deve estar no formato DD/MM/AAAA."
 
-    if data_obj.date() > datetime.now().date():
+    if data_obj.date() > datetime.now(timezone.utc).date():
         mensagem = "Data de entrada" if tipo == "entrada" else "Data de processo"
         return False, f"{mensagem} não pode ser maior que a data atual."
 

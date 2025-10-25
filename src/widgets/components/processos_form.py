@@ -5,11 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
-from PySide6.QtCore import QDate
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
 from src.utils.ui_config import (aplicar_estilo_botao,
-                                 configurar_widgets_entrada_uniformes)
+                                 configurar_widgets_entrada_uniformes,
+                                 obter_data_atual_utc)
 from src.widgets.components.processos_layout import (criar_coluna_rotulo,
                                                      criar_layout_botao_padrao)
 from src.widgets.navigable_widgets import NavigableDateEdit, NavigableLineEdit
@@ -62,16 +62,17 @@ def criar_formulario(
     )
 
     entry_data_entrada = NavigableDateEdit(frame)
-    entry_data_entrada.setDate(QDate.currentDate())
+    entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
-    entry_data_entrada.setMaximumDate(QDate.currentDate())
-    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
+    entry_data_entrada.setMaximumDate(obter_data_atual_utc())
+    entry_data_entrada.setToolTip(
+        "Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
     entry_data_processo.setSpecialValueText("Não processado")
-    entry_data_processo.setMaximumDate(QDate.currentDate())
-    entry_data_processo.setDate(QDate.currentDate())
+    entry_data_processo.setMaximumDate(obter_data_atual_utc())
+    entry_data_processo.setDate(obter_data_atual_utc())
     entry_data_processo.setToolTip(
         "Data de processamento. Mantenha em 'Não processado' se ainda pendente."
     )

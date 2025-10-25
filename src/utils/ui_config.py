@@ -12,8 +12,10 @@ Funcionalidades:
 - Funções utilitárias para aplicação de estilos
 """
 
+from datetime import datetime, timezone
 from pathlib import Path
 
+from PySide6.QtCore import QDate
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
@@ -327,3 +329,15 @@ def aplicar_icone_padrao(widget: QWidget) -> None:
     if icon_path.exists():
         icon = QIcon(str(icon_path))
         widget.setWindowIcon(icon)
+
+
+def obter_data_atual_utc():
+    """
+    Retorna a data atual em UTC como QDate.
+
+    Isso evita problemas de fuso horário onde a data local pode ser diferente
+    da data UTC, permitindo que usuários em fusos horários negativos
+    (como UTC-3) possam registrar processos na data correta.
+    """
+    data_utc = datetime.now(timezone.utc).date()
+    return QDate(data_utc.year, data_utc.month, data_utc.day)
