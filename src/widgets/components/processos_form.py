@@ -112,7 +112,7 @@ def criar_formulario(
 
     colunas_info = (
         ("Cliente:", entry_cliente, 3),
-        ("Processo:", entry_processo, 3),
+        ("OS:", entry_processo, 3),
         ("Qtd. Itens:", entry_qtde_itens, 2),
         ("Data Entrada:", entry_data_entrada, 2),
         ("Data Processo:", entry_data_processo, 2),

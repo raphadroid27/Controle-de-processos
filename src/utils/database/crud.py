@@ -1,4 +1,4 @@
-"""Operações de CRUD sobre os registros de processos por usuário."""
+"""Operações de CRUD sobre os registros de OS's por usuário."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def adicionar_lancamento(
     if lancamento is None:
         if None in (usuario, cliente, processo, qtde_itens, data_entrada, valor_pedido):
             return (
-                "Erro: Campos obrigatórios: usuário, cliente, processo, "
+                "Erro: Campos obrigatórios: usuário, cliente, OS, "
                 "qtd itens, data entrada, valor."
             )
         lanc = Lancamento(
@@ -60,7 +60,7 @@ def adicionar_lancamento(
         registro = RegistroModel(**preparado)
         session.add(registro)
         session.commit()
-        return "Sucesso: Processo adicionado!"
+        return "Sucesso: registro adicionado!"
     except SQLAlchemyError as exc:
         session.rollback()
         return f"Erro ao inserir no banco de dados: {exc}"
@@ -147,7 +147,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
             setattr(registro, campo, valor)
 
         session.commit()
-        return "Sucesso: Processo atualizado com sucesso!"
+        return "Sucesso: Registro atualizado com sucesso!"
     except SQLAlchemyError as exc:
         session.rollback()
         return f"Erro no banco de dados: {exc}"
