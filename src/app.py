@@ -53,8 +53,7 @@ class ControleProcessosApp:
             self.main_window.logout_requested.connect(self.mostrar_login)
             self.main_window.show()
             return 1
-        else:
-            return 0
+        return 0
 
 
 def main():
