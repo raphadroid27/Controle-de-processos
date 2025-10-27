@@ -291,4 +291,7 @@ def encerrar_sessoes_usuario(usuario_nome: str) -> int:
 def _formatar_timestamp(valor: datetime | None) -> str:
     if not valor:
         return ""
-    return valor.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    # Garantir que seja tratado como UTC e convertido para local
+    if valor.tzinfo is None:
+        valor = valor.replace(tzinfo=timezone.utc)
+    return valor.astimezone().strftime("%Y-%m-%d %H:%M:%S")

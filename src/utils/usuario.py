@@ -9,7 +9,7 @@ e controle de permissões administrativas.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -310,7 +310,7 @@ def arquivar_usuario(nome: str) -> str:
             return "Erro: Usuário já está arquivado."
 
         usuario.ativo = False
-        usuario.arquivado_em = datetime.utcnow()
+        usuario.arquivado_em = datetime.now(timezone.utc)
         try:
             session.commit()
         except SQLAlchemyError:
