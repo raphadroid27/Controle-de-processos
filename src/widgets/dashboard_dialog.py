@@ -85,7 +85,7 @@ class DashboardDialog(QDialog):
     _METRIC_MAP = {
         "Itens": ("itens", int),
         "Valor (R$)": ("valor", float),
-        "Propostas": ("propostas", int),
+        "Propostas": ("proposta", int),
     }
 
     _MESES = [
@@ -198,8 +198,8 @@ class DashboardDialog(QDialog):
         self.df_registros["valor_pedido"] = pd.to_numeric(
             self.df_registros["valor_pedido"], errors="coerce"
         ).fillna(0.0)
-        self.df_registros["os"] = pd.to_numeric(
-            self.df_registros.get("os", 1), errors="coerce"
+        self.df_registros["proposta"] = pd.to_numeric(
+            self.df_registros.get("proposta", 1), errors="coerce"
         ).fillna(0)
         self.df_registros["tempo_segundos"] = (
             pd.to_numeric(self.df_registros["tempo_segundos"], errors="coerce")
@@ -299,7 +299,7 @@ class DashboardDialog(QDialog):
         self.tabela_totais = QTableWidget()
         self.tabela_totais.setColumnCount(4)
         self.tabela_totais.setHorizontalHeaderLabels(
-            ["Ano", "Itens", "Valor (R$)", "Proposta"]
+            ["Ano", "Itens", "Valor (R$)", "Propostas"]
         )
         self.tabela_totais.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
@@ -494,7 +494,7 @@ class DashboardDialog(QDialog):
             self.tabela_totais.setItem(
                 row,
                 3,
-                self._criar_item_tabela(str(int(dados.get("os", 0)))),
+                self._criar_item_tabela(str(int(dados.get("proposta", 0)))),
             )
 
     def _atualizar_tabela_medias(self) -> None:
@@ -512,7 +512,7 @@ class DashboardDialog(QDialog):
                 {
                     "dias_ativos": 0,
                     "itens_por_dia": 0.0,
-                    "os_por_dia": 0.0,
+                    "proposta_por_dia": 0.0,
                     "dias_com_horas": 0,
                     "horas_por_dia": 0.0,
                 },
@@ -521,7 +521,8 @@ class DashboardDialog(QDialog):
             valores = [
                 usuario,
                 self._formatar_media_decimal(dados.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(dados.get("os_por_dia", 0.0)),
+                self._formatar_media_decimal(
+                    dados.get("proposta_por_dia", 0.0)),
                 self._formatar_segundos(dados.get("horas_por_dia", 0)),
             ]
 
@@ -544,7 +545,7 @@ class DashboardDialog(QDialog):
                 self._formatar_media_decimal(
                     media_geral.get("itens_por_dia", 0.0)),
                 self._formatar_media_decimal(
-                    media_geral.get("os_por_dia", 0.0)),
+                    media_geral.get("proposta_por_dia", 0.0)),
                 self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -679,8 +680,8 @@ class DashboardDialog(QDialog):
             "itens_ano": fig.add_subplot(gs[0, 1]),
             "valor_mes": fig.add_subplot(gs[1, 0]),
             "valor_ano": fig.add_subplot(gs[1, 1]),
-            "os_mes": fig.add_subplot(gs[2, 0]),
-            "os_ano": fig.add_subplot(gs[2, 1]),
+            "proposta_mes": fig.add_subplot(gs[2, 0]),
+            "proposta_ano": fig.add_subplot(gs[2, 1]),
             "horas": fig.add_subplot(gs[3, :]),
         }
 
@@ -696,7 +697,7 @@ class DashboardDialog(QDialog):
     ) -> None:
         pivot_itens = self._build_monthly_pivot(df, "qtde_itens")
         pivot_valor = self._build_monthly_pivot(df, "valor_pedido")
-        pivot_os = self._build_monthly_pivot(df, "os")
+        pivot_proposta = self._build_monthly_pivot(df, "proposta")
 
         self._plot_grouped_bars(
             axes["itens_mes"],
@@ -733,17 +734,17 @@ class DashboardDialog(QDialog):
         )
 
         self._plot_grouped_bars(
-            axes["os_mes"],
-            pivot_os,
+            axes["proposta_mes"],
+            pivot_proposta,
             titulo="Propostas por mês",
             rotulo_y="Propostas",
             formatter=FuncFormatter(self._int_tick_formatter),
         )
 
-        os_por_ano = df.groupby("ano")["os"].sum().sort_index()
+        proposta_por_ano = df.groupby("ano")["proposta"].sum().sort_index()
         self._plot_simple_bar(
-            axes["os_ano"],
-            os_por_ano,
+            axes["proposta_ano"],
+            proposta_por_ano,
             titulo="Propostas por ano",
             rotulo_y="Propostas",
             formatter=FuncFormatter(self._int_tick_formatter),

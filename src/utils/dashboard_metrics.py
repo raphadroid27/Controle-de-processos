@@ -14,7 +14,7 @@ from src.utils import database as db
 
 def _novo_pacote_mensal() -> Dict[str, float]:
     """Gera a estrutura inicial para acumular dados mensais."""
-    return {"itens": 0, "valor": 0.0, "os": 0}
+    return {"itens": 0, "valor": 0.0, "proposta": 0}
 
 
 @dataclass(slots=True)
@@ -58,12 +58,13 @@ class DashboardAccumulator:
             lambda: {"total": 0, "por_usuario": defaultdict(int)}
         )
         self.totais_por_usuario: DefaultDict[str, Dict[str, float]] = defaultdict(
-            lambda: {"itens": 0.0, "valor": 0.0, "os": 0.0}
+            lambda: {"itens": 0.0, "valor": 0.0, "proposta": 0.0}
         )
         self.dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
         self.dias_totais: Set[str] = set()
         self.horas_total_por_usuario: DefaultDict[str, int] = defaultdict(int)
-        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
+        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(
+            set)
         self.usuarios_registrados: Set[str] = set()
         self.registros_raw: List[Dict[str, Any]] = []
 
@@ -81,17 +82,17 @@ class DashboardAccumulator:
         dados_mes = self.dados_mensais[ano][usuario][mes]
         dados_mes["itens"] += registro.qtde_itens
         dados_mes["valor"] += registro.valor_pedido
-        dados_mes["os"] += 1
+        dados_mes["proposta"] += 1
 
         totais_ano = self.totais_ano[ano]
         totais_ano["itens"] += registro.qtde_itens
         totais_ano["valor"] += registro.valor_pedido
-        totais_ano["os"] += 1
+        totais_ano["proposta"] += 1
 
         totais_usuario = self.totais_por_usuario[usuario]
         totais_usuario["itens"] += registro.qtde_itens
         totais_usuario["valor"] += registro.valor_pedido
-        totais_usuario["os"] += 1
+        totais_usuario["proposta"] += 1
 
         tempo = registro.tempo_segundos
         if tempo > 0:
@@ -109,7 +110,7 @@ class DashboardAccumulator:
                 "mes": mes,
                 "qtde_itens": registro.qtde_itens,
                 "valor_pedido": registro.valor_pedido,
-                "os": 1,
+                "proposta": 1,
                 "tempo_segundos": tempo,
             }
         )
@@ -154,14 +155,15 @@ class DashboardAccumulator:
             dias_ativos = len(self.dias_por_usuario.get(usuario, set()))
             totais_usuario = self.totais_por_usuario.get(usuario, {})
             itens_total = float(totais_usuario.get("itens", 0.0))
-            os_total = float(totais_usuario.get("os", 0.0))
-            dias_com_horas = len(self.horas_dias_por_usuario.get(usuario, set()))
+            os_total = float(totais_usuario.get("proposta", 0.0))
+            dias_com_horas = len(
+                self.horas_dias_por_usuario.get(usuario, set()))
             horas_total_usuario = self.horas_total_por_usuario.get(usuario, 0)
 
             medias_por_usuario[usuario] = {
                 "dias_ativos": dias_ativos,
                 "itens_por_dia": itens_total / dias_ativos if dias_ativos else 0.0,
-                "os_por_dia": os_total / dias_ativos if dias_ativos else 0.0,
+                "proposta_por_dia": os_total / dias_ativos if dias_ativos else 0.0,
                 "dias_com_horas": dias_com_horas,
                 "horas_por_dia": (
                     horas_total_usuario / dias_com_horas if dias_com_horas else 0.0
@@ -176,10 +178,11 @@ class DashboardAccumulator:
             valor.get("itens", 0.0) for valor in self.totais_por_usuario.values()
         )
         total_os_geral = sum(
-            valor.get("os", 0.0) for valor in self.totais_por_usuario.values()
+            valor.get("proposta", 0.0) for valor in self.totais_por_usuario.values()
         )
         dias_totais_contagem = len(self.dias_totais)
-        total_horas_geral = sum(info["total"] for info in self.horas_por_dia.values())
+        total_horas_geral = sum(info["total"]
+                                for info in self.horas_por_dia.values())
         dias_com_horas_geral = len(self.horas_por_dia)
 
         media_geral = {
@@ -189,7 +192,7 @@ class DashboardAccumulator:
                 if dias_totais_contagem
                 else 0.0
             ),
-            "os_por_dia": (
+            "proposta_por_dia": (
                 total_os_geral / dias_totais_contagem if dias_totais_contagem else 0.0
             ),
             "dias_com_horas": dias_com_horas_geral,
