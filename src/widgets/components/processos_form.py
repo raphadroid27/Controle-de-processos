@@ -51,7 +51,7 @@ def criar_formulario(
         "Nome do cliente. Use Tab para avançar e Ctrl+Enter para adicionar rapidamente."
     )
     entry_processo = NavigableLineEdit(frame)
-    entry_processo.setPlaceholderText("Número da OS")
+    entry_processo.setPlaceholderText("Número da proposta")
     entry_processo.setToolTip(
         "Descrição do processo ou atividade. Campos obrigatórios são marcados."
     )
@@ -112,7 +112,7 @@ def criar_formulario(
 
     colunas_info = (
         ("Cliente:", entry_cliente, 3),
-        ("OS:", entry_processo, 3),
+        ("Proposta:", entry_processo, 3),
         ("Qtd. Itens:", entry_qtde_itens, 2),
         ("Data Entrada:", entry_data_entrada, 2),
         ("Data Processo:", entry_data_processo, 2),

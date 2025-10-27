@@ -85,7 +85,7 @@ class DashboardDialog(QDialog):
     _METRIC_MAP = {
         "Itens": ("itens", int),
         "Valor (R$)": ("valor", float),
-        "OS": ("os", int),
+        "Propostas": ("propostas", int),
     }
 
     _MESES = [
@@ -190,7 +190,8 @@ class DashboardDialog(QDialog):
             .fillna(0)
             .astype(int)
         )
-        self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(int)
+        self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(
+            int)
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
         ).fillna(0)
@@ -261,7 +262,8 @@ class DashboardDialog(QDialog):
         self.combo_ano = QComboBox()
         for ano in self.anos:
             self.combo_ano.addItem(str(ano))
-        self.combo_ano.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_ano.currentTextChanged.connect(
+            self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
@@ -269,7 +271,8 @@ class DashboardDialog(QDialog):
         self.combo_metrica = QComboBox()
         for titulo in self._METRIC_MAP:
             self.combo_metrica.addItem(titulo)
-        self.combo_metrica.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_metrica.currentTextChanged.connect(
+            self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_metrica)
         controles_layout.addStretch()
         return controles_layout
@@ -283,7 +286,8 @@ class DashboardDialog(QDialog):
         self.tabela_mensal.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_mensal.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_mensal.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_mensal.setAlternatingRowColors(True)
         return self.tabela_mensal
 
@@ -295,12 +299,13 @@ class DashboardDialog(QDialog):
         self.tabela_totais = QTableWidget()
         self.tabela_totais.setColumnCount(4)
         self.tabela_totais.setHorizontalHeaderLabels(
-            ["Ano", "Itens", "Valor (R$)", "OS"]
+            ["Ano", "Itens", "Valor (R$)", "Proposta"]
         )
         self.tabela_totais.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_totais.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_totais.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_totais.setAlternatingRowColors(True)
         totais_layout.addWidget(self.tabela_totais)
 
@@ -312,14 +317,15 @@ class DashboardDialog(QDialog):
             [
                 "Usuário",
                 "Itens/dia",
-                "OS/dia",
+                "Propostas/dia",
                 "Horas/dia",
             ]
         )
         self.tabela_medias.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_medias.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_medias.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_medias.setAlternatingRowColors(True)
         medias_layout.addWidget(self.tabela_medias)
 
@@ -338,7 +344,8 @@ class DashboardDialog(QDialog):
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
-        self.combo_intervalo.currentIndexChanged.connect(self._atualizar_tabela_horas)
+        self.combo_intervalo.currentIndexChanged.connect(
+            self._atualizar_tabela_horas)
         horas_controles_layout.addWidget(self.combo_intervalo)
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
@@ -347,7 +354,8 @@ class DashboardDialog(QDialog):
         layout.addWidget(self.label_total_horas)
 
         self.tabela_horas = QTableWidget()
-        self.tabela_horas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_horas.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_horas.setAlternatingRowColors(True)
         self.tabela_horas.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
@@ -369,7 +377,8 @@ class DashboardDialog(QDialog):
         self.combo_grafico_usuario.addItem("Todos", None)
         for usuario in self.usuarios:
             self.combo_grafico_usuario.addItem(usuario, usuario)
-        self.combo_grafico_usuario.currentIndexChanged.connect(self._atualizar_graficos)
+        self.combo_grafico_usuario.currentIndexChanged.connect(
+            self._atualizar_graficos)
         controles_layout.addWidget(self.combo_grafico_usuario)
         controles_layout.addStretch()
 
@@ -402,10 +411,12 @@ class DashboardDialog(QDialog):
         self.tabela_mensal.setRowCount(row_count)
 
         for row, usuario in enumerate(self.usuarios):
-            self.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
+            self.tabela_mensal.setVerticalHeaderItem(
+                row, QTableWidgetItem(usuario))
             total_usuario = 0.0
             for col, (mes, _) in enumerate(self._MESES):
-                valor = dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
+                valor = dados_ano.get(usuario, {}).get(
+                    mes, {}).get(chave_metrica, 0)
                 total_usuario += valor
                 self.tabela_mensal.setItem(
                     row,
@@ -423,7 +434,8 @@ class DashboardDialog(QDialog):
             )
 
         total_row = len(self.usuarios)
-        self.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
+        self.tabela_mensal.setVerticalHeaderItem(
+            total_row, QTableWidgetItem("Total"))
 
         for col, (mes, _) in enumerate(self._MESES):
             total_mes = sum(
@@ -529,8 +541,10 @@ class DashboardDialog(QDialog):
             total_row = len(self.usuarios)
             valores_total = [
                 "Todos",
-                self._formatar_media_decimal(media_geral.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(media_geral.get("os_por_dia", 0.0)),
+                self._formatar_media_decimal(
+                    media_geral.get("itens_por_dia", 0.0)),
+                self._formatar_media_decimal(
+                    media_geral.get("os_por_dia", 0.0)),
                 self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -594,7 +608,8 @@ class DashboardDialog(QDialog):
             self.tabela_horas.setItem(
                 row,
                 len(colunas) - 1,
-                self._criar_item_tabela(self._formatar_segundos(info.get("total", 0))),
+                self._criar_item_tabela(
+                    self._formatar_segundos(info.get("total", 0))),
             )
 
         self.label_total_horas.setText(
@@ -720,8 +735,8 @@ class DashboardDialog(QDialog):
         self._plot_grouped_bars(
             axes["os_mes"],
             pivot_os,
-            titulo="OS por mês",
-            rotulo_y="OS",
+            titulo="Propostas por mês",
+            rotulo_y="Propostas",
             formatter=FuncFormatter(self._int_tick_formatter),
         )
 
@@ -729,8 +744,8 @@ class DashboardDialog(QDialog):
         self._plot_simple_bar(
             axes["os_ano"],
             os_por_ano,
-            titulo="OS por ano",
-            rotulo_y="OS",
+            titulo="Propostas por ano",
+            rotulo_y="Propostas",
             formatter=FuncFormatter(self._int_tick_formatter),
         )
 
@@ -742,10 +757,12 @@ class DashboardDialog(QDialog):
         ax_horas,
     ) -> None:
         series_total = (
-            df_total.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_total.groupby("data")[
+                "tempo_segundos"].sum().sort_index() / 3600.0
         )
         series_usuario = (
-            df_filtrado.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_filtrado.groupby(
+                "data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
 
         if not series_total.empty:

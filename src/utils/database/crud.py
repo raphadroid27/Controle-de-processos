@@ -1,4 +1,4 @@
-"""Operações de CRUD sobre os registros de OS's por usuário."""
+"""Operações de CRUD sobre os registros de propostas por usuário."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def adicionar_lancamento(
     if lancamento is None:
         if None in (usuario, cliente, processo, qtde_itens, data_entrada, valor_pedido):
             return (
-                "Erro: Campos obrigatórios: usuário, cliente, OS, "
+                "Erro: Campos obrigatórios: usuário, cliente, propostas, "
                 "qtd itens, data entrada, valor."
             )
         lanc = Lancamento(

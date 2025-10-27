@@ -82,12 +82,12 @@ O filtro é aplicado automaticamente."""
     layout.addLayout(coluna_cliente, peso_cliente)
 
     entry_processo = NavigableLineEdit(frame)
-    entry_processo.setPlaceholderText("Digite o número da OS")
+    entry_processo.setPlaceholderText("Digite o número da proposta")
     entry_processo.setToolTip(
-        "Filtrar OS pelo número informado. Clique em Limpar para remover."
+        "Filtrar propostas pelo número informado. Clique em Limpar para remover."
     )
     coluna_processo, peso_processo = criar_coluna_rotulo(
-        "OS:", entry_processo, 3)
+        "Proposta:", entry_processo, 3)
     layout.addLayout(coluna_processo, peso_processo)
 
     timer_processo = QTimer(frame)
