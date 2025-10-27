@@ -84,7 +84,7 @@ O filtro é aplicado automaticamente."""
     entry_processo = NavigableLineEdit(frame)
     entry_processo.setPlaceholderText("Digite o número da proposta")
     entry_processo.setToolTip(
-        "Filtrar propostas pelo número informado. Clique em Limpar para remover."
+        "Filtrar registros pelo número da proposta informado. Clique em Limpar para remover."
     )
     coluna_processo, peso_processo = criar_coluna_rotulo(
         "Proposta:", entry_processo, 3)
