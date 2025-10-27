@@ -51,7 +51,7 @@ def criar_formulario(
         "Nome do cliente. Use Tab para avançar e Ctrl+Enter para adicionar rapidamente."
     )
     entry_processo = NavigableLineEdit(frame)
-    entry_processo.setPlaceholderText("Descreva o processo")
+    entry_processo.setPlaceholderText("Número da OS")
     entry_processo.setToolTip(
         "Descrição do processo ou atividade. Campos obrigatórios são marcados."
     )
@@ -65,7 +65,8 @@ def criar_formulario(
     entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
     entry_data_entrada.setMaximumDate(obter_data_atual_utc())
-    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
+    entry_data_entrada.setToolTip(
+        "Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
