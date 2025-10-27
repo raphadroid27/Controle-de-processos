@@ -7,7 +7,7 @@ tabela de dados e controles de filtros.
 
 from datetime import date, datetime
 
-from PySide6.QtCore import QDate, Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
@@ -17,7 +17,7 @@ from src.utils.formatters import (formatar_data_para_exibicao,
 from src.utils.periodo_faturamento import (
     calcular_periodo_faturamento_atual_datas,
     calcular_periodo_faturamento_para_data_datas)
-from src.utils.ui_config import ESPACAMENTO_PADRAO
+from src.utils.ui_config import ESPACAMENTO_PADRAO, obter_data_atual_utc
 from src.widgets.components import processos_autocomplete
 from src.widgets.components import processos_data_service as processos_data
 from src.widgets.components import (processos_filters, processos_form,
@@ -95,8 +95,10 @@ class ProcessosWidget(QWidget):
         self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
 
-        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
-        self.shortcut_enter_num.activated.connect(self.atalho_adicionar_processo)
+        self.shortcut_enter_num = QShortcut(
+            QKeySequence(Qt.Key.Key_Enter), self)
+        self.shortcut_enter_num.activated.connect(
+            self.atalho_adicionar_processo)
 
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
         self.shortcut_delete.activated.connect(self.excluir_processo)
@@ -387,9 +389,11 @@ class ProcessosWidget(QWidget):
                         dados_linha.data_processo or dados_linha.data_entrada
                     )
                     if data_registro_str:
-                        data_registro = datetime.strptime(data_registro_str, "%Y-%m-%d")
+                        data_registro = datetime.strptime(
+                            data_registro_str, "%Y-%m-%d")
                         periodo_inicio, periodo_fim = (
-                            calcular_periodo_faturamento_para_data_datas(data_registro)
+                            calcular_periodo_faturamento_para_data_datas(
+                                data_registro)
                         )
 
                         # Verificar se o filtro já está no período do registro
@@ -421,7 +425,8 @@ class ProcessosWidget(QWidget):
 
         except (ValueError, AttributeError, TypeError) as e:
             self.aplicar_filtro(rolar_para_ultimo=False)
-            QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
+            QMessageBox.warning(
+                self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             self.tabela.blockSignals(False)
 
@@ -574,7 +579,7 @@ class ProcessosWidget(QWidget):
         self.entry_cliente.clear()
         self.entry_processo.clear()
         self.entry_qtde_itens.clear()
-        self.entry_data_entrada.setDate(QDate.currentDate())
+        self.entry_data_entrada.setDate(obter_data_atual_utc())
         self.entry_data_processo.clear()
         self.entry_tempo_corte.clear()
         self.entry_valor_pedido.clear()
@@ -649,7 +654,7 @@ class ProcessosWidget(QWidget):
         }
 
         data_entrada_qdate = self.entry_data_entrada.date()
-        if data_entrada_qdate > QDate.currentDate():
+        if data_entrada_qdate > obter_data_atual_utc():
             QMessageBox.warning(
                 self, "Erro", "Data de entrada não pode ser maior que a data atual."
             )
@@ -658,7 +663,7 @@ class ProcessosWidget(QWidget):
 
         data_processo_qdate = self.entry_data_processo.date()
         if not data_processo_qdate.isNull():
-            if data_processo_qdate > QDate.currentDate():
+            if data_processo_qdate > obter_data_atual_utc():
                 QMessageBox.warning(
                     self,
                     "Erro",
@@ -678,7 +683,8 @@ class ProcessosWidget(QWidget):
 
         # Capturar anos disponíveis antes da adição
         usuario_filtro = self._calcular_usuario_filtro()
-        anos_antes = set(processos_data.listar_anos_disponiveis(usuario_filtro))
+        anos_antes = set(
+            processos_data.listar_anos_disponiveis(usuario_filtro))
 
         resultado = db.adicionar_lancamento(
             usuario=self.usuario_logado,
@@ -698,7 +704,8 @@ class ProcessosWidget(QWidget):
             self.autocomplete_manager.refresh_all()
 
             # Verificar se novos anos foram criados e recarregar filtros se necessário
-            anos_depois = set(processos_data.listar_anos_disponiveis(usuario_filtro))
+            anos_depois = set(
+                processos_data.listar_anos_disponiveis(usuario_filtro))
             novos_anos_criados = anos_depois != anos_antes
 
             if novos_anos_criados:
@@ -720,7 +727,8 @@ class ProcessosWidget(QWidget):
                 else (None, None)
             )
             filtro_no_periodo_registro = (
-                periodo_selecionado_inicio == periodo_inicio.strftime("%Y-%m-%d")
+                periodo_selecionado_inicio == periodo_inicio.strftime(
+                    "%Y-%m-%d")
                 and periodo_selecionado_fim == periodo_fim.strftime("%Y-%m-%d")
             )
 

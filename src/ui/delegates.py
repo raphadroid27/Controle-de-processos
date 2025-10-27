@@ -9,6 +9,8 @@ from datetime import datetime
 from PySide6.QtCore import QDate
 from PySide6.QtWidgets import QDateEdit, QStyledItemDelegate
 
+from src.utils.ui_config import obter_data_atual_utc
+
 
 class DateEditDelegate(QStyledItemDelegate):
     """Delegate personalizado para edição de datas com calendário."""
@@ -26,7 +28,7 @@ class DateEditDelegate(QStyledItemDelegate):
         editor.setDisplayFormat("dd/MM/yyyy")
 
         # Definir data máxima como hoje
-        editor.setMaximumDate(QDate.currentDate())
+        editor.setMaximumDate(obter_data_atual_utc())
 
         # Verificar se é uma coluna de data processo (pode estar vazia)
         data_texto = index.data()
@@ -41,9 +43,10 @@ class DateEditDelegate(QStyledItemDelegate):
                 else:
                     # Formato AAAA-MM-DD do banco
                     data_obj = datetime.strptime(data_texto, "%Y-%m-%d")
-                editor.setDate(QDate(data_obj.year, data_obj.month, data_obj.day))
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
             except (ValueError, AttributeError):
-                editor.setDate(QDate.currentDate())
+                editor.setDate(obter_data_atual_utc())
 
         return editor
 
@@ -58,9 +61,10 @@ class DateEditDelegate(QStyledItemDelegate):
                     data_obj = datetime.strptime(value, "%d/%m/%Y")
                 else:
                     data_obj = datetime.strptime(value, "%Y-%m-%d")
-                editor.setDate(QDate(data_obj.year, data_obj.month, data_obj.day))
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
             except (ValueError, AttributeError):
-                editor.setDate(QDate.currentDate())
+                editor.setDate(obter_data_atual_utc())
 
     def setModelData(self, editor, model, index):  # pylint: disable=invalid-name
         """Define os dados do editor no modelo."""
