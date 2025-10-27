@@ -62,8 +62,7 @@ def criar_filtros(
         combo_usuario.setToolTip(
             "Selecione um usuário específico para visualizar apenas seus registros."
         )
-        coluna_usuario, peso_usuario = criar_coluna_rotulo(
-            "Usuário:", combo_usuario, 2)
+        coluna_usuario, peso_usuario = criar_coluna_rotulo("Usuário:", combo_usuario, 2)
         layout.addLayout(coluna_usuario, peso_usuario)
 
     entry_cliente = NavigableLineEdit(frame)
@@ -77,8 +76,7 @@ O filtro é aplicado automaticamente."""
     timer_cliente.timeout.connect(on_cliente_timeout)
 
     entry_cliente.textChanged.connect(lambda _: timer_cliente.start(500))
-    coluna_cliente, peso_cliente = criar_coluna_rotulo(
-        "Cliente:", entry_cliente, 3)
+    coluna_cliente, peso_cliente = criar_coluna_rotulo("Cliente:", entry_cliente, 3)
     layout.addLayout(coluna_cliente, peso_cliente)
 
     entry_processo = NavigableLineEdit(frame)
@@ -86,8 +84,7 @@ O filtro é aplicado automaticamente."""
     entry_processo.setToolTip(
         "Filtrar processos pelo prefixo informado. Clique em Limpar para remover."
     )
-    coluna_processo, peso_processo = criar_coluna_rotulo(
-        "OS:", entry_processo, 3)
+    coluna_processo, peso_processo = criar_coluna_rotulo("OS:", entry_processo, 3)
     layout.addLayout(coluna_processo, peso_processo)
 
     timer_processo = QTimer(frame)
@@ -99,8 +96,7 @@ O filtro é aplicado automaticamente."""
     combo_ano = NavigableComboBox(frame)
     combo_ano.addItem("Todos os anos")
     combo_ano.currentTextChanged.connect(on_ano_changed)
-    combo_ano.setToolTip(
-        "Escolha um ano específico para restringir os resultados.")
+    combo_ano.setToolTip("Escolha um ano específico para restringir os resultados.")
     combo_ano.setFixedWidth(140)
     coluna_ano, peso_ano = criar_coluna_rotulo("Ano:", combo_ano, 2)
     layout.addLayout(coluna_ano, peso_ano)
@@ -112,8 +108,7 @@ O filtro é aplicado automaticamente."""
         "Selecione um intervalo de faturamento (26 a 25) para refinar a busca."
     )
     combo_periodo.setFixedWidth(140)
-    coluna_periodo, peso_periodo = criar_coluna_rotulo(
-        "Período:", combo_periodo, 3)
+    coluna_periodo, peso_periodo = criar_coluna_rotulo("Período:", combo_periodo, 3)
     layout.addLayout(coluna_periodo, peso_periodo)
 
     btn_limpar = QPushButton("Limpar Filtros", frame)
@@ -123,15 +118,13 @@ O filtro é aplicado automaticamente."""
     aplicar_estilo_botao(btn_limpar, "laranja", largura_minima=110)
     btn_limpar.clicked.connect(on_limpar)
     estilo_atual = btn_limpar.styleSheet()
-    btn_limpar.setStyleSheet(
-        estilo_atual + aplicar_estilo_botao_desabilitado())
+    btn_limpar.setStyleSheet(estilo_atual + aplicar_estilo_botao_desabilitado())
     layout.addLayout(criar_layout_botao_padrao(btn_limpar), 1)
 
     layout.addStretch()
     frame.setLayout(layout)
 
-    widgets_uniformes = [entry_cliente,
-                         entry_processo, combo_ano, combo_periodo]
+    widgets_uniformes = [entry_cliente, entry_processo, combo_ano, combo_periodo]
     if combo_usuario is not None:
         widgets_uniformes.append(combo_usuario)
     configurar_widgets_entrada_uniformes(widgets_uniformes)

@@ -41,8 +41,7 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -81,8 +80,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
         session_manager.remover_sessao()
         event.accept()
 
@@ -114,8 +112,7 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip(
-                "Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -129,8 +126,7 @@ class MainWindow(QMainWindow):
             atualizar_action = QAction("Atualizar", self)
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip(
-                "Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 

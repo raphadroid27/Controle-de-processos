@@ -22,6 +22,7 @@ from src.utils.periodo_faturamento import \
 @dataclass
 class FiltrosLancamentos:
     """Classe para encapsular filtros de lançamentos."""
+
     usuario: Optional[str] = None
     cliente: Optional[str] = None
     processo: Optional[str] = None
@@ -67,8 +68,7 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(
-            RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if processo:
         condicoes.append(
@@ -299,8 +299,7 @@ def _buscar_valores_unicos(
         session = get_user_session(usuario)
         try:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,)
-                           in session.execute(stmt) if value)
+            valores.update(value for (value,) in session.execute(stmt) if value)
         finally:
             session.close()
     else:
@@ -308,8 +307,7 @@ def _buscar_valores_unicos(
             session = get_sessionmaker_for_slug(slug)()
             try:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,)
-                               in session.execute(stmt) if value)
+                valores.update(value for (value,) in session.execute(stmt) if value)
             finally:
                 session.close()
 
@@ -452,8 +450,7 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
             intervalo = _periodo_faturamento_datas(data)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
-                display = _formatar_periodo_exibicao(
-                    inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
                 if display:
                     chave = (inicio, fim)
                     if chave not in vistos:
