@@ -178,7 +178,7 @@ def generate_changelog(version):
                 )
                 replacement = replacement.replace("\\", r"\\")
                 updated_content = re.sub(
-                    r"# Changelog\n\nHistórico de mudanças do aplicativo Calculadora de Dobras\n\n",
+                    r"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n",
                     replacement,
                     existing_content,
                 )
