@@ -2,6 +2,14 @@
 
 Histórico de mudanças do aplicativo Controle de Processos
 
+## 1.0.1 (28/10/2025)
+
+- refatoração: renomeia 'os'/'OS' para 'proposta'/'propostas' em código, dashboards, dialogs, componentes CRUD e filtros
+- refatoração: atualiza placeholders e tooltips do campo de proposta para maior clareza
+- refatoração: simplifica método mostrar_login e remove quebras de linha desnecessárias para melhorar legibilidade
+- refatoração: adiciona timezone ao gerenciamento de datas
+- refatoração: melhorias gerais de legibilidade e adiciona ação de atualização no menu de administração
+
 ## 1.0.0 (25/10/2025)
 
 - Implementação inicial da aplicação "Controle de Processos" (primeiro release).
