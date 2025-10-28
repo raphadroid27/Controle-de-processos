@@ -22,7 +22,8 @@ def formatar_valor_monetario(valor: float | str) -> str:
 
         # Formatar com separador de milhares (ponto) e decimais (vírgula)
         valor_formatado = (
-            f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            f"{valor:,.2f}".replace(",", "X").replace(
+                ".", ",").replace("X", ".")
         )
         return f"R$ {valor_formatado}"
     except (ValueError, TypeError):
@@ -62,3 +63,46 @@ def formatar_data_para_exibicao(data_str: str) -> str:
         return data_obj.strftime("%d/%m/%Y")
     except ValueError:
         return str(data_str)
+
+
+def formatar_numero_decimal(valor: float, casas_decimais: int = 2) -> str:
+    """
+    Formata um número decimal com separadores brasileiros.
+
+    Args:
+        valor: O valor numérico a ser formatado
+        casas_decimais: Número de casas decimais (padrão: 2)
+
+    Returns:
+        String formatada com separador de milhares (ponto) e decimal (vírgula)
+    """
+    formato = f"{valor:,.{casas_decimais}f}"
+    return formato.replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def formatar_segundos(segundos: int) -> str:
+    """
+    Formata segundos em formato HH:MM:SS.
+
+    Args:
+        segundos: Total de segundos a serem formatados
+
+    Returns:
+        String no formato HH:MM:SS
+    """
+    horas, resto = divmod(int(segundos), 3600)
+    minutos, segundos = divmod(resto, 60)
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
+
+
+def segundos_para_horas(segundos: float) -> float:
+    """
+    Converte segundos para horas.
+
+    Args:
+        segundos: Valor em segundos
+
+    Returns:
+        Valor em horas (float)
+    """
+    return segundos / 3600.0

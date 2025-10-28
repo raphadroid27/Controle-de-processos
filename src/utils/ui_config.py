@@ -17,7 +17,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QDate
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtWidgets import QHeaderView, QSizePolicy, QTableWidget, QWidget
 
 # Constantes para padronização de componentes
 ALTURA_BOTAO = 32
@@ -340,3 +340,40 @@ def obter_data_atual_utc():
     """
     data_utc = datetime.now(timezone.utc).date()
     return QDate(data_utc.year, data_utc.month, data_utc.day)
+
+
+# Constantes para dashboard e gráficos
+_FIGURE_FACE = "#202124"
+_AXES_FACE = "#2b3138"
+_AXES_EDGE = "#4a4d52"
+_TEXT_COLOR = "#f1f3f4"
+_GRID_COLOR = "#3c4043"
+_LEGEND_FACE = "#262c33"
+_ACCENT_CYCLE = [
+    "#4CAF50",
+    "#5BC0EB",
+    "#F5A623",
+    "#9C27B0",
+    "#E91E63",
+    "#00ACC1",
+]
+
+# Mapeamento de métricas para dashboard
+METRIC_MAP = {
+    "Itens": ("itens", int),
+    "Valor (R$)": ("valor", float),
+    "Propostas": ("proposta", int),
+    "Horas": ("horas", float),
+}
+
+
+def configurar_tabela_padrao(tabela):
+    """
+    Configura uma tabela com as propriedades padrão do dashboard.
+
+    Args:
+        tabela: QTableWidget a ser configurada
+    """
+    tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    tabela.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    tabela.setAlternatingRowColors(True)

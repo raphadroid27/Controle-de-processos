@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
-from cycler import cycler
 
 try:  # pragma: no cover - fallback executado apenas sem pandas instalado
     import pandas as pd  # type: ignore[assignment]
@@ -19,77 +18,24 @@ except ImportError:  # pragma: no cover
 else:
     from pandas import DataFrame, Series
 
-from matplotlib.backends.backend_qt5agg import \
-    FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib.ticker import FuncFormatter
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTableWidgetItem,
-                               QTabWidget, QVBoxLayout, QWidget)
+                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
+                               QWidget)
 
-from src.utils import database as db
 from src.utils.dashboard_metrics import obter_metricas_dashboard
-from src.utils.formatters import (formatar_data_para_exibicao,
-                                  formatar_valor_monetario)
+from src.utils.formatters import segundos_para_horas
 from src.utils.periodo_faturamento import \
     calcular_periodo_faturamento_para_data
-from src.utils.ui_config import aplicar_icone_padrao
-
-_FIGURE_FACE = "#202124"
-_AXES_FACE = "#2b3138"
-_AXES_EDGE = "#4a4d52"
-_TEXT_COLOR = "#f1f3f4"
-_GRID_COLOR = "#3c4043"
-_LEGEND_FACE = "#262c33"
-_ACCENT_CYCLE = [
-    "#4CAF50",
-    "#5BC0EB",
-    "#F5A623",
-    "#9C27B0",
-    "#E91E63",
-    "#00ACC1",
-]
-
-mpl.rcParams.update(
-    {
-        "figure.facecolor": _FIGURE_FACE,
-        "figure.edgecolor": _FIGURE_FACE,
-        "axes.facecolor": _AXES_FACE,
-        "axes.edgecolor": _AXES_EDGE,
-        "axes.labelcolor": _TEXT_COLOR,
-        "axes.titlecolor": _TEXT_COLOR,
-        "xtick.color": _TEXT_COLOR,
-        "ytick.color": _TEXT_COLOR,
-        "text.color": _TEXT_COLOR,
-        "grid.color": _GRID_COLOR,
-        "legend.facecolor": _LEGEND_FACE,
-        "legend.edgecolor": _AXES_EDGE,
-        "savefig.facecolor": _FIGURE_FACE,
-        "savefig.edgecolor": _FIGURE_FACE,
-        "axes.prop_cycle": cycler(color=_ACCENT_CYCLE),
-    }
-)
-
-
-class MatplotlibCanvas(FigureCanvas):
-    """Canvas helper para integrar gráficos do Matplotlib ao Qt."""
-
-    def __init__(self, width: float = 12, height: float = 9, dpi: int = 100):
-        """Inicializa o canvas do Matplotlib com as dimensões especificadas."""
-        self.figure = Figure(figsize=(width, height), dpi=dpi)
-        self.figure.patch.set_facecolor(_FIGURE_FACE)
-        super().__init__(self.figure)
+from src.utils.ui_config import (METRIC_MAP, aplicar_icone_padrao,
+                                 configurar_tabela_padrao)
+from src.widgets.components.matplotlib_canvas import MatplotlibCanvas
+from src.widgets.dashboard_plotting import DashboardPlotting
+from src.widgets.dashboard_tables import DashboardTableUpdates
 
 
 class DashboardDialog(QDialog):
     """Exibe métricas agregadas para administradores."""
-
-    _METRIC_MAP = {
-        "Itens": ("itens", int),
-        "Valor (R$)": ("valor", float),
-        "Propostas": ("proposta", int),
-    }
 
     _PERIODOS = [
         (1, "26/12 a 25/01"),
@@ -199,7 +145,8 @@ class DashboardDialog(QDialog):
         )
         # Alterado para usar o mês de faturamento em vez do mês calendário
         self.df_registros["mes"] = self.df_registros["data"].apply(
-            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
+            lambda d: int(calcular_periodo_faturamento_para_data(
+                d.to_pydatetime())[0])
         )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
@@ -215,7 +162,9 @@ class DashboardDialog(QDialog):
             .fillna(0)
             .astype(int)
         )
-        self.df_registros["tempo_horas"] = self.df_registros["tempo_segundos"] / 3600.0
+        self.df_registros["tempo_horas"] = self.df_registros["tempo_segundos"].apply(
+            segundos_para_horas
+        )
 
     def _exibir_aviso_sem_dados(self) -> None:
         layout = QVBoxLayout()
@@ -235,12 +184,12 @@ class DashboardDialog(QDialog):
         self.setLayout(layout)
 
     def _atualizar_resumos(self) -> None:
-        self._atualizar_tabela_totais()
-        self._atualizar_tabela_mensal()
-        self._atualizar_tabela_medias()
-        self._atualizar_tabela_horas()
+        DashboardTableUpdates.atualizar_tabela_totais(self)
+        DashboardTableUpdates.atualizar_tabela_mensal(self)
+        DashboardTableUpdates.atualizar_tabela_medias(self)
+        DashboardTableUpdates.atualizar_tabela_horas(self)
         if not self.df_registros.empty:
-            self._atualizar_graficos()
+            DashboardPlotting.atualizar_graficos(self)
 
     # ------------------------------------------------------------------
     # Construção das abas
@@ -271,15 +220,19 @@ class DashboardDialog(QDialog):
         self.combo_ano = QComboBox()
         for ano in self.anos:
             self.combo_ano.addItem(str(ano))
-        self.combo_ano.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_ano.currentTextChanged.connect(
+            lambda: DashboardTableUpdates.atualizar_tabela_mensal(self)
+        )
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
         controles_layout.addWidget(QLabel("Métrica:"))
         self.combo_metrica = QComboBox()
-        for titulo in self._METRIC_MAP:
+        for titulo in METRIC_MAP:
             self.combo_metrica.addItem(titulo)
-        self.combo_metrica.currentTextChanged.connect(self._atualizar_tabela_mensal)
+        self.combo_metrica.currentTextChanged.connect(
+            lambda: DashboardTableUpdates.atualizar_tabela_mensal(self)
+        )
         controles_layout.addWidget(self.combo_metrica)
         controles_layout.addStretch()
         return controles_layout
@@ -288,11 +241,7 @@ class DashboardDialog(QDialog):
         self.tabela_mensal = QTableWidget()
         self.tabela_mensal.setColumnCount(13)  # 12 períodos + 1 total
         # Headers serão definidos dinamicamente em _atualizar_tabela_mensal
-        self.tabela_mensal.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Stretch
-        )
-        self.tabela_mensal.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.tabela_mensal.setAlternatingRowColors(True)
+        configurar_tabela_padrao(self.tabela_mensal)
         return self.tabela_mensal
 
     def _montar_tabelas_resumo(self) -> QHBoxLayout:
@@ -301,15 +250,11 @@ class DashboardDialog(QDialog):
         totais_layout = QVBoxLayout()
         totais_layout.addWidget(QLabel("Totais por ano"))
         self.tabela_totais = QTableWidget()
-        self.tabela_totais.setColumnCount(4)
+        self.tabela_totais.setColumnCount(5)
         self.tabela_totais.setHorizontalHeaderLabels(
-            ["Ano", "Itens", "Valor (R$)", "Propostas"]
+            ["Ano", "Itens", "Valor (R$)", "Propostas", "Horas"]
         )
-        self.tabela_totais.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Stretch
-        )
-        self.tabela_totais.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.tabela_totais.setAlternatingRowColors(True)
+        configurar_tabela_padrao(self.tabela_totais)
         totais_layout.addWidget(self.tabela_totais)
 
         medias_layout = QVBoxLayout()
@@ -324,11 +269,7 @@ class DashboardDialog(QDialog):
                 "Horas/dia",
             ]
         )
-        self.tabela_medias.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Stretch
-        )
-        self.tabela_medias.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.tabela_medias.setAlternatingRowColors(True)
+        configurar_tabela_padrao(self.tabela_medias)
         medias_layout.addWidget(self.tabela_medias)
 
         tabelas_layout.addLayout(totais_layout)
@@ -346,7 +287,9 @@ class DashboardDialog(QDialog):
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
-        self.combo_intervalo.currentIndexChanged.connect(self._atualizar_tabela_horas)
+        self.combo_intervalo.currentIndexChanged.connect(
+            lambda: DashboardTableUpdates.atualizar_tabela_horas(self)
+        )
         horas_controles_layout.addWidget(self.combo_intervalo)
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
@@ -355,8 +298,7 @@ class DashboardDialog(QDialog):
         layout.addWidget(self.label_total_horas)
 
         self.tabela_horas = QTableWidget()
-        self.tabela_horas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.tabela_horas.setAlternatingRowColors(True)
+        configurar_tabela_padrao(self.tabela_horas)
         self.tabela_horas.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
@@ -377,15 +319,19 @@ class DashboardDialog(QDialog):
         self.combo_grafico_usuario.addItem("Todos", None)
         for usuario in self.usuarios:
             self.combo_grafico_usuario.addItem(usuario, usuario)
-        self.combo_grafico_usuario.currentIndexChanged.connect(self._atualizar_graficos)
+        self.combo_grafico_usuario.currentIndexChanged.connect(
+            lambda: DashboardPlotting.atualizar_graficos(self)
+        )
         controles_layout.addWidget(self.combo_grafico_usuario)
 
         controles_layout.addSpacing(16)
         controles_layout.addWidget(QLabel("Métrica:"))
         self.combo_grafico_metrica = QComboBox()
-        for titulo in self._METRIC_MAP:
+        for titulo in METRIC_MAP:
             self.combo_grafico_metrica.addItem(titulo)
-        self.combo_grafico_metrica.currentIndexChanged.connect(self._atualizar_graficos)
+        self.combo_grafico_metrica.currentIndexChanged.connect(
+            lambda: DashboardPlotting.atualizar_graficos(self)
+        )
         controles_layout.addWidget(self.combo_grafico_metrica)
 
         controles_layout.addStretch()
@@ -393,692 +339,10 @@ class DashboardDialog(QDialog):
         layout.addLayout(controles_layout)
 
         self.canvas = MatplotlibCanvas(width=12, height=9, dpi=100)
-        self.canvas.mpl_connect("motion_notify_event", self._on_hover_grafico)
+        self.canvas.mpl_connect(
+            "motion_notify_event",
+            lambda event: DashboardPlotting.on_hover_grafico(self, event),
+        )
         layout.addWidget(self.canvas)
 
         self.tabs.addTab(self.tab_graficos, "Gráficos")
-
-    # ------------------------------------------------------------------
-    # Atualizações de UI
-    # ------------------------------------------------------------------
-
-    def _atualizar_tabela_mensal(self) -> None:
-        assert self.combo_ano is not None
-        assert self.combo_metrica is not None
-        assert self.tabela_mensal is not None
-
-        ano_texto = self.combo_ano.currentText()
-        if not ano_texto:
-            self.tabela_mensal.setRowCount(0)
-            return
-
-        chave_metrica, _ = self._METRIC_MAP[self.combo_metrica.currentText()]
-        ano = int(ano_texto)
-        dados_ano = self.metricas.get("dados_mensais", {}).get(ano, {})
-
-        # Obter períodos do ano selecionado
-        periodos = db.buscar_periodos_faturamento_por_ano(str(ano))
-        # Ordenar do mais antigo ao mais recente
-        periodos.sort(key=lambda p: p["inicio"])
-        self.periodos_atuais = periodos
-        self.rotulos_periodos = [p["display"] for p in periodos]
-
-        # Atualizar número de colunas da tabela
-        self.tabela_mensal.setColumnCount(len(self.rotulos_periodos) + 1)
-        # Atualizar headers da tabela
-        self.tabela_mensal.setHorizontalHeaderLabels(self.rotulos_periodos + ["Total"])
-
-        row_count = len(self.usuarios) + 1  # +1 para linha de totais
-        self.tabela_mensal.setRowCount(row_count)
-
-        for row, usuario in enumerate(self.usuarios):
-            self.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
-            total_usuario = 0.0
-            for col, p in enumerate(self.periodos_atuais):
-                mes = p["numero"]
-                valor = dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
-                total_usuario += valor
-                self.tabela_mensal.setItem(
-                    row,
-                    col,
-                    self._criar_item_tabela(
-                        self._formatar_valor_metrica(chave_metrica, valor)
-                    ),
-                )
-            self.tabela_mensal.setItem(
-                row,
-                len(self.periodos_atuais),  # coluna de total
-                self._criar_item_tabela(
-                    self._formatar_valor_metrica(chave_metrica, total_usuario)
-                ),
-            )
-
-        total_row = len(self.usuarios)
-        self.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
-
-        for col, p in enumerate(self.periodos_atuais):
-            mes = p["numero"]
-            total_mes = sum(
-                dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
-                for usuario in self.usuarios
-            )
-            self.tabela_mensal.setItem(
-                total_row,
-                col,
-                self._criar_item_tabela(
-                    self._formatar_valor_metrica(chave_metrica, total_mes)
-                ),
-            )
-
-        total_geral = sum(
-            dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
-            for usuario in self.usuarios
-            for p in self.periodos_atuais
-            for mes in [p["numero"]]
-        )
-        self.tabela_mensal.setItem(
-            total_row,
-            len(self.periodos_atuais),
-            self._criar_item_tabela(
-                self._formatar_valor_metrica(chave_metrica, total_geral)
-            ),
-        )
-
-    def _atualizar_tabela_totais(self) -> None:
-        assert self.tabela_totais is not None
-
-        totais = self.metricas.get("totais_ano", {})
-        anos_ordenados = sorted(totais.keys())
-        self.tabela_totais.setRowCount(len(anos_ordenados))
-
-        for row, ano in enumerate(anos_ordenados):
-            dados = totais.get(ano, {})
-            self.tabela_totais.setItem(
-                row,
-                0,
-                self._criar_item_tabela(
-                    str(ano), alinhamento=Qt.AlignmentFlag.AlignCenter
-                ),
-            )
-            self.tabela_totais.setItem(
-                row,
-                1,
-                self._criar_item_tabela(str(int(dados.get("itens", 0)))),
-            )
-            self.tabela_totais.setItem(
-                row,
-                2,
-                self._criar_item_tabela(
-                    formatar_valor_monetario(dados.get("valor", 0.0))
-                ),
-            )
-            self.tabela_totais.setItem(
-                row,
-                3,
-                self._criar_item_tabela(str(int(dados.get("proposta", 0)))),
-            )
-
-    def _atualizar_tabela_medias(self) -> None:
-        assert self.tabela_medias is not None
-
-        medias = self.metricas.get("medias_por_usuario", {})
-        media_geral = self.metricas.get("media_geral", {})
-
-        row_count = len(self.usuarios) + 1 if medias else 0
-        self.tabela_medias.setRowCount(row_count)
-
-        for row, usuario in enumerate(self.usuarios):
-            dados = medias.get(
-                usuario,
-                {
-                    "dias_ativos": 0,
-                    "itens_por_dia": 0.0,
-                    "proposta_por_dia": 0.0,
-                    "dias_com_horas": 0,
-                    "horas_por_dia": 0.0,
-                },
-            )
-
-            valores = [
-                usuario,
-                self._formatar_media_decimal(dados.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(dados.get("proposta_por_dia", 0.0)),
-                self._formatar_segundos(dados.get("horas_por_dia", 0)),
-            ]
-
-            for col, texto in enumerate(valores):
-                alinhamento = (
-                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                    if col == 0
-                    else Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-                )
-                self.tabela_medias.setItem(
-                    row,
-                    col,
-                    self._criar_item_tabela(texto, alinhamento=alinhamento),
-                )
-
-        if row_count:
-            total_row = len(self.usuarios)
-            valores_total = [
-                "Todos",
-                self._formatar_media_decimal(media_geral.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(media_geral.get("proposta_por_dia", 0.0)),
-                self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
-            ]
-
-            for col, texto in enumerate(valores_total):
-                alinhamento = (
-                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                    if col == 0
-                    else Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-                )
-                self.tabela_medias.setItem(
-                    total_row,
-                    col,
-                    self._criar_item_tabela(texto, alinhamento=alinhamento),
-                )
-
-    def _atualizar_tabela_horas(self) -> None:
-        assert self.combo_intervalo is not None
-        assert self.label_total_horas is not None
-        assert self.tabela_horas is not None
-
-        dados_horas = self.metricas.get("horas_por_dia", {})
-        dias_ordenados = list(dados_horas.keys())
-        if not dias_ordenados:
-            self.tabela_horas.setRowCount(0)
-            self.label_total_horas.setText(
-                "Nenhuma informação de tempo de corte disponível."
-            )
-            return
-
-        dias_limite = self.combo_intervalo.currentData()
-        if dias_limite:
-            dias_exibidos = dias_ordenados[:dias_limite]
-        else:
-            dias_exibidos = dias_ordenados
-
-        colunas = ["Data"] + self.usuarios + ["Total"]
-        self.tabela_horas.setColumnCount(len(colunas))
-        self.tabela_horas.setHorizontalHeaderLabels(colunas)
-        self.tabela_horas.setRowCount(len(dias_exibidos))
-
-        total_periodo = 0
-
-        for row, dia in enumerate(dias_exibidos):
-            info = dados_horas[dia]
-            total_periodo += info.get("total", 0)
-            self.tabela_horas.setItem(
-                row,
-                0,
-                self._criar_item_tabela(
-                    formatar_data_para_exibicao(dia),
-                    alinhamento=Qt.AlignmentFlag.AlignCenter,
-                ),
-            )
-            for col, usuario in enumerate(self.usuarios, start=1):
-                segundos = info.get("por_usuario", {}).get(usuario, 0)
-                self.tabela_horas.setItem(
-                    row,
-                    col,
-                    self._criar_item_tabela(self._formatar_segundos(segundos)),
-                )
-            self.tabela_horas.setItem(
-                row,
-                len(colunas) - 1,
-                self._criar_item_tabela(self._formatar_segundos(info.get("total", 0))),
-            )
-
-        self.label_total_horas.setText(
-            f"Total acumulado no período: {self._formatar_segundos(total_periodo)}"
-        )
-
-    def _atualizar_graficos(self) -> None:
-        if self.df_registros.empty or not hasattr(self, "canvas"):
-            return
-
-        assert self.canvas is not None
-        assert self.combo_grafico_metrica is not None
-
-        df_total, df_filtrado, usuario_filtro = self._obter_dados_grafico()
-
-        fig = self.canvas.figure
-        fig.clear()
-
-        self.tooltip_annotation = None
-
-        if df_filtrado.empty:
-            self._mostrar_mensagem_sem_dados(fig)
-            return
-
-        metrica_selecionada = self.combo_grafico_metrica.currentText()
-        chave_metrica, _ = self._METRIC_MAP[metrica_selecionada]
-
-        axes = self._criar_area_graficos(fig)
-
-        self._plotar_metricas_em_barras(
-            df_filtrado, axes, metrica_selecionada, chave_metrica
-        )
-
-        self._plotar_series_de_horas(
-            df_total,
-            df_filtrado,
-            usuario_filtro,
-            axes["horas"],
-        )
-
-        fig.tight_layout()
-        self.canvas.draw_idle()
-
-    def _obter_dados_grafico(self) -> tuple[DataFrame, DataFrame, str | None]:
-        df_total = self.df_registros.copy()
-        usuario_filtro = None
-        if hasattr(self, "combo_grafico_usuario"):
-            assert self.combo_grafico_usuario is not None
-            usuario_filtro = self.combo_grafico_usuario.currentData()
-
-        if usuario_filtro:
-            df_filtrado = df_total[df_total["usuario"] == usuario_filtro]
-        else:
-            df_filtrado = df_total
-
-        return df_total, df_filtrado, usuario_filtro
-
-    def _mostrar_mensagem_sem_dados(self, fig) -> None:
-        assert self.canvas is not None
-
-        ax = fig.add_subplot(111)
-        ax.axis("off")
-        ax.text(
-            0.5,
-            0.5,
-            "Sem dados para o filtro selecionado.",
-            ha="center",
-            va="center",
-            color=_TEXT_COLOR,
-        )
-        self.canvas.draw_idle()
-
-    def _criar_area_graficos(self, fig) -> dict[str, Any]:
-        gs = fig.add_gridspec(3, 1, height_ratios=[1, 1, 1.2])
-        axes = {
-            "metrica_mes": fig.add_subplot(gs[0, 0]),
-            "metrica_ano": fig.add_subplot(gs[1, 0]),
-            "horas": fig.add_subplot(gs[2, 0]),
-        }
-
-        for eixo in axes.values():
-            self._estilizar_axes(eixo)
-
-        return axes
-
-    def _plotar_metricas_em_barras(
-        self,
-        df: DataFrame,
-        axes: dict[str, Any],
-        titulo_metrica: str,
-        chave_metrica: str,
-    ) -> None:
-        coluna_df, rotulo_y, formatter = None, None, None
-
-        if chave_metrica == "itens":
-            coluna_df = "qtde_itens"
-            rotulo_y = "Itens"
-            formatter = FuncFormatter(self._int_tick_formatter)
-        elif chave_metrica == "valor":
-            coluna_df = "valor_pedido"
-            rotulo_y = "Valor (R$)"
-            formatter = FuncFormatter(self._currency_tick_formatter)
-        elif chave_metrica == "proposta":
-            coluna_df = "proposta"
-            rotulo_y = "Propostas"
-            formatter = FuncFormatter(self._int_tick_formatter)
-
-        if coluna_df is None:  # Verificação de segurança
-            return
-
-        pivot = self._build_monthly_pivot(df, coluna_df)
-
-        self._plot_grouped_bars(
-            axes["metrica_mes"],
-            pivot,
-            titulo=f"{titulo_metrica} por mês",
-            rotulo_y=rotulo_y,
-            formatter=formatter,
-        )
-
-        serie_por_ano = df.groupby("ano")[coluna_df].sum().sort_index()
-        self._plot_simple_bar(
-            axes["metrica_ano"],
-            serie_por_ano,
-            titulo=f"{titulo_metrica} por ano",
-            rotulo_y=rotulo_y,
-            formatter=formatter,
-        )
-
-    def _plotar_series_de_horas(
-        self,
-        df_total: DataFrame,
-        df_filtrado: DataFrame,
-        usuario_filtro: str | None,
-        ax_horas,
-    ) -> None:
-        series_total = (
-            df_total.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
-        )
-        series_usuario = (
-            df_filtrado.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
-        )
-
-        if not series_total.empty:
-            cor_total = "#7f8c8d" if usuario_filtro else _ACCENT_CYCLE[0]
-            estilo_total = "--" if usuario_filtro else "-"
-            ax_horas.plot(
-                series_total.index,
-                series_total.values,
-                label="Todos",
-                color=cor_total,
-                linestyle=estilo_total,
-            )
-
-        if usuario_filtro and not series_usuario.empty:
-            ax_horas.plot(
-                series_usuario.index,
-                series_usuario.values,
-                label=usuario_filtro,
-                color=_ACCENT_CYCLE[2],
-            )
-
-        ax_horas.set_title("Horas de corte por dia")
-        ax_horas.set_ylabel("Horas")
-        ax_horas.grid(True, linestyle="--", color=_GRID_COLOR, alpha=0.4)
-        legenda = ax_horas.legend(loc="upper left")
-        self._estilizar_legenda(legenda)
-        ax_horas.tick_params(axis="x", rotation=45)
-        self._estilizar_axes(ax_horas)
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    def _formatar_valor_tooltip(self, eixo, valor: float) -> str:
-        """Formata um valor para o tooltip baseado no formatador do eixo Y."""
-        formatter = eixo.yaxis.get_major_formatter()
-        if isinstance(formatter, FuncFormatter):
-            # Nossos formatters são (valor, pos)
-            return formatter(valor, 0)
-        # Fallback
-        return f"{valor:,.2f}"
-
-    def _on_hover_grafico(self, event) -> None:
-        """Chamado quando o mouse se move sobre o canvas."""
-        if not self.canvas:
-            return
-
-        # Limpa a anotação anterior se ela existir
-        if self.tooltip_annotation:
-            try:
-                self.tooltip_annotation.remove()
-            except (ValueError, AttributeError):
-                pass  # Pode já ter sido removida
-            self.tooltip_annotation = None
-
-        if not event.inaxes:
-            # Se o mouse saiu, apenas desenha a remoção
-            self.canvas.draw_idle()
-            return
-
-        eixo = event.inaxes
-        artista_encontrado = None
-
-        # Apenas verifica barras (patches)
-        for artista in eixo.patches:
-            if (
-                isinstance(artista, mpl.patches.Rectangle)
-                and artista.contains(event)[0]
-            ):
-                artista_encontrado = artista
-                break
-
-        if artista_encontrado:
-            valor = artista_encontrado.get_height()
-            if valor == 0:  # Não mostra tooltip para valor 0
-                self.canvas.draw_idle()
-                return
-
-            texto = self._formatar_valor_tooltip(eixo, valor)
-
-            # Posição da anotação
-            x = artista_encontrado.get_x() + artista_encontrado.get_width() / 2.0
-            y = artista_encontrado.get_y() + artista_encontrado.get_height()
-
-            bbox_props = dict(
-                boxstyle="round,pad=0.3",
-                fc=_LEGEND_FACE,
-                ec=_AXES_EDGE,
-                lw=1,
-                alpha=0.9,
-            )
-            self.tooltip_annotation = eixo.annotate(
-                texto,
-                xy=(x, y),
-                xytext=(0, 10),  # 10 pontos acima
-                textcoords="offset points",
-                ha="center",
-                va="bottom",
-                color=_TEXT_COLOR,
-                bbox=bbox_props,
-                zorder=10,
-            )
-
-        self.canvas.draw_idle()
-
-    def _estilizar_axes(self, ax) -> None:
-        ax.set_facecolor(_AXES_FACE)
-        for spine in ax.spines.values():
-            spine.set_color(_AXES_EDGE)
-        ax.tick_params(colors=_TEXT_COLOR)
-        ax.yaxis.label.set_color(_TEXT_COLOR)
-        ax.xaxis.label.set_color(_TEXT_COLOR)
-        ax.title.set_color(_TEXT_COLOR)
-
-    @staticmethod
-    def _estilizar_legenda(legenda) -> None:
-        if legenda is None:
-            return
-        legenda.get_frame().set_facecolor(_LEGEND_FACE)
-        legenda.get_frame().set_edgecolor(_AXES_EDGE)
-        for texto in legenda.get_texts():
-            texto.set_color(_TEXT_COLOR)
-
-    @staticmethod
-    def _formatar_segundos(segundos: int) -> str:
-        horas, resto = divmod(int(segundos), 3600)
-        minutos, segundos = divmod(resto, 60)
-        return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
-
-    @staticmethod
-    def _criar_item_tabela(
-        texto: str,
-        alinhamento: int = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-    ) -> QTableWidgetItem:
-        item = QTableWidgetItem(texto)
-        item.setTextAlignment(alinhamento)
-        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        return item
-
-    @staticmethod
-    def _formatar_valor_metrica(chave: str, valor) -> str:
-        if chave == "valor":
-            return formatar_valor_monetario(valor)
-        return f"{int(round(valor)):,}".replace(",", ".")
-
-    @staticmethod
-    def _formatar_media_decimal(valor: float) -> str:
-        return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-    def _build_monthly_pivot(self, df: DataFrame, coluna: str) -> DataFrame:
-        if pd is None:  # pragma: no cover - tratado na inicialização
-            raise RuntimeError("Pandas não disponível para gerar o dashboard.")
-
-        if df.empty:
-            return pd.DataFrame()
-
-        meses = [p["numero"] for p in self.periodos_atuais]
-        pivot = (
-            df.pivot_table(
-                index="ano",
-                columns="mes",
-                values=coluna,
-                aggfunc="sum",
-                fill_value=0,
-            )
-            .sort_index()
-            .reindex(columns=meses, fill_value=0)
-        )
-        return pivot
-
-    def _plot_grouped_bars(
-        self,
-        ax,
-        pivot: DataFrame,
-        *,
-        titulo: str,
-        rotulo_y: str,
-        formatter: FuncFormatter,
-    ) -> None:
-        ax.clear()
-        ax.set_title(titulo)
-        ax.set_ylabel(rotulo_y)
-
-        if pivot.empty or pivot.to_numpy().sum() == 0:
-            ax.axis("off")
-            ax.text(
-                0.5,
-                0.5,
-                "Sem dados",
-                ha="center",
-                va="center",
-                color=_TEXT_COLOR,
-            )
-            return
-
-        colunas_meses, rotulos_meses = self._obter_meses_presentes(pivot)
-
-        if not colunas_meses:
-            ax.axis("off")
-            ax.text(
-                0.5,
-                0.5,
-                "Sem dados",
-                ha="center",
-                va="center",
-                color=_TEXT_COLOR,
-            )
-            return
-
-        num_anos = max(len(pivot.index), 1)
-        largura = 0.8 / num_anos
-        deslocamento_inicial = -((num_anos - 1) * largura) / 2
-
-        base = self._desenhar_barras_por_ano(
-            ax=ax,
-            pivot=pivot,
-            # MODIFICADO: Corrigido erro de digitação de 'colunas_semes' para 'colunas_meses'
-            colunas_meses=colunas_meses,
-            largura=largura,
-            deslocamento_inicial=deslocamento_inicial,
-        )
-
-        ax.set_xticks(base)
-        ax.set_xticklabels(rotulos_meses)
-        ax.yaxis.set_major_formatter(formatter)
-        ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
-        legenda = ax.legend(loc="upper left", fontsize="small")
-        self._estilizar_legenda(legenda)
-        self._estilizar_axes(ax)
-
-    def _obter_meses_presentes(
-        self,
-        pivot: DataFrame,
-    ) -> tuple[list[int], list[str]]:
-        colunas: list[int] = []
-        rotulos: list[str] = []
-        # Garante que temos os rótulos de período corretos carregados
-        if not self.rotulos_periodos:
-            # Se não estivermos no contexto de atualização da tabela,
-            # pegamos os períodos do ano mais recente como fallback
-            ano_recente = self.anos[0] if self.anos else None
-            if ano_recente:
-                periodos = db.buscar_periodos_faturamento_por_ano(str(ano_recente))
-                periodos.sort(key=lambda p: p["inicio"])
-                self.rotulos_periodos = [p["display"] for p in periodos]
-            else:
-                # Fallback muito básico se tudo falhar
-                self.rotulos_periodos = [f"P{i}" for i in range(1, 13)]
-
-        for mes in range(1, 13):
-            if mes in pivot.columns and mes - 1 < len(self.rotulos_periodos):
-                colunas.append(mes)
-                rotulos.append(self.rotulos_periodos[mes - 1])
-        return colunas, rotulos
-
-    def _desenhar_barras_por_ano(
-        self,
-        *,
-        ax,
-        pivot: DataFrame,
-        colunas_meses: list[int],
-        largura: float,
-        deslocamento_inicial: float,
-    ) -> list[int]:
-        base = list(range(len(colunas_meses)))
-        for indice_ano, ano in enumerate(pivot.index.tolist()):
-            valores = pivot.loc[ano, colunas_meses].values
-            posicoes = [
-                indice + deslocamento_inicial + indice_ano * largura for indice in base
-            ]
-            ax.bar(posicoes, valores, width=largura, label=str(ano))
-        return base
-
-    def _plot_simple_bar(
-        self,
-        ax,
-        serie: Series,
-        *,
-        titulo: str,
-        rotulo_y: str,
-        formatter: FuncFormatter,
-    ) -> None:
-        ax.clear()
-        ax.set_title(titulo)
-        ax.set_ylabel(rotulo_y)
-
-        if serie.empty or serie.sum() == 0:
-            ax.axis("off")
-            ax.text(
-                0.5,
-                0.5,
-                "Sem dados",
-                ha="center",
-                va="center",
-                color=_TEXT_COLOR,
-            )
-            return
-
-        ax.bar(serie.index.astype(str), serie.values, color=_ACCENT_CYCLE[0])
-        ax.yaxis.set_major_formatter(formatter)
-        ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
-        self._estilizar_axes(ax)
-
-    @staticmethod
-    def _int_tick_formatter(valor: float, _pos: int) -> str:
-        valor_arredondado = int(round(valor))
-        if valor_arredondado < 0:
-            return ""
-        return f"{valor_arredondado:,}".replace(",", ".")
-
-    @staticmethod
-    def _currency_tick_formatter(valor: float, _pos: int) -> str:
-        return f"R$ {valor:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")

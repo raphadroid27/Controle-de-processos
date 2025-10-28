@@ -15,7 +15,7 @@ from src.utils.periodo_faturamento import calcular_periodo_faturamento_para_data
 
 def _novo_pacote_mensal() -> Dict[str, float]:
     """Gera a estrutura inicial para acumular dados mensais."""
-    return {"itens": 0, "valor": 0.0, "proposta": 0}
+    return {"itens": 0, "valor": 0.0, "proposta": 0, "horas": 0}
 
 
 @dataclass(slots=True)
@@ -32,7 +32,11 @@ class RegistroResumo:
     def ano(self) -> int:
         """Ano associado ao lançamento baseado no período de faturamento."""
         numero = int(calcular_periodo_faturamento_para_data(self.data_base)[0])
-        return self.data_base.year + 1 if numero == 1 and self.data_base.month == 12 else self.data_base.year
+        return (
+            self.data_base.year + 1
+            if numero == 1 and self.data_base.month == 12
+            else self.data_base.year
+        )
 
     @property
     def mes(self) -> int:
@@ -60,7 +64,7 @@ class DashboardAccumulator:
             lambda: {"total": 0, "por_usuario": defaultdict(int)}
         )
         self.totais_por_usuario: DefaultDict[str, Dict[str, float]] = defaultdict(
-            lambda: {"itens": 0.0, "valor": 0.0, "proposta": 0.0}
+            lambda: {"itens": 0.0, "valor": 0.0, "proposta": 0.0, "horas": 0}
         )
         self.dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
         self.dias_totais: Set[str] = set()
@@ -69,6 +73,28 @@ class DashboardAccumulator:
             set)
         self.usuarios_registrados: Set[str] = set()
         self.registros_raw: List[Dict[str, Any]] = []
+
+    def _adicionar_valores_metricas(
+        self, ano: int, mes: int, usuario: str, registro: RegistroResumo
+    ) -> None:
+        """Adiciona valores às estruturas de métricas mensais, anuais e por usuário."""
+        dados_mes = self.dados_mensais[ano][usuario][mes]
+        dados_mes["itens"] += registro.qtde_itens
+        dados_mes["valor"] += registro.valor_pedido
+        dados_mes["proposta"] += 1
+        dados_mes["horas"] += registro.tempo_segundos
+
+        totais_ano = self.totais_ano[ano]
+        totais_ano["itens"] += registro.qtde_itens
+        totais_ano["valor"] += registro.valor_pedido
+        totais_ano["proposta"] += 1
+        totais_ano["horas"] += registro.tempo_segundos
+
+        totais_usuario = self.totais_por_usuario[usuario]
+        totais_usuario["itens"] += registro.qtde_itens
+        totais_usuario["valor"] += registro.valor_pedido
+        totais_usuario["proposta"] += 1
+        totais_usuario["horas"] += registro.tempo_segundos
 
     def acumular(self, registro: RegistroResumo) -> None:
         """Incorpora um registro agregado nas estruturas de cálculo."""
@@ -81,20 +107,7 @@ class DashboardAccumulator:
         self.dias_totais.add(dia_iso)
         self.dias_por_usuario[usuario].add(dia_iso)
 
-        dados_mes = self.dados_mensais[ano][usuario][mes]
-        dados_mes["itens"] += registro.qtde_itens
-        dados_mes["valor"] += registro.valor_pedido
-        dados_mes["proposta"] += 1
-
-        totais_ano = self.totais_ano[ano]
-        totais_ano["itens"] += registro.qtde_itens
-        totais_ano["valor"] += registro.valor_pedido
-        totais_ano["proposta"] += 1
-
-        totais_usuario = self.totais_por_usuario[usuario]
-        totais_usuario["itens"] += registro.qtde_itens
-        totais_usuario["valor"] += registro.valor_pedido
-        totais_usuario["proposta"] += 1
+        self._adicionar_valores_metricas(ano, mes, usuario, registro)
 
         tempo = registro.tempo_segundos
         if tempo > 0:
