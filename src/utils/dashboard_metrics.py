@@ -10,6 +10,7 @@ from typing import Any, DefaultDict, Dict, Iterable, List, Set
 from sqlalchemy import select
 
 from src.utils import database as db
+from src.utils.periodo_faturamento import calcular_periodo_faturamento_para_data
 
 
 def _novo_pacote_mensal() -> Dict[str, float]:
@@ -29,13 +30,14 @@ class RegistroResumo:
 
     @property
     def ano(self) -> int:
-        """Ano associado ao lançamento."""
-        return self.data_base.year
+        """Ano associado ao lançamento baseado no período de faturamento."""
+        numero = int(calcular_periodo_faturamento_para_data(self.data_base)[0])
+        return self.data_base.year + 1 if numero == 1 and self.data_base.month == 12 else self.data_base.year
 
     @property
     def mes(self) -> int:
-        """Mês numérico do lançamento."""
-        return self.data_base.month
+        """Mês numérico do lançamento baseado no período de faturamento."""
+        return int(calcular_periodo_faturamento_para_data(self.data_base)[0])
 
     @property
     def dia_iso(self) -> str:
