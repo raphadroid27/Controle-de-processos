@@ -28,9 +28,12 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
                                QLabel, QTableWidget, QTableWidgetItem,
                                QTabWidget, QVBoxLayout, QWidget)
 
+from src.utils import database as db
 from src.utils.dashboard_metrics import obter_metricas_dashboard
 from src.utils.formatters import (formatar_data_para_exibicao,
                                   formatar_valor_monetario)
+from src.utils.periodo_faturamento import \
+    calcular_periodo_faturamento_para_data
 from src.utils.ui_config import aplicar_icone_padrao
 
 _FIGURE_FACE = "#202124"
@@ -88,19 +91,19 @@ class DashboardDialog(QDialog):
         "Propostas": ("proposta", int),
     }
 
-    _MESES = [
-        (1, "Jan"),
-        (2, "Fev"),
-        (3, "Mar"),
-        (4, "Abr"),
-        (5, "Mai"),
-        (6, "Jun"),
-        (7, "Jul"),
-        (8, "Ago"),
-        (9, "Set"),
-        (10, "Out"),
-        (11, "Nov"),
-        (12, "Dez"),
+    _PERIODOS = [
+        (1, "26/12 a 25/01"),
+        (2, "26/01 a 25/02"),
+        (3, "26/02 a 25/03"),
+        (4, "26/03 a 25/04"),
+        (5, "26/04 a 25/05"),
+        (6, "26/05 a 25/06"),
+        (7, "26/06 a 25/07"),
+        (8, "26/07 a 25/08"),
+        (9, "26/08 a 25/09"),
+        (10, "26/09 a 25/10"),
+        (11, "26/10 a 25/11"),
+        (12, "26/11 a 25/12"),
     ]
 
     _INTERVALOS = [
@@ -130,7 +133,11 @@ class DashboardDialog(QDialog):
         self.tabela_horas: QTableWidget | None = None
         self.tab_graficos: QWidget | None = None
         self.combo_grafico_usuario: QComboBox | None = None
+        self.combo_grafico_metrica: QComboBox | None = None
         self.canvas: MatplotlibCanvas | None = None
+        self.periodos_atuais: list[dict] = []
+        self.rotulos_periodos: list[str] = []
+        self.tooltip_annotation: mpl.text.Annotation | None = None
 
         if self._exibir_aviso_sem_pandas():
             return
@@ -190,8 +197,10 @@ class DashboardDialog(QDialog):
             .fillna(0)
             .astype(int)
         )
-        self.df_registros["mes"] = self.df_registros["data"].dt.month.astype(
-            int)
+        # Alterado para usar o mês de faturamento em vez do mês calendário
+        self.df_registros["mes"] = self.df_registros["data"].apply(
+            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
+        )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
         ).fillna(0)
@@ -262,8 +271,7 @@ class DashboardDialog(QDialog):
         self.combo_ano = QComboBox()
         for ano in self.anos:
             self.combo_ano.addItem(str(ano))
-        self.combo_ano.currentTextChanged.connect(
-            self._atualizar_tabela_mensal)
+        self.combo_ano.currentTextChanged.connect(self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
@@ -271,23 +279,19 @@ class DashboardDialog(QDialog):
         self.combo_metrica = QComboBox()
         for titulo in self._METRIC_MAP:
             self.combo_metrica.addItem(titulo)
-        self.combo_metrica.currentTextChanged.connect(
-            self._atualizar_tabela_mensal)
+        self.combo_metrica.currentTextChanged.connect(self._atualizar_tabela_mensal)
         controles_layout.addWidget(self.combo_metrica)
         controles_layout.addStretch()
         return controles_layout
 
     def _criar_tabela_mensal(self) -> QTableWidget:
         self.tabela_mensal = QTableWidget()
-        self.tabela_mensal.setColumnCount(len(self._MESES) + 1)
-        self.tabela_mensal.setHorizontalHeaderLabels(
-            [nome for _, nome in self._MESES] + ["Total"]
-        )
+        self.tabela_mensal.setColumnCount(13)  # 12 períodos + 1 total
+        # Headers serão definidos dinamicamente em _atualizar_tabela_mensal
         self.tabela_mensal.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_mensal.setEditTriggers(
-            QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_mensal.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_mensal.setAlternatingRowColors(True)
         return self.tabela_mensal
 
@@ -304,8 +308,7 @@ class DashboardDialog(QDialog):
         self.tabela_totais.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_totais.setEditTriggers(
-            QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_totais.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_totais.setAlternatingRowColors(True)
         totais_layout.addWidget(self.tabela_totais)
 
@@ -324,8 +327,7 @@ class DashboardDialog(QDialog):
         self.tabela_medias.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.tabela_medias.setEditTriggers(
-            QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_medias.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_medias.setAlternatingRowColors(True)
         medias_layout.addWidget(self.tabela_medias)
 
@@ -344,8 +346,7 @@ class DashboardDialog(QDialog):
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
-        self.combo_intervalo.currentIndexChanged.connect(
-            self._atualizar_tabela_horas)
+        self.combo_intervalo.currentIndexChanged.connect(self._atualizar_tabela_horas)
         horas_controles_layout.addWidget(self.combo_intervalo)
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
@@ -354,8 +355,7 @@ class DashboardDialog(QDialog):
         layout.addWidget(self.label_total_horas)
 
         self.tabela_horas = QTableWidget()
-        self.tabela_horas.setEditTriggers(
-            QTableWidget.EditTrigger.NoEditTriggers)
+        self.tabela_horas.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabela_horas.setAlternatingRowColors(True)
         self.tabela_horas.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
@@ -377,14 +377,23 @@ class DashboardDialog(QDialog):
         self.combo_grafico_usuario.addItem("Todos", None)
         for usuario in self.usuarios:
             self.combo_grafico_usuario.addItem(usuario, usuario)
-        self.combo_grafico_usuario.currentIndexChanged.connect(
-            self._atualizar_graficos)
+        self.combo_grafico_usuario.currentIndexChanged.connect(self._atualizar_graficos)
         controles_layout.addWidget(self.combo_grafico_usuario)
+
+        controles_layout.addSpacing(16)
+        controles_layout.addWidget(QLabel("Métrica:"))
+        self.combo_grafico_metrica = QComboBox()
+        for titulo in self._METRIC_MAP:
+            self.combo_grafico_metrica.addItem(titulo)
+        self.combo_grafico_metrica.currentIndexChanged.connect(self._atualizar_graficos)
+        controles_layout.addWidget(self.combo_grafico_metrica)
+
         controles_layout.addStretch()
 
         layout.addLayout(controles_layout)
 
         self.canvas = MatplotlibCanvas(width=12, height=9, dpi=100)
+        self.canvas.mpl_connect("motion_notify_event", self._on_hover_grafico)
         layout.addWidget(self.canvas)
 
         self.tabs.addTab(self.tab_graficos, "Gráficos")
@@ -407,16 +416,27 @@ class DashboardDialog(QDialog):
         ano = int(ano_texto)
         dados_ano = self.metricas.get("dados_mensais", {}).get(ano, {})
 
+        # Obter períodos do ano selecionado
+        periodos = db.buscar_periodos_faturamento_por_ano(str(ano))
+        # Ordenar do mais antigo ao mais recente
+        periodos.sort(key=lambda p: p["inicio"])
+        self.periodos_atuais = periodos
+        self.rotulos_periodos = [p["display"] for p in periodos]
+
+        # Atualizar número de colunas da tabela
+        self.tabela_mensal.setColumnCount(len(self.rotulos_periodos) + 1)
+        # Atualizar headers da tabela
+        self.tabela_mensal.setHorizontalHeaderLabels(self.rotulos_periodos + ["Total"])
+
         row_count = len(self.usuarios) + 1  # +1 para linha de totais
         self.tabela_mensal.setRowCount(row_count)
 
         for row, usuario in enumerate(self.usuarios):
-            self.tabela_mensal.setVerticalHeaderItem(
-                row, QTableWidgetItem(usuario))
+            self.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
             total_usuario = 0.0
-            for col, (mes, _) in enumerate(self._MESES):
-                valor = dados_ano.get(usuario, {}).get(
-                    mes, {}).get(chave_metrica, 0)
+            for col, p in enumerate(self.periodos_atuais):
+                mes = p["numero"]
+                valor = dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
                 total_usuario += valor
                 self.tabela_mensal.setItem(
                     row,
@@ -427,17 +447,17 @@ class DashboardDialog(QDialog):
                 )
             self.tabela_mensal.setItem(
                 row,
-                len(self._MESES),
+                len(self.periodos_atuais),  # coluna de total
                 self._criar_item_tabela(
                     self._formatar_valor_metrica(chave_metrica, total_usuario)
                 ),
             )
 
         total_row = len(self.usuarios)
-        self.tabela_mensal.setVerticalHeaderItem(
-            total_row, QTableWidgetItem("Total"))
+        self.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
 
-        for col, (mes, _) in enumerate(self._MESES):
+        for col, p in enumerate(self.periodos_atuais):
+            mes = p["numero"]
             total_mes = sum(
                 dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
                 for usuario in self.usuarios
@@ -453,11 +473,12 @@ class DashboardDialog(QDialog):
         total_geral = sum(
             dados_ano.get(usuario, {}).get(mes, {}).get(chave_metrica, 0)
             for usuario in self.usuarios
-            for mes, _ in self._MESES
+            for p in self.periodos_atuais
+            for mes in [p["numero"]]
         )
         self.tabela_mensal.setItem(
             total_row,
-            len(self._MESES),
+            len(self.periodos_atuais),
             self._criar_item_tabela(
                 self._formatar_valor_metrica(chave_metrica, total_geral)
             ),
@@ -521,8 +542,7 @@ class DashboardDialog(QDialog):
             valores = [
                 usuario,
                 self._formatar_media_decimal(dados.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(
-                    dados.get("proposta_por_dia", 0.0)),
+                self._formatar_media_decimal(dados.get("proposta_por_dia", 0.0)),
                 self._formatar_segundos(dados.get("horas_por_dia", 0)),
             ]
 
@@ -542,10 +562,8 @@ class DashboardDialog(QDialog):
             total_row = len(self.usuarios)
             valores_total = [
                 "Todos",
-                self._formatar_media_decimal(
-                    media_geral.get("itens_por_dia", 0.0)),
-                self._formatar_media_decimal(
-                    media_geral.get("proposta_por_dia", 0.0)),
+                self._formatar_media_decimal(media_geral.get("itens_por_dia", 0.0)),
+                self._formatar_media_decimal(media_geral.get("proposta_por_dia", 0.0)),
                 self._formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -609,8 +627,7 @@ class DashboardDialog(QDialog):
             self.tabela_horas.setItem(
                 row,
                 len(colunas) - 1,
-                self._criar_item_tabela(
-                    self._formatar_segundos(info.get("total", 0))),
+                self._criar_item_tabela(self._formatar_segundos(info.get("total", 0))),
             )
 
         self.label_total_horas.setText(
@@ -622,18 +639,28 @@ class DashboardDialog(QDialog):
             return
 
         assert self.canvas is not None
+        assert self.combo_grafico_metrica is not None
 
         df_total, df_filtrado, usuario_filtro = self._obter_dados_grafico()
 
         fig = self.canvas.figure
         fig.clear()
 
+        self.tooltip_annotation = None
+
         if df_filtrado.empty:
             self._mostrar_mensagem_sem_dados(fig)
             return
 
+        metrica_selecionada = self.combo_grafico_metrica.currentText()
+        chave_metrica, _ = self._METRIC_MAP[metrica_selecionada]
+
         axes = self._criar_area_graficos(fig)
-        self._plotar_metricas_em_barras(df_filtrado, axes)
+
+        self._plotar_metricas_em_barras(
+            df_filtrado, axes, metrica_selecionada, chave_metrica
+        )
+
         self._plotar_series_de_horas(
             df_total,
             df_filtrado,
@@ -674,15 +701,11 @@ class DashboardDialog(QDialog):
         self.canvas.draw_idle()
 
     def _criar_area_graficos(self, fig) -> dict[str, Any]:
-        gs = fig.add_gridspec(4, 2, height_ratios=[1, 1, 1, 1.2])
+        gs = fig.add_gridspec(3, 1, height_ratios=[1, 1, 1.2])
         axes = {
-            "itens_mes": fig.add_subplot(gs[0, 0]),
-            "itens_ano": fig.add_subplot(gs[0, 1]),
-            "valor_mes": fig.add_subplot(gs[1, 0]),
-            "valor_ano": fig.add_subplot(gs[1, 1]),
-            "proposta_mes": fig.add_subplot(gs[2, 0]),
-            "proposta_ano": fig.add_subplot(gs[2, 1]),
-            "horas": fig.add_subplot(gs[3, :]),
+            "metrica_mes": fig.add_subplot(gs[0, 0]),
+            "metrica_ano": fig.add_subplot(gs[1, 0]),
+            "horas": fig.add_subplot(gs[2, 0]),
         }
 
         for eixo in axes.values():
@@ -694,60 +717,44 @@ class DashboardDialog(QDialog):
         self,
         df: DataFrame,
         axes: dict[str, Any],
+        titulo_metrica: str,
+        chave_metrica: str,
     ) -> None:
-        pivot_itens = self._build_monthly_pivot(df, "qtde_itens")
-        pivot_valor = self._build_monthly_pivot(df, "valor_pedido")
-        pivot_proposta = self._build_monthly_pivot(df, "proposta")
+        coluna_df, rotulo_y, formatter = None, None, None
+
+        if chave_metrica == "itens":
+            coluna_df = "qtde_itens"
+            rotulo_y = "Itens"
+            formatter = FuncFormatter(self._int_tick_formatter)
+        elif chave_metrica == "valor":
+            coluna_df = "valor_pedido"
+            rotulo_y = "Valor (R$)"
+            formatter = FuncFormatter(self._currency_tick_formatter)
+        elif chave_metrica == "proposta":
+            coluna_df = "proposta"
+            rotulo_y = "Propostas"
+            formatter = FuncFormatter(self._int_tick_formatter)
+
+        if coluna_df is None:  # Verificação de segurança
+            return
+
+        pivot = self._build_monthly_pivot(df, coluna_df)
 
         self._plot_grouped_bars(
-            axes["itens_mes"],
-            pivot_itens,
-            titulo="Itens por mês",
-            rotulo_y="Itens",
-            formatter=FuncFormatter(self._int_tick_formatter),
+            axes["metrica_mes"],
+            pivot,
+            titulo=f"{titulo_metrica} por mês",
+            rotulo_y=rotulo_y,
+            formatter=formatter,
         )
 
-        itens_por_ano = df.groupby("ano")["qtde_itens"].sum().sort_index()
+        serie_por_ano = df.groupby("ano")[coluna_df].sum().sort_index()
         self._plot_simple_bar(
-            axes["itens_ano"],
-            itens_por_ano,
-            titulo="Itens por ano",
-            rotulo_y="Itens",
-            formatter=FuncFormatter(self._int_tick_formatter),
-        )
-
-        self._plot_grouped_bars(
-            axes["valor_mes"],
-            pivot_valor,
-            titulo="Valor por mês",
-            rotulo_y="Valor (R$)",
-            formatter=FuncFormatter(self._currency_tick_formatter),
-        )
-
-        valor_por_ano = df.groupby("ano")["valor_pedido"].sum().sort_index()
-        self._plot_simple_bar(
-            axes["valor_ano"],
-            valor_por_ano,
-            titulo="Valor por ano",
-            rotulo_y="Valor (R$)",
-            formatter=FuncFormatter(self._currency_tick_formatter),
-        )
-
-        self._plot_grouped_bars(
-            axes["proposta_mes"],
-            pivot_proposta,
-            titulo="Propostas por mês",
-            rotulo_y="Propostas",
-            formatter=FuncFormatter(self._int_tick_formatter),
-        )
-
-        proposta_por_ano = df.groupby("ano")["proposta"].sum().sort_index()
-        self._plot_simple_bar(
-            axes["proposta_ano"],
-            proposta_por_ano,
-            titulo="Propostas por ano",
-            rotulo_y="Propostas",
-            formatter=FuncFormatter(self._int_tick_formatter),
+            axes["metrica_ano"],
+            serie_por_ano,
+            titulo=f"{titulo_metrica} por ano",
+            rotulo_y=rotulo_y,
+            formatter=formatter,
         )
 
     def _plotar_series_de_horas(
@@ -758,12 +765,10 @@ class DashboardDialog(QDialog):
         ax_horas,
     ) -> None:
         series_total = (
-            df_total.groupby("data")[
-                "tempo_segundos"].sum().sort_index() / 3600.0
+            df_total.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
         series_usuario = (
-            df_filtrado.groupby(
-                "data")["tempo_segundos"].sum().sort_index() / 3600.0
+            df_filtrado.groupby("data")["tempo_segundos"].sum().sort_index() / 3600.0
         )
 
         if not series_total.empty:
@@ -796,6 +801,78 @@ class DashboardDialog(QDialog):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _formatar_valor_tooltip(self, eixo, valor: float) -> str:
+        """Formata um valor para o tooltip baseado no formatador do eixo Y."""
+        formatter = eixo.yaxis.get_major_formatter()
+        if isinstance(formatter, FuncFormatter):
+            # Nossos formatters são (valor, pos)
+            return formatter(valor, 0)
+        # Fallback
+        return f"{valor:,.2f}"
+
+    def _on_hover_grafico(self, event) -> None:
+        """Chamado quando o mouse se move sobre o canvas."""
+        if not self.canvas:
+            return
+
+        # Limpa a anotação anterior se ela existir
+        if self.tooltip_annotation:
+            try:
+                self.tooltip_annotation.remove()
+            except (ValueError, AttributeError):
+                pass  # Pode já ter sido removida
+            self.tooltip_annotation = None
+
+        if not event.inaxes:
+            # Se o mouse saiu, apenas desenha a remoção
+            self.canvas.draw_idle()
+            return
+
+        eixo = event.inaxes
+        artista_encontrado = None
+
+        # Apenas verifica barras (patches)
+        for artista in eixo.patches:
+            if (
+                isinstance(artista, mpl.patches.Rectangle)
+                and artista.contains(event)[0]
+            ):
+                artista_encontrado = artista
+                break
+
+        if artista_encontrado:
+            valor = artista_encontrado.get_height()
+            if valor == 0:  # Não mostra tooltip para valor 0
+                self.canvas.draw_idle()
+                return
+
+            texto = self._formatar_valor_tooltip(eixo, valor)
+
+            # Posição da anotação
+            x = artista_encontrado.get_x() + artista_encontrado.get_width() / 2.0
+            y = artista_encontrado.get_y() + artista_encontrado.get_height()
+
+            bbox_props = dict(
+                boxstyle="round,pad=0.3",
+                fc=_LEGEND_FACE,
+                ec=_AXES_EDGE,
+                lw=1,
+                alpha=0.9,
+            )
+            self.tooltip_annotation = eixo.annotate(
+                texto,
+                xy=(x, y),
+                xytext=(0, 10),  # 10 pontos acima
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                color=_TEXT_COLOR,
+                bbox=bbox_props,
+                zorder=10,
+            )
+
+        self.canvas.draw_idle()
 
     def _estilizar_axes(self, ax) -> None:
         ax.set_facecolor(_AXES_FACE)
@@ -848,7 +925,7 @@ class DashboardDialog(QDialog):
         if df.empty:
             return pd.DataFrame()
 
-        meses = [mes for mes, _ in self._MESES]
+        meses = [p["numero"] for p in self.periodos_atuais]
         pivot = (
             df.pivot_table(
                 index="ano",
@@ -908,6 +985,7 @@ class DashboardDialog(QDialog):
         base = self._desenhar_barras_por_ano(
             ax=ax,
             pivot=pivot,
+            # MODIFICADO: Corrigido erro de digitação de 'colunas_semes' para 'colunas_meses'
             colunas_meses=colunas_meses,
             largura=largura,
             deslocamento_inicial=deslocamento_inicial,
@@ -927,10 +1005,23 @@ class DashboardDialog(QDialog):
     ) -> tuple[list[int], list[str]]:
         colunas: list[int] = []
         rotulos: list[str] = []
-        for mes, rotulo in self._MESES:
-            if mes in pivot.columns:
+        # Garante que temos os rótulos de período corretos carregados
+        if not self.rotulos_periodos:
+            # Se não estivermos no contexto de atualização da tabela,
+            # pegamos os períodos do ano mais recente como fallback
+            ano_recente = self.anos[0] if self.anos else None
+            if ano_recente:
+                periodos = db.buscar_periodos_faturamento_por_ano(str(ano_recente))
+                periodos.sort(key=lambda p: p["inicio"])
+                self.rotulos_periodos = [p["display"] for p in periodos]
+            else:
+                # Fallback muito básico se tudo falhar
+                self.rotulos_periodos = [f"P{i}" for i in range(1, 13)]
+
+        for mes in range(1, 13):
+            if mes in pivot.columns and mes - 1 < len(self.rotulos_periodos):
                 colunas.append(mes)
-                rotulos.append(rotulo)
+                rotulos.append(self.rotulos_periodos[mes - 1])
         return colunas, rotulos
 
     def _desenhar_barras_por_ano(
