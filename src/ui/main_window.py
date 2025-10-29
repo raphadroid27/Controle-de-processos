@@ -132,7 +132,8 @@ class MainWindow(QMainWindow):
                     "A aplicação será fechada.",
                     5000,
                 )
-                QApplication.quit()
+                # Agendar o fechamento da aplicação após a mensagem ser exibida
+                QTimer.singleShot(500, QApplication.quit)
                 return
 
             # Atualizar heartbeat se a sessão ainda existe
