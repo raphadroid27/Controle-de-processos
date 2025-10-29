@@ -1,5 +1,7 @@
 """Módulo da janela principal do aplicativo."""
 
+import logging
+
 from PySide6.QtCore import QFileSystemWatcher, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
@@ -113,8 +115,33 @@ class MainWindow(QMainWindow):
         self.command_timer.start(10000)  # Verificar a cada 10 segundos
 
     def atualizar_heartbeat(self):
-        """Atualiza o heartbeat da sessão."""
-        session_manager.atualizar_heartbeat_sessao()
+        """Atualiza o heartbeat da sessão e verifica se a sessão ainda é válida."""
+        try:
+            # Verificar se a sessão ainda existe
+            sessoes = session_manager.obter_sessoes_ativas()
+            sessao_atual_existe = any(
+                s["session_id"] == session_manager.SESSION_ID for s in sessoes
+            )
+
+            if not sessao_atual_existe:
+                # Sessão foi removida por outro login
+                show_timed_message_box(
+                    self,
+                    "Sessão Encerrada",
+                    "Sua sessão foi encerrada por outro login.\n"
+                    "A aplicação será fechada.",
+                    5000,
+                )
+                QApplication.quit()
+                return
+
+            # Atualizar heartbeat se a sessão ainda existe
+            session_manager.atualizar_heartbeat_sessao()
+
+        except (OSError, RuntimeError) as e:
+            # Em caso de erro, assumir que a sessão não é válida
+            logging.error("Erro ao verificar sessão: %s", e)
+            QApplication.quit()
 
     def verificar_comando_sistema(self):
         """Verifica se há comandos do sistema para executar."""

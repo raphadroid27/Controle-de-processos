@@ -58,6 +58,12 @@ def encerrar_sessoes_usuario(usuario_nome: str) -> int:
     return ipc_manager.remove_sessions_by_user(usuario_nome)
 
 
+def remover_sessao_por_id(session_id: str) -> None:
+    """Remove uma sessão específica pelo seu ID."""
+    logging.info("Removendo sessão específica via arquivo: ID %s", session_id)
+    ipc_manager.remove_session_file(session_id)
+
+
 def definir_comando_sistema(comando: str) -> None:
     """Define um comando do sistema criando um arquivo."""
     ipc_manager.create_command_file(comando)
