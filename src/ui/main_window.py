@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin
+        self._logout_voluntario = False  # Flag para indicar logout voluntário
         self._theme_manager = ThemeManager.instance()
         self._theme_actions: dict[str, QAction] = {}
         self._theme_action_group: QActionGroup | None = None
@@ -124,16 +125,18 @@ class MainWindow(QMainWindow):
             )
 
             if not sessao_atual_existe:
-                # Sessão foi removida por outro login
-                show_timed_message_box(
-                    self,
-                    "Sessão Encerrada",
-                    "Sua sessão foi encerrada por outro login.\n"
-                    "A aplicação será fechada.",
-                    5000,
-                )
-                # Agendar o fechamento da aplicação após a mensagem ser exibida
-                QTimer.singleShot(500, QApplication.quit)
+                # Verificar se foi logout voluntário
+                if not self._logout_voluntario:
+                    # Sessão foi removida por outro login
+                    show_timed_message_box(
+                        self,
+                        "Sessão Encerrada",
+                        "Sua sessão foi encerrada por outro login.\n"
+                        "A aplicação será fechada.",
+                        5000,
+                    )
+                    # Agendar o fechamento da aplicação após a mensagem ser exibida
+                    QTimer.singleShot(500, QApplication.quit)
                 return
 
             # Atualizar heartbeat se a sessão ainda existe
@@ -276,6 +279,7 @@ class MainWindow(QMainWindow):
         )
 
         if resposta == QMessageBox.StandardButton.Yes:
+            self._logout_voluntario = True  # Marcar como logout voluntário
             session_manager.remover_sessao()
             self.logout_requested.emit()
             self.close()
