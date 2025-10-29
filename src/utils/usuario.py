@@ -92,7 +92,8 @@ def verificar_login(nome: str, senha: str) -> dict:
         senha_hash = hash_senha(senha)
         nome_limpo = nome.strip().lower()
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome_limpo)
+            select(UsuarioModel).where(
+                func.lower(UsuarioModel.nome) == nome_limpo)
         )
         if not usuario or usuario.senha != senha_hash:
             return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
@@ -163,9 +164,8 @@ def resetar_senha_usuario(nome: str, nova_senha: str = "nova_senha") -> str:
     """Reseta a senha de um usuário pelo nome."""
 
     def _operacao(session) -> str:
-        senha_hash = (
-            nova_senha if nova_senha == "nova_senha" else hash_senha(nova_senha)
-        )
+        # Sempre hashee, removendo a condição anterior
+        senha_hash = hash_senha(nova_senha)
         try:
             resultado = session.execute(
                 update(UsuarioModel)
@@ -247,14 +247,16 @@ def verificar_senha_reset(nome: str) -> bool:
 
     def _operacao(session) -> bool:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario or not usuario.ativo:
             return False
-        return bool(usuario.senha == "nova_senha")
+        # Compare com hash
+        return bool(usuario.senha == hash_senha("nova_senha"))
 
     def _on_error(exc: SQLAlchemyError) -> bool:
-        print(f"Erro ao deletar usuário: {exc}")
+        print(f"Erro ao verificar reset de senha: {exc}")
         return False
 
     return _executar_operacao_usuario(
@@ -268,7 +270,8 @@ def excluir_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -302,7 +305,8 @@ def arquivar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -333,7 +337,8 @@ def restaurar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
