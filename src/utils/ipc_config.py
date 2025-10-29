@@ -14,7 +14,6 @@ def obter_dir_base() -> str:
 BASE_DIR = obter_dir_base()
 
 # Diretório oculto para IPC
-RUNTIME_DIR = os.path.join(BASE_DIR, ".runtime")
+RUNTIME_DIR = os.path.join(BASE_DIR, ".runtime", "controle_processos")
 SESSION_DIR = os.path.join(RUNTIME_DIR, "sessions")
 COMMAND_DIR = os.path.join(RUNTIME_DIR, "commands")
-CACHE_DIR = os.path.join(RUNTIME_DIR, "cache")

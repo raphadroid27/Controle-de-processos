@@ -78,4 +78,4 @@ def limpar_comando_sistema() -> None:
 
 def get_comando_path() -> Path:
     """Retorna o caminho do arquivo de comando SHUTDOWN."""
-    return Path(COMMAND_DIR) / "controle_processos_shutdown.cmd"
+    return Path(COMMAND_DIR) / "shutdown.cmd"
