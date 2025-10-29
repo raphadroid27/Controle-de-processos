@@ -44,6 +44,8 @@ class PeriodoFiltroController:
         usuario_filtro = self.obter_usuario()
         ano_selecionado = self.combo_ano.currentText()
 
+        periodo_selecionado = self.combo_periodo.currentText()
+
         self.combo_periodo.clear()
         self.combo_periodo.addItem("Todos os períodos")
 
@@ -57,6 +59,12 @@ class PeriodoFiltroController:
                     "fim": periodo["fim"],
                 },
             )
+
+        # Restaurar período selecionado se ainda existir
+        if periodo_selecionado and periodo_selecionado != "Todos os períodos":
+            index = self.combo_periodo.findText(periodo_selecionado)
+            if index >= 0:
+                self.combo_periodo.setCurrentIndex(index)
 
     def on_ano_changed(self) -> None:
         """Manipula a mudança de ano disparada pelo combo."""
