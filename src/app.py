@@ -8,7 +8,7 @@ from src.login_dialog import LoginDialog
 from src.ui.main_window import MainWindow
 from src.ui.theme_manager import ThemeManager
 from src.utils import database as db
-from src.utils.session_manager import criar_tabela_system_control
+from src.utils import ipc_manager
 from src.utils.usuario import criar_tabela_usuario
 
 
@@ -26,11 +26,11 @@ class ControleProcessosApp:
         self.theme_manager.initialize()
         self.main_window = None
 
-    # Inicialização explícita das tabelas para evitar ciclos de import
-    db.inicializar_todas_tabelas()
-    criar_tabela_usuario()
-    criar_tabela_system_control()
-    # db.limpar_bancos_orfaos()
+        # Inicialização explícita das tabelas para evitar ciclos de import
+        db.inicializar_todas_tabelas()
+        ipc_manager.ensure_ipc_dirs_exist()
+        criar_tabela_usuario()
+        # db.limpar_bancos_orfaos()
 
     def run(self):
         """Executa a aplicação."""

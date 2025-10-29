@@ -5,7 +5,7 @@ from __future__ import annotations
 from src.utils.database.crud import (adicionar_lancamento,
                                      atualizar_lancamento, excluir_lancamento)
 from src.utils.database.models import (Lancamento, RegistroModel,
-                                       SystemControlModel, UsuarioModel)
+                                       UsuarioModel)
 from src.utils.database.queries import (buscar_anos_unicos,
                                         buscar_clientes_unicos,
                                         buscar_estatisticas,
@@ -28,7 +28,6 @@ from src.utils.tempo_corte import tempo_corte_para_segundos
 __all__ = [
     "Lancamento",
     "UsuarioModel",
-    "SystemControlModel",
     "RegistroModel",
     "adicionar_lancamento",
     "atualizar_lancamento",

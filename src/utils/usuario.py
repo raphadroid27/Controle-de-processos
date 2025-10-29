@@ -20,6 +20,13 @@ from src.utils.database import (UsuarioModel, ensure_user_database,
 from src.utils.database.sessions import executar_sessao_compartilhada
 
 
+def _executar_operacao_usuario(operacao, error_handler=None, fallback=None):
+    """Helper para executar operações no banco de usuários."""
+    return executar_sessao_compartilhada(
+        operacao, error_handler=error_handler, fallback=fallback
+    )
+
+
 def criar_tabela_usuario() -> None:
     """Garante a criação da tabela de usuários."""
     get_shared_engine()  # Cria metadados compartilhados se necessário
@@ -73,7 +80,7 @@ def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
             return f"Erro: {exc.orig if exc.orig else 'Violação de integridade.'}"
         return f"Erro ao inserir usuário: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def verificar_login(nome: str, senha: str) -> dict:
@@ -105,7 +112,7 @@ def verificar_login(nome: str, senha: str) -> dict:
     def _on_error(exc: SQLAlchemyError) -> dict:
         return {"sucesso": False, "mensagem": f"Erro no banco de dados: {exc}"}
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def verificar_admin_existente() -> bool:
@@ -119,7 +126,7 @@ def verificar_admin_existente() -> bool:
         )
         return count_admin is not None
 
-    return executar_sessao_compartilhada(_operacao, fallback=False)
+    return _executar_operacao_usuario(_operacao, fallback=False)
 
 
 def listar_usuarios(*, incluir_arquivados: bool = True) -> list[dict]:
@@ -146,7 +153,7 @@ def listar_usuarios(*, incluir_arquivados: bool = True) -> list[dict]:
         print(f"Erro ao listar usuários: {exc}")
         return []
 
-    return executar_sessao_compartilhada(
+    return _executar_operacao_usuario(
         _operacao,
         error_handler=_on_error,
     )
@@ -177,7 +184,7 @@ def resetar_senha_usuario(nome: str, nova_senha: str = "nova_senha") -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao resetar senha: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def excluir_usuario_por_id(user_id: int) -> str:
@@ -205,7 +212,7 @@ def excluir_usuario_por_id(user_id: int) -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao excluir usuário: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def alterar_senha_usuario(nome: str, senha_atual: str, nova_senha: str) -> str:
@@ -232,7 +239,7 @@ def alterar_senha_usuario(nome: str, senha_atual: str, nova_senha: str) -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao alterar senha: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def verificar_senha_reset(nome: str) -> bool:
@@ -247,10 +254,10 @@ def verificar_senha_reset(nome: str) -> bool:
         return bool(usuario.senha == "nova_senha")
 
     def _on_error(exc: SQLAlchemyError) -> bool:
-        print(f"Erro ao verificar senha de reset: {exc}")
+        print(f"Erro ao deletar usuário: {exc}")
         return False
 
-    return executar_sessao_compartilhada(
+    return _executar_operacao_usuario(
         _operacao,
         error_handler=_on_error,
     )
@@ -287,7 +294,7 @@ def excluir_usuario(nome: str) -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao excluir usuário: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def arquivar_usuario(nome: str) -> str:
@@ -318,7 +325,7 @@ def arquivar_usuario(nome: str) -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao arquivar usuário: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 def restaurar_usuario(nome: str) -> str:
@@ -347,7 +354,7 @@ def restaurar_usuario(nome: str) -> str:
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao restaurar usuário: {exc}"
 
-    return executar_sessao_compartilhada(_operacao, error_handler=_on_error)
+    return _executar_operacao_usuario(_operacao, error_handler=_on_error)
 
 
 # Garante que a tabela seja criada na primeira vez que o módulo for importado

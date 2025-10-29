@@ -30,22 +30,9 @@ class UsuarioModel(SharedBase):
     ativo: Mapped[bool] = mapped_column(
         Boolean, default=True, nullable=False, server_default="1"
     )
-    arquivado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    arquivado_em: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.datetime("now"), nullable=False
-    )
-
-
-class SystemControlModel(SharedBase):
-    """Tabela de controle de sessões e comandos do sistema."""
-
-    __tablename__ = "system_control"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
-    value: Mapped[Optional[str]] = mapped_column(String(512))
-    last_updated: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.datetime("now"), nullable=False
     )
 
@@ -56,11 +43,15 @@ class RegistroModel(UserBase):
     __tablename__ = "registro"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    usuario: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    cliente: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    processo: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    usuario: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
+    cliente: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
+    processo: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True)
     qtde_itens: Mapped[int] = mapped_column(Integer, nullable=False)
-    data_entrada: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    data_entrada: Mapped[date] = mapped_column(
+        Date, nullable=False, index=True)
     data_processo: Mapped[Optional[date]] = mapped_column(Date, index=True)
     tempo_corte: Mapped[Optional[str]] = mapped_column(String(16))
     observacoes: Mapped[Optional[str]] = mapped_column(String(500))
@@ -89,7 +80,6 @@ __all__ = [
     "SharedBase",
     "UserBase",
     "UsuarioModel",
-    "SystemControlModel",
     "RegistroModel",
     "Lancamento",
 ]

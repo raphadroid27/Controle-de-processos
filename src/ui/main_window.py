@@ -1,6 +1,6 @@
 """Módulo da janela principal do aplicativo."""
 
-from PySide6.QtCore import QSignalBlocker, QTimer, Signal
+from PySide6.QtCore import QFileSystemWatcher, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
@@ -11,6 +11,50 @@ from src.utils import session_manager
 from src.utils.ui_config import aplicar_icone_padrao
 from src.widgets.dashboard_dialog import DashboardDialog
 from src.widgets.processos_widget import ProcessosWidget
+
+
+def show_timed_message_box(parent, title, message, timeout_ms=10000):
+    """Mostra uma caixa de mensagem com timeout automático."""
+    msg_box = QMessageBox(
+        QMessageBox.Icon.Information,
+        title,
+        message,
+        QMessageBox.StandardButton.Ok,
+        parent,
+    )
+
+    # Timer para fechar automaticamente
+    timer = QTimer(parent)
+    timer.timeout.connect(msg_box.accept)
+    timer.setSingleShot(True)
+    timer.start(timeout_ms)
+
+    # Mostrar diálogo (modal)
+    msg_box.exec()
+
+    # Parar timer se ainda rodando
+    timer.stop()
+
+
+def _criar_menu_com_acoes_checkaveis(  # pylint: disable=too-many-positional-arguments
+    menu,
+    opcoes,
+    action_group,
+    actions_dict,
+    callback,
+    status_prefix="Aplicar",
+    parent=None,
+):
+    """Helper para criar menus com ações checkáveis."""
+    for rotulo, valor in opcoes:
+        action = QAction(rotulo, parent, checkable=True)
+        action.setData(valor)
+        action.triggered.connect(callback)
+        action.setStatusTip(f"{status_prefix} {rotulo.lower()}")
+        action.setToolTip(f"{status_prefix} {rotulo.lower()}")
+        menu.addAction(action)
+        action_group.addAction(action)
+        actions_dict[valor] = action
 
 
 class MainWindow(QMainWindow):
@@ -41,7 +85,8 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(
+            self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -54,9 +99,18 @@ class MainWindow(QMainWindow):
         self.heartbeat_timer.timeout.connect(self.atualizar_heartbeat)
         self.heartbeat_timer.start(30000)
 
+        # Usar QFileSystemWatcher para monitorar comandos em vez de polling
+        self.command_watcher = QFileSystemWatcher(self)
+        comando_path = session_manager.get_comando_path()
+        # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
+        self.command_watcher.addPath(str(comando_path))
+        self.command_watcher.fileChanged.connect(
+            self.verificar_comando_sistema)
+
+        # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
         self.command_timer.timeout.connect(self.verificar_comando_sistema)
-        self.command_timer.start(5000)
+        self.command_timer.start(10000)  # Verificar a cada 10 segundos
 
     def atualizar_heartbeat(self):
         """Atualiza o heartbeat da sessão."""
@@ -66,21 +120,22 @@ class MainWindow(QMainWindow):
         """Verifica se há comandos do sistema para executar."""
         comando_global = session_manager.obter_comando_sistema()
         if comando_global == "SHUTDOWN":
-            QMessageBox.information(
+            show_timed_message_box(
                 self,
                 "Sistema",
-                (
-                    "O administrador solicitou o fechamento do sistema.\n"
-                    "A aplicação será encerrada."
-                ),
+                "O administrador solicitou o fechamento do sistema.\n"
+                "A aplicação será encerrada.",
+                10000,
             )
+
             session_manager.limpar_comando_sistema()
             QApplication.quit()
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.unregister_color_listener(
+            self._on_cor_tema_atualizada)
         session_manager.remover_sessao()
         event.accept()
 
@@ -112,7 +167,8 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Gerenciar Usuários", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip(
+                "Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -126,7 +182,8 @@ class MainWindow(QMainWindow):
             atualizar_action = QAction("Atualizar", self)
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip(
+                "Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 
@@ -157,7 +214,7 @@ class MainWindow(QMainWindow):
         try:
             dialog = DashboardDialog(self)
             dialog.exec()
-        except Exception as exc:  # pylint: disable=broad-except
+        except (ImportError, AttributeError, RuntimeError) as exc:
             QMessageBox.warning(
                 self,
                 "Erro",
@@ -168,7 +225,7 @@ class MainWindow(QMainWindow):
         """Abre o diálogo Sobre."""
         try:
             mostrar_sobre(self)
-        except Exception as exc:  # pylint: disable=broad-except
+        except (ImportError, AttributeError, RuntimeError) as exc:
             QMessageBox.warning(
                 self,
                 "Erro",
@@ -210,15 +267,15 @@ class MainWindow(QMainWindow):
             ("Escuro", "dark"),
         ]
 
-        for rotulo, modo in opcoes:
-            action = QAction(rotulo, self, checkable=True)
-            action.setData(modo)
-            action.triggered.connect(self._on_tema_selecionado)
-            action.setStatusTip(f"Aplicar tema {rotulo.lower()}")
-            action.setToolTip(f"Aplicar tema {rotulo.lower()}")
-            tema_menu.addAction(action)
-            self._theme_action_group.addAction(action)
-            self._theme_actions[modo] = action
+        _criar_menu_com_acoes_checkaveis(
+            menu=tema_menu,
+            opcoes=opcoes,
+            action_group=self._theme_action_group,
+            actions_dict=self._theme_actions,
+            callback=self._on_tema_selecionado,
+            status_prefix="Aplicar tema",
+            parent=self,
+        )
 
         tema_menu.addSeparator()
         estilo_menu = tema_menu.addMenu("Estilo")
@@ -231,15 +288,15 @@ class MainWindow(QMainWindow):
             ("Windows", "Windows"),
         ]
 
-        for rotulo, estilo in estilos_opcoes:
-            action = QAction(rotulo, self, checkable=True)
-            action.setData(estilo)
-            action.triggered.connect(self._on_estilo_selecionado)
-            action.setStatusTip(f"Aplicar estilo {rotulo}")
-            action.setToolTip(f"Aplicar estilo {rotulo}")
-            estilo_menu.addAction(action)
-            self._style_action_group.addAction(action)
-            self._style_actions[estilo] = action
+        _criar_menu_com_acoes_checkaveis(
+            menu=estilo_menu,
+            opcoes=estilos_opcoes,
+            action_group=self._style_action_group,
+            actions_dict=self._style_actions,
+            callback=self._on_estilo_selecionado,
+            status_prefix="Aplicar estilo",
+            parent=self,
+        )
 
         # Marcar o estilo atual
         current_style = self._theme_manager.current_style
@@ -252,15 +309,20 @@ class MainWindow(QMainWindow):
         self._color_action_group.setExclusive(True)
         self._color_actions.clear()
 
-        for chave, (rotulo, _hex) in ThemeManager.color_options().items():
-            action = QAction(rotulo, self, checkable=True)
-            action.setData(chave)
-            action.triggered.connect(self._on_cor_tema_selecionada)
-            action.setStatusTip(f"Aplicar destaque {rotulo.lower()}")
-            action.setToolTip(f"Cor de destaque {rotulo.lower()}")
-            cores_menu.addAction(action)
-            self._color_action_group.addAction(action)
-            self._color_actions[chave] = action
+        cores_opcoes = [
+            (rotulo, chave)
+            for chave, (rotulo, _hex) in ThemeManager.color_options().items()
+        ]
+
+        _criar_menu_com_acoes_checkaveis(
+            menu=cores_menu,
+            opcoes=cores_opcoes,
+            action_group=self._color_action_group,
+            actions_dict=self._color_actions,
+            callback=self._on_cor_tema_selecionada,
+            status_prefix="Aplicar destaque",
+            parent=self,
+        )
 
         self._marcar_tema(self._theme_manager.current_mode)
         self._marcar_cor(self._theme_manager.current_color)
