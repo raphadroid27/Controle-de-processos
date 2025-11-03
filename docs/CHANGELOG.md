@@ -2,6 +2,16 @@
 
 Histórico de mudanças do aplicativo Controle de Processos
 
+## 1.1.0 (29/10/2025)
+
+- refatora: implementa gerenciamento de IPC e reorganiza sessões do sistema
+- refatora: adiciona restauração do período selecionado no filtro de processos
+- recurso: adiciona funcionalidades de gráficos do dashboard e atualização de tabelas
+- refatora: ajusta lógica de cálculo de períodos de faturamento e atualiza interface do dashboard
+- refatora: ajusta cálculo de ano e mês nas métricas do dashboard com base no período de faturamento
+- remove: exclui script de importação de CSV para o banco do usuário
+- refatora: atualiza o título do changelog para refletir o nome correto do aplicativo
+
 ## 1.0.1 (28/10/2025)
 
 - refatoração: renomeia 'os'/'OS' para 'proposta'/'propostas' em código, dashboards, dialogs, componentes CRUD e filtros
