@@ -37,6 +37,7 @@ def criar_formulario(
     parent,
     on_tempo_editado: Callable[[str], None],
     on_cliente_editado: Callable[[str], None],
+    on_valor_editado: Callable[[str], None] | None = None,
     on_submit: Callable[[], None],
 ) -> ProcessoFormControls:
     """Monta o formulário de cadastro de processos."""
@@ -85,10 +86,12 @@ def criar_formulario(
     )
 
     entry_valor_pedido = NavigableLineEdit(frame)
-    entry_valor_pedido.setPlaceholderText("0.00")
+    entry_valor_pedido.setPlaceholderText("0,00")
     entry_valor_pedido.setToolTip(
         "Valor total em reais. Utilize vírgula ou ponto como separador decimal."
     )
+    if on_valor_editado is not None:
+        entry_valor_pedido.textEdited.connect(on_valor_editado)
 
     widgets: Sequence[NavigableLineEdit | NavigableDateEdit] = (
         entry_cliente,

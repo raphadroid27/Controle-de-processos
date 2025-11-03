@@ -12,11 +12,15 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
 from src.utils import database as db
-from src.utils.formatters import (formatar_data_para_exibicao,
-                                  formatar_valor_monetario)
+from src.utils.formatters import (
+    formatar_data_para_exibicao,
+    formatar_valor_monetario,
+    normalizar_valor_padrao_brasileiro,
+)
 from src.utils.periodo_faturamento import (
     calcular_periodo_faturamento_atual_datas,
-    calcular_periodo_faturamento_para_data_datas)
+    calcular_periodo_faturamento_para_data_datas,
+)
 from src.utils.ui_config import ESPACAMENTO_PADRAO, obter_data_atual_utc
 from src.widgets.components import processos_autocomplete
 from src.widgets.components import processos_data_service as processos_data
@@ -163,7 +167,21 @@ class ProcessosWidget(QWidget):
         self.entry_tempo_corte.blockSignals(False)
         self.entry_tempo_corte.setCursorPosition(len(formato))
 
+    def _on_valor_pedido_editado(self, texto: str) -> None:
+        """Formata o valor digitado para o padrão brasileiro (ex.: 123,45)."""
+        if self.entry_valor_pedido is None:
+            return
+
+        self.entry_valor_pedido.blockSignals(True)
+        try:
+            valor_formatado = normalizar_valor_padrao_brasileiro(texto)
+            self.entry_valor_pedido.setText(valor_formatado)
+            self.entry_valor_pedido.setCursorPosition(len(valor_formatado))
+        finally:
+            self.entry_valor_pedido.blockSignals(False)
+
     def showEvent(self, event):  # pylint: disable=invalid-name
+        """Garante atualização de datas quando o widget volta a ser exibido."""
         super().showEvent(event)
         self._verificar_atualizacao_datas_formulario(forcar=True)
 
@@ -262,6 +280,7 @@ class ProcessosWidget(QWidget):
             parent=self,
             on_tempo_editado=self._on_tempo_corte_editado,
             on_cliente_editado=self._converter_cliente_maiuscula,
+            on_valor_editado=self._on_valor_pedido_editado,
             on_submit=self.adicionar_processo,
         )
 

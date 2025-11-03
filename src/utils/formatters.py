@@ -7,6 +7,18 @@ Contém funções utilitárias para formatação de valores monetários, datas e
 from datetime import datetime
 
 
+def normalizar_valor_padrao_brasileiro(valor: str) -> str:
+    """Normaliza texto numérico para o formato monetário brasileiro simples."""
+    digitos = "".join(ch for ch in valor if ch.isdigit())
+    if not digitos:
+        return ""
+
+    centavos = digitos[-2:].rjust(2, "0")
+    parte_inteira = digitos[:-2] or "0"
+    parte_inteira_formatada = f"{int(parte_inteira):,}".replace(",", ".")
+    return f"{parte_inteira_formatada},{centavos}"
+
+
 def formatar_valor_monetario(valor: float | str) -> str:
     """Formata valor monetário com separador de milhares e vírgula decimal."""
     try:
