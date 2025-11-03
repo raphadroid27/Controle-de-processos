@@ -69,8 +69,10 @@ class ProcessosWidget(QWidget):
             carregar_clientes=processos_data.carregar_clientes_upper,
         )
         self.periodo_controller = None
+        self._timer_atualizacao_datas = None
 
         self.init_ui()
+        self._configurar_atualizacao_automatica_datas()
         self.carregar_dados()
 
     def init_ui(self):
@@ -160,6 +162,80 @@ class ProcessosWidget(QWidget):
         self.entry_tempo_corte.setText(formato)
         self.entry_tempo_corte.blockSignals(False)
         self.entry_tempo_corte.setCursorPosition(len(formato))
+
+    def showEvent(self, event):  # pylint: disable=invalid-name
+        super().showEvent(event)
+        self._verificar_atualizacao_datas_formulario(forcar=True)
+
+    def _configurar_atualizacao_automatica_datas(self) -> None:
+        """Configura a atualização periódica dos campos de data."""
+        self._verificar_atualizacao_datas_formulario(forcar=True)
+
+        if self._timer_atualizacao_datas is None:
+            self._timer_atualizacao_datas = QTimer(self)
+            # Atualiza a cada 1 hora para capturar viradas de dia sem custo alto.
+            self._timer_atualizacao_datas.setInterval(60 * 60 * 1000)
+            self._timer_atualizacao_datas.timeout.connect(
+                self._verificar_atualizacao_datas_formulario
+            )
+            self._timer_atualizacao_datas.start()
+
+    def _verificar_atualizacao_datas_formulario(self, forcar: bool = False) -> None:
+        """Verifica se é necessário atualizar datas e limites do formulário."""
+        nova_data = obter_data_atual_utc()
+        max_entrada = (
+            self.entry_data_entrada.maximumDate()
+            if self.entry_data_entrada is not None
+            else None
+        )
+        max_processo = (
+            self.entry_data_processo.maximumDate()
+            if self.entry_data_processo is not None
+            else None
+        )
+
+        if (
+            not forcar
+            and self._timer_atualizacao_datas is not None
+            and max_entrada == nova_data
+            and (max_processo is None or max_processo == nova_data)
+        ):
+            return
+
+        self._atualizar_limite_e_valor_data(
+            self.entry_data_entrada,
+            nova_data,
+            preservar_nulos=False,
+        )
+        self._atualizar_limite_e_valor_data(
+            self.entry_data_processo,
+            nova_data,
+            preservar_nulos=True,
+        )
+
+    @staticmethod
+    def _atualizar_limite_e_valor_data(
+        campo,
+        nova_data,
+        *,
+        preservar_nulos: bool,
+    ) -> None:
+        if campo is None or nova_data is None:
+            return
+
+        campo.blockSignals(True)
+        try:
+            data_antiga = campo.maximumDate()
+            campo.setMaximumDate(nova_data)
+
+            valor_atual = campo.date()
+            if preservar_nulos and hasattr(valor_atual, "isNull") and valor_atual.isNull():
+                return
+
+            if valor_atual == data_antiga:
+                campo.setDate(nova_data)
+        finally:
+            campo.blockSignals(False)
 
     def atalho_adicionar_processo(self):
         """Adiciona processo via atalho se campos obrigatórios estiverem ok."""
