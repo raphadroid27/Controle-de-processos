@@ -9,7 +9,7 @@ from typing import Tuple
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
-from src.utils.formatters import converter_data_para_banco
+from src.utils.formatters import converter_data_para_banco, normalizar_nome_cliente
 
 __all__ = [
     "LinhaProcessoEdicao",
@@ -71,7 +71,7 @@ def extrair_campos_linha(
     col_offset: int,
 ) -> LinhaProcessoEdicao:
     """Extrai os campos da linha informada, convertendo para formatos de banco."""
-    cliente = _texto_item(tabela, row, col_offset).upper()
+    cliente = normalizar_nome_cliente(_texto_item(tabela, row, col_offset))
     processo = _texto_item(tabela, row, col_offset + 1)
     qtde_itens = _texto_item(tabela, row, col_offset + 2)
 

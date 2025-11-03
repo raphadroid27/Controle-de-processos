@@ -7,6 +7,14 @@ Contém funções utilitárias para formatação de valores monetários, datas e
 from datetime import datetime
 
 
+def normalizar_nome_cliente(valor: str) -> str:
+    """Remove espaços excedentes e padroniza cliente em caixa alta."""
+    texto = (valor or "").strip()
+    if not texto:
+        return ""
+    return " ".join(texto.split()).upper()
+
+
 def normalizar_valor_padrao_brasileiro(valor: str) -> str:
     """Normaliza texto numérico para o formato monetário brasileiro simples."""
     digitos = "".join(ch for ch in valor if ch.isdigit())

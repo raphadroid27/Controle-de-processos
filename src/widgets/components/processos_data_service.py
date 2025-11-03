@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.utils import database as db
 from src.utils.database.queries import _garantir_periodo_atual
+from src.utils.formatters import normalizar_nome_cliente
 from src.utils.periodo_faturamento import \
     calcular_periodo_faturamento_atual_datas
 
@@ -43,7 +44,12 @@ def carregar_clientes_upper() -> List[str]:
     except (SQLAlchemyError, RuntimeError, AttributeError, TypeError) as exc:
         print(f"Erro ao carregar clientes: {exc}")
         return []
-    return [cliente.upper() for cliente in clientes_raw]
+    clientes_normalizados = {
+        normalizar_nome_cliente(cliente)
+        for cliente in clientes_raw
+        if normalizar_nome_cliente(cliente)
+    }
+    return sorted(clientes_normalizados)
 
 
 def listar_anos_disponiveis(usuario_filtro: Optional[str]) -> List[str]:

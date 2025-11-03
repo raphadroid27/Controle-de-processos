@@ -15,6 +15,7 @@ from src.utils import database as db
 from src.utils.formatters import (
     formatar_data_para_exibicao,
     formatar_valor_monetario,
+    normalizar_nome_cliente,
     normalizar_valor_padrao_brasileiro,
 )
 from src.utils.periodo_faturamento import (
@@ -131,11 +132,14 @@ class ProcessosWidget(QWidget):
     def _converter_cliente_maiuscula(self, texto):
         """Convert the client field text to uppercase automatically."""
         self.entry_cliente.blockSignals(True)
-        posicao_cursor = self.entry_cliente.cursorPosition()
-        texto_maiusculo = texto.upper()
-        self.entry_cliente.setText(texto_maiusculo)
-        self.entry_cliente.setCursorPosition(posicao_cursor)
-        self.entry_cliente.blockSignals(False)
+        try:
+            posicao_cursor = self.entry_cliente.cursorPosition()
+            texto_normalizado = normalizar_nome_cliente(texto)
+            self.entry_cliente.setText(texto_normalizado)
+            self.entry_cliente.setCursorPosition(
+                min(posicao_cursor, len(texto_normalizado)))
+        finally:
+            self.entry_cliente.blockSignals(False)
 
     def _on_tempo_corte_editado(self, texto):
         """Insere automaticamente os separadores de tempo (HH:MM:SS)."""
@@ -740,7 +744,7 @@ class ProcessosWidget(QWidget):
     def adicionar_processo(self):
         """Valida campos e insere novo processo no banco."""
         form_data = {
-            "cliente": self.entry_cliente.text().strip().upper(),
+            "cliente": normalizar_nome_cliente(self.entry_cliente.text()),
             "processo": self.entry_processo.text().strip(),
             "qtde_itens": self.entry_qtde_itens.text().strip(),
             "valor_pedido": self.entry_valor_pedido.text().strip(),
