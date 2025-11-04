@@ -25,7 +25,7 @@ class LoginDialog(QDialog):
     def __init__(self):
         """Inicializa o diálogo de login."""
         super().__init__()
-        self.setWindowTitle("Login - Controle de Processos")
+        self.setWindowTitle("Login - Controle de Pedidos")
         self.setFixedSize(LARGURA_DIALOG_LOGIN, ALTURA_DIALOG_LOGIN)
         self.setModal(True)
         self.usuario_logado = None
@@ -60,7 +60,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_usuario, self.entry_senha])
 
         layout.addRow("Usuário:", self.entry_usuario)
         layout.addRow("Senha:", self.entry_senha)
@@ -114,7 +115,8 @@ Use Tab para avançar para o campo de senha."""
             return
 
         # Verificar se usuário já está logado em outra máquina
-        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(nome)
+        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(
+            nome)
         if ja_logado and info_sessao:
             resposta = QMessageBox.question(
                 self,
@@ -165,7 +167,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         if ok and nova_senha.strip():
-            resultado = usuario.alterar_senha_usuario(nome, "nova_senha", nova_senha)
+            resultado = usuario.alterar_senha_usuario(
+                nome, "nova_senha", nova_senha)
             if "Sucesso" in resultado:
                 QMessageBox.information(
                     self, "Sucesso", "Senha alterada com sucesso. Faça login novamente."
@@ -194,7 +197,8 @@ class NovoUsuarioDialog(QDialog):
         """Inicializa o diálogo de novo usuário."""
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO, ALTURA_DIALOG_NOVO_USUARIO)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                          ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         # Aplicar ícone padrão
@@ -226,7 +230,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_nome, self.entry_senha])
 
         layout.addRow("Nome:", self.entry_nome)
         layout.addRow("Senha:", self.entry_senha)
@@ -260,7 +265,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         aplicar_estilo_botao(self.btn_cancelar, "vermelho", 110)
         aplicar_estilo_botao(self.btn_salvar, "verde", 110)
 
-        self.btn_cancelar.setToolTip("Fechar o formulário sem criar usuário (Esc)")
+        self.btn_cancelar.setToolTip(
+            "Fechar o formulário sem criar usuário (Esc)")
         self.btn_cancelar.setShortcut(QKeySequence("Esc"))
 
         self.btn_salvar.setToolTip("Salvar novo usuário (Ctrl+S)")
@@ -297,7 +303,8 @@ Deve ser único e sem espaços extras nas extremidades."""
             return
 
         # Verificar se é admin
-        is_admin = hasattr(self, "check_admin") and self.check_admin.isChecked()
+        is_admin = hasattr(
+            self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario.inserir_usuario(nome, senha, is_admin)
 

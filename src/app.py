@@ -1,4 +1,4 @@
-"""Módulo principal da aplicação de controle de processos."""
+"""Módulo principal da aplicação de Controle de Pedidos."""
 
 import sys
 
@@ -18,9 +18,9 @@ class ControleProcessosApp:
     def __init__(self):
         """Inicializa a aplicação."""
         self.app = QApplication(sys.argv)
-        self.app.setApplicationName("Controle de Processos")
-        self.app.setOrganizationName("Controle de Processos")
-        self.app.setOrganizationDomain("controle-de-processos.local")
+        self.app.setApplicationName("Controle de Pedidos")
+        self.app.setOrganizationName("Controle de Pedidos")
+        self.app.setOrganizationDomain("controle-de-pedidos.local")
 
         self.theme_manager = ThemeManager.instance()
         self.theme_manager.initialize()

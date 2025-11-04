@@ -1,4 +1,4 @@
-"""Ponto de entrada principal para o aplicativo de controle de processos."""
+"""Ponto de entrada principal para o aplicativo de Controle de Pedidos."""
 
 import sys
 

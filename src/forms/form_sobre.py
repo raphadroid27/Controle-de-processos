@@ -32,7 +32,7 @@ def main(root: Optional[QWidget]) -> None:
     conteudo_layout.setSpacing(5)
 
     # Título
-    label_titulo = QLabel("Controle de Processos")
+    label_titulo = QLabel("Controle de Pedidos")
     font_titulo = QFont("Arial", 16)
     font_titulo.setBold(True)
     label_titulo.setFont(font_titulo)

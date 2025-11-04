@@ -1,3 +1,3 @@
-"""Controle de Processos - Sistema de gestão de processos."""
+"""Controle de Pedidos - Sistema de gestão de processos."""
 
 __version__ = "1.1.0"

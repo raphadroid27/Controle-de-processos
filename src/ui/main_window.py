@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         self._color_actions: dict[str, QAction] = {}
         self._color_action_group: QActionGroup | None = None
 
-        self.setWindowTitle("Controle de Processos")
+        self.setWindowTitle("Controle de Pedidos")
         self.setMinimumSize(800, 600)
 
         # Aplicar ícone padrão
