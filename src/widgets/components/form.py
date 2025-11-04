@@ -12,7 +12,7 @@ from src.utils.ui_config import (
     configurar_widgets_entrada_uniformes,
     obter_data_atual_utc,
 )
-from src.widgets.components.processos_layout import (
+from src.widgets.components.layout import (
     criar_coluna_rotulo,
     criar_layout_botao_padrao,
 )

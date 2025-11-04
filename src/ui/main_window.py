@@ -12,7 +12,7 @@ from src.ui.theme_manager import ThemeManager
 from src.utils import session_manager
 from src.utils.ui_config import aplicar_icone_padrao
 from src.widgets.dashboard_dialog import DashboardDialog
-from src.widgets.processos_widget import PedidosWidget
+from src.widgets.widget import PedidosWidget
 
 
 def show_timed_message_box(parent, title, message, timeout_ms=10000):

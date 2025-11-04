@@ -23,11 +23,10 @@ from src.utils.periodo_faturamento import (
     calcular_periodo_faturamento_para_data_datas,
 )
 from src.utils.ui_config import ESPACAMENTO_PADRAO, obter_data_atual_utc
-from src.widgets.components import processos_autocomplete
-from src.widgets.components import processos_data_service as processos_data
-from src.widgets.components import (processos_filters, processos_form,
-                                    processos_periodo, processos_table,
-                                    processos_table_edit, processos_totais)
+from src.widgets.components import filters, processos_autocomplete, table_edit, totais
+from src.widgets.components import data_service as processos_data
+from src.widgets.components import (processos_form,
+                                    processos_periodo, processos_table)
 
 
 class PedidosWidget(QWidget):
@@ -303,7 +302,7 @@ class PedidosWidget(QWidget):
     def _criar_tabela(self):
         """Cria a interface da tabela de pedidos com filtros."""
         self.tabela_layout = QVBoxLayout()
-        filtros = processos_filters.criar_filtros(
+        filtros = filters.criar_filtros(
             parent=self,
             is_admin=self.is_admin,
             on_cliente_timeout=self.aplicar_filtro,
@@ -349,7 +348,7 @@ class PedidosWidget(QWidget):
 
     def _criar_frame_totais(self):
         """Cria o frame que exibe os totais (pedidos, itens, valores)."""
-        controles_totais = processos_totais.criar_totais(
+        controles_totais = totais.criar_totais(
             parent=self,
             espacamento=ESPACAMENTO_PADRAO,
         )
@@ -437,7 +436,7 @@ class PedidosWidget(QWidget):
                 self.aplicar_filtro(rolar_para_ultimo=False)
                 return
 
-            registro_id = processos_table_edit.obter_registro_id(
+            registro_id = table_edit.obter_registro_id(
                 self.tabela, row, self.is_admin
             )
             if not registro_id:
@@ -446,7 +445,7 @@ class PedidosWidget(QWidget):
             col_editada = col - col_offset
             valor_editado = item.text().strip()
 
-            ok, erro_msg = processos_table_edit.validar_edicao_celula(
+            ok, erro_msg = table_edit.validar_edicao_celula(
                 col_editada, valor_editado
             )
             if not ok:
@@ -455,7 +454,7 @@ class PedidosWidget(QWidget):
                 self.aplicar_filtro(rolar_para_ultimo=False)
                 return
 
-            dados_linha = processos_table_edit.extrair_campos_linha(
+            dados_linha = table_edit.extrair_campos_linha(
                 self.tabela,
                 row,
                 col_offset,
@@ -728,7 +727,7 @@ class PedidosWidget(QWidget):
         filtros = filtros or {}
         estatisticas = processos_data.obter_estatisticas_totais(filtros)
 
-        processos_totais.atualizar_totais(
+        totais.atualizar_totais(
             self.controles_totais,
             total_pedidos=estatisticas.total_pedidos,
             total_itens=estatisticas.total_itens,
