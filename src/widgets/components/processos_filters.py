@@ -1,4 +1,4 @@
-"""Componentes de filtro para o widget de processos."""
+"""Componentes de filtro para o widget de pedidos."""
 
 from __future__ import annotations
 
@@ -26,12 +26,12 @@ class FiltroControls:
     frame: QGroupBox
     combo_usuario: Optional[QComboBox]
     entry_cliente: QLineEdit
-    entry_processo: QLineEdit
+    entry_pedido: QLineEdit
     combo_ano: QComboBox
     combo_periodo: QComboBox
     btn_limpar: QPushButton
     timer_cliente: QTimer
-    timer_processo: QTimer
+    timer_pedido: QTimer
 
 
 def criar_filtros(
@@ -39,7 +39,7 @@ def criar_filtros(
     parent,
     is_admin: bool,
     on_cliente_timeout: Callable[[], None],
-    on_processo_timeout: Callable[[], None],
+    on_pedido_timeout: Callable[[], None],
     on_ano_changed: Callable[[str], None],
     on_periodo_changed: Callable[[str], None],
     on_usuario_changed: Callable[[str], None],
@@ -81,20 +81,20 @@ O filtro é aplicado automaticamente."""
         "Cliente:", entry_cliente, 3)
     layout.addLayout(coluna_cliente, peso_cliente)
 
-    entry_processo = NavigableLineEdit(frame)
-    entry_processo.setPlaceholderText("Digite o número da proposta")
-    entry_processo.setToolTip(
-        "Filtrar registros pelo número da proposta informado. Clique em Limpar para remover."
+    entry_pedido = NavigableLineEdit(frame)
+    entry_pedido.setPlaceholderText("Digite o número do pedido")
+    entry_pedido.setToolTip(
+        "Filtrar registros pelo identificador do pedido informado. Clique em Limpar para remover."
     )
-    coluna_processo, peso_processo = criar_coluna_rotulo(
-        "Proposta:", entry_processo, 3)
-    layout.addLayout(coluna_processo, peso_processo)
+    coluna_pedido, peso_pedido = criar_coluna_rotulo(
+        "Pedido:", entry_pedido, 3)
+    layout.addLayout(coluna_pedido, peso_pedido)
 
-    timer_processo = QTimer(frame)
-    timer_processo.setSingleShot(True)
-    timer_processo.timeout.connect(on_processo_timeout)
+    timer_pedido = QTimer(frame)
+    timer_pedido.setSingleShot(True)
+    timer_pedido.timeout.connect(on_pedido_timeout)
 
-    entry_processo.textChanged.connect(lambda _: timer_processo.start(500))
+    entry_pedido.textChanged.connect(lambda _: timer_pedido.start(500))
 
     combo_ano = NavigableComboBox(frame)
     combo_ano.addItem("Todos os anos")
@@ -118,7 +118,7 @@ O filtro é aplicado automaticamente."""
 
     btn_limpar = QPushButton("Limpar Filtros", frame)
     btn_limpar.setToolTip(
-        "Limpar filtros de cliente e processo, mantendo o mês corrente"
+        "Limpar filtros de cliente e pedido, mantendo o mês corrente"
     )
     aplicar_estilo_botao(btn_limpar, "laranja", largura_minima=110)
     btn_limpar.clicked.connect(on_limpar)
@@ -130,8 +130,7 @@ O filtro é aplicado automaticamente."""
     layout.addStretch()
     frame.setLayout(layout)
 
-    widgets_uniformes = [entry_cliente,
-                         entry_processo, combo_ano, combo_periodo]
+    widgets_uniformes = [entry_cliente, entry_pedido, combo_ano, combo_periodo]
     if combo_usuario is not None:
         widgets_uniformes.append(combo_usuario)
     configurar_widgets_entrada_uniformes(widgets_uniformes)
@@ -141,7 +140,7 @@ O filtro é aplicado automaticamente."""
         for w in [
             combo_usuario,
             entry_cliente,
-            entry_processo,
+            entry_pedido,
             combo_ano,
             combo_periodo,
         ]
@@ -155,10 +154,10 @@ O filtro é aplicado automaticamente."""
         frame=frame,
         combo_usuario=combo_usuario,
         entry_cliente=entry_cliente,
-        entry_processo=entry_processo,
+        entry_pedido=entry_pedido,
         combo_ano=combo_ano,
         combo_periodo=combo_periodo,
         btn_limpar=btn_limpar,
         timer_cliente=timer_cliente,
-        timer_processo=timer_processo,
+        timer_pedido=timer_pedido,
     )

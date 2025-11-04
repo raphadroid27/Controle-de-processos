@@ -1,4 +1,4 @@
-"""Componentes de tabela para o widget de processos."""
+"""Componentes de tabela para o widget de pedidos."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class TabelaControls:
 def _definir_colunas(tabela: QTableWidget, is_admin: bool) -> List[str]:
     colunas = [
         "Cliente",
-        "Proposta",
+        "Pedido",
         "Itens",
         "Data Entrada",
         "Data Processo",
@@ -106,12 +106,12 @@ def criar_tabela(
 
     offset = 1 if is_admin else 0
 
-    processo_col_index = 1 + offset
-    processo_header_item = QTableWidgetItem("Proposta")
-    processo_header_item.setTextAlignment(
+    pedido_col_index = 1 + offset
+    pedido_header_item = QTableWidgetItem("Pedido")
+    pedido_header_item.setTextAlignment(
         Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
     )
-    tabela.setHorizontalHeaderItem(processo_col_index, processo_header_item)
+    tabela.setHorizontalHeaderItem(pedido_col_index, pedido_header_item)
 
     qtd_col_index = 2 + offset
     qtd_header_item = QTableWidgetItem("Itens")
@@ -174,7 +174,7 @@ def criar_tabela(
 
     btn_excluir = QPushButton("Excluir", frame)
     btn_excluir.setToolTip(
-        "Excluir processo selecionado na tabela (Atalho: Delete)")
+        "Excluir pedido selecionado na tabela (Atalho: Delete)")
     btn_excluir.clicked.connect(on_excluir)
     aplicar_estilo_botao(btn_excluir, "vermelho")
     estilo_completo = btn_excluir.styleSheet() + aplicar_estilo_botao_desabilitado()
@@ -219,11 +219,11 @@ def preencher_tabela(
             item_cliente = QTableWidgetItem(str(registro[2]).upper())
             tabela.setItem(row, offset + 0, item_cliente)
 
-            item_processo = QTableWidgetItem(str(registro[3]))
-            item_processo.setTextAlignment(
+            item_pedido = QTableWidgetItem(str(registro[3]))
+            item_pedido.setTextAlignment(
                 Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
             )
-            tabela.setItem(row, offset + 1, item_processo)
+            tabela.setItem(row, offset + 1, item_pedido)
 
             item_qtde = QTableWidgetItem(str(registro[4]))
             item_qtde.setTextAlignment(

@@ -1,4 +1,4 @@
-"""Serviços auxiliares de dados utilizados pelo :mod:`processos_widget`."""
+"""Serviços auxiliares de dados utilizados pelo :mod:`pedidos_widget`."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ __all__ = [
 class EstatisticasTotais:
     """Estrutura agregadora para exibir métricas no painel de totais."""
 
-    total_processos: int
+    total_pedidos: int
     total_itens: int
     total_valor: float
     media_dias_processamento: float | None
@@ -146,7 +146,7 @@ def buscar_registros_filtrados(
     *,
     usuario: Optional[str],
     cliente: Optional[str],
-    processo: Optional[str],
+    pedido: Optional[str],
     data_inicio: Optional[str],
     data_fim: Optional[str],
     limite: Optional[int] = None,
@@ -158,7 +158,7 @@ def buscar_registros_filtrados(
         registros = db.buscar_lancamentos_filtros_completos(
             usuario=usuario,
             cliente=cliente,
-            processo=processo,
+            pedido=pedido,
             data_inicio=data_inicio,
             data_fim=data_fim,
             limite=limite,
@@ -270,7 +270,7 @@ def obter_estatisticas_totais(
         registros = buscar_registros_filtrados(
             usuario=filtros.get("usuario"),
             cliente=filtros.get("cliente"),
-            processo=filtros.get("processo"),
+            pedido=filtros.get("pedido"),
             data_inicio=filtros.get("data_inicio"),
             data_fim=filtros.get("data_fim"),
         )
@@ -278,7 +278,7 @@ def obter_estatisticas_totais(
         totais = db.buscar_estatisticas_completas(
             usuario=filtros.get("usuario"),
             cliente=filtros.get("cliente"),
-            processo=filtros.get("processo"),
+            pedido=filtros.get("pedido"),
             data_inicio=filtros.get("data_inicio"),
             data_fim=filtros.get("data_fim"),
         )
@@ -319,7 +319,7 @@ def obter_estatisticas_totais(
     )
 
     return EstatisticasTotais(
-        total_processos=totais.get("total_processos", 0),
+        total_pedidos=totais.get("total_pedidos", 0),
         total_itens=totais.get("total_itens", 0),
         total_valor=totais.get("total_valor", 0.0),
         media_dias_processamento=media_dias,

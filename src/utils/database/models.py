@@ -47,8 +47,8 @@ class RegistroModel(UserBase):
         String(255), nullable=False, index=True)
     cliente: Mapped[str] = mapped_column(
         String(255), nullable=False, index=True)
-    processo: Mapped[str] = mapped_column(
-        String(255), nullable=False, index=True)
+    pedido: Mapped[str] = mapped_column(
+        "pedido", String(255), nullable=False, index=True)
     qtde_itens: Mapped[int] = mapped_column(Integer, nullable=False)
     data_entrada: Mapped[date] = mapped_column(
         Date, nullable=False, index=True)
@@ -63,11 +63,11 @@ class RegistroModel(UserBase):
 
 @dataclass
 class Lancamento:
-    """Representa um lançamento de processo no sistema."""
+    """Representa um lançamento de pedido no sistema."""
 
     usuario: Optional[str]
     cliente: str
-    processo: str
+    pedido: str
     qtde_itens: str
     data_entrada: str
     data_processo: Optional[str]

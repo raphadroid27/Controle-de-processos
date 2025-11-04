@@ -1,4 +1,4 @@
-"""Operações de CRUD sobre os registros de propostas por usuário."""
+"""Operações de CRUD sobre os registros de pedidos por usuário."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def adicionar_lancamento(
     *,
     usuario: Optional[str] = None,
     cliente: Optional[str] = None,
-    processo: Optional[str] = None,
+    pedido: Optional[str] = None,
     qtde_itens: Optional[str] = None,
     data_entrada: Optional[str] = None,
     data_processo: Optional[str] = None,
@@ -30,15 +30,15 @@ def adicionar_lancamento(
 ) -> str:
     """Adiciona um novo registro no banco individual do usuário."""
     if lancamento is None:
-        if None in (usuario, cliente, processo, qtde_itens, data_entrada, valor_pedido):
+        if None in (usuario, cliente, pedido, qtde_itens, data_entrada, valor_pedido):
             return (
-                "Erro: Campos obrigatórios: usuário, cliente, propostas, "
+                "Erro: Campos obrigatórios: usuário, cliente, pedido, "
                 "qtd itens, data entrada, valor."
             )
         lanc = Lancamento(
             usuario=usuario,
             cliente=cliente or "",
-            processo=processo or "",
+            pedido=pedido or "",
             qtde_itens=qtde_itens or "",
             data_entrada=data_entrada or "",
             data_processo=data_processo or "",
@@ -99,7 +99,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
     lancamento: Optional[Lancamento] = None,
     *,
     cliente: Optional[str] = None,
-    processo: Optional[str] = None,
+    pedido: Optional[str] = None,
     qtde_itens: Optional[str] = None,
     data_entrada: Optional[str] = None,
     data_processo: Optional[str] = None,
@@ -121,7 +121,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
         lanc = Lancamento(
             usuario=None,
             cliente=cliente or "",
-            processo=processo or "",
+            pedido=pedido or "",
             qtde_itens=qtde_itens or "",
             data_entrada=data_entrada or "",
             data_processo=data_processo or "",

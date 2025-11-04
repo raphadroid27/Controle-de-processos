@@ -1,5 +1,5 @@
 """
-Widget principal para gerenciamento de processos.
+Widget principal para gerenciamento de pedidos.
 
 Contém a interface principal do sistema com formulário de entrada,
 tabela de dados e controles de filtros.
@@ -30,8 +30,8 @@ from src.widgets.components import (processos_filters, processos_form,
                                     processos_table_edit, processos_totais)
 
 
-class ProcessosWidget(QWidget):
-    """Widget principal para gerenciamento de processos."""
+class PedidosWidget(QWidget):
+    """Widget principal para gerenciamento de pedidos."""
 
     def __init__(self, usuario_logado, is_admin):
         """Inicializa o widget principal com configurações do usuário."""
@@ -45,7 +45,7 @@ class ProcessosWidget(QWidget):
         self.btn_adicionar = None
         self.btn_excluir = None
         self.entry_cliente = None
-        self.entry_processo = None
+        self.entry_pedido = None
         self.entry_qtde_itens = None
         self.entry_data_entrada = None
         self.entry_data_processo = None
@@ -54,11 +54,11 @@ class ProcessosWidget(QWidget):
         self.tabela_layout = None
         self.tabela = None
         self.entry_filtro_cliente = None
-        self.entry_filtro_processo = None
+        self.entry_filtro_pedido = None
         self.timer_cliente = None
-        self.timer_processo = None
+        self.timer_pedido = None
         self.btn_limpar_filtros = None
-        self.label_total_processos = None
+        self.label_total_pedidos = None
         self.label_total_itens = None
         self.label_total_valor = None
         self.shortcut_enter = None
@@ -100,15 +100,15 @@ class ProcessosWidget(QWidget):
     def configurar_atalhos(self):
         """Configura os atalhos de teclado para a aplicação."""
         self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
-        self.shortcut_enter.activated.connect(self.atalho_adicionar_processo)
+        self.shortcut_enter.activated.connect(self.atalho_adicionar_pedido)
 
         self.shortcut_enter_num = QShortcut(
             QKeySequence(Qt.Key.Key_Enter), self)
         self.shortcut_enter_num.activated.connect(
-            self.atalho_adicionar_processo)
+            self.atalho_adicionar_pedido)
 
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
-        self.shortcut_delete.activated.connect(self.excluir_processo)
+        self.shortcut_delete.activated.connect(self.excluir_pedido)
 
     def configurar_filtros_ano_periodo(self):
         """Configura combos de ano e período de faturamento com dados únicos."""
@@ -259,20 +259,20 @@ class ProcessosWidget(QWidget):
         finally:
             campo.blockSignals(False)
 
-    def atalho_adicionar_processo(self):
-        """Adiciona processo via atalho se campos obrigatórios estiverem ok."""
+    def atalho_adicionar_pedido(self):
+        """Adiciona pedido via atalho se campos obrigatórios estiverem ok."""
         cliente = self.entry_cliente.text().strip()
-        processo = self.entry_processo.text().strip()
+        pedido = self.entry_pedido.text().strip()
         qtde_itens = self.entry_qtde_itens.text().strip()
         valor_pedido = self.entry_valor_pedido.text().strip()
 
-        if cliente and processo and qtde_itens and valor_pedido:
-            self.adicionar_processo()
+        if cliente and pedido and qtde_itens and valor_pedido:
+            self.adicionar_pedido()
         else:
             if not cliente:
                 self.entry_cliente.setFocus()
-            elif not processo:
-                self.entry_processo.setFocus()
+            elif not pedido:
+                self.entry_pedido.setFocus()
             elif not qtde_itens:
                 self.entry_qtde_itens.setFocus()
             elif not valor_pedido:
@@ -285,12 +285,12 @@ class ProcessosWidget(QWidget):
             on_tempo_editado=self._on_tempo_corte_editado,
             on_cliente_editado=self._converter_cliente_maiuscula,
             on_valor_editado=self._on_valor_pedido_editado,
-            on_submit=self.adicionar_processo,
+            on_submit=self.adicionar_pedido,
         )
 
         self.frame_entrada = controles.frame
         self.entry_cliente = controles.cliente
-        self.entry_processo = controles.processo
+        self.entry_pedido = controles.pedido
         self.entry_qtde_itens = controles.qtde_itens
         self.entry_data_entrada = controles.data_entrada
         self.entry_data_processo = controles.data_processo
@@ -301,13 +301,13 @@ class ProcessosWidget(QWidget):
         self.autocomplete_manager.configure_form(self.entry_cliente)
 
     def _criar_tabela(self):
-        """Cria a interface da tabela de processos com filtros."""
+        """Cria a interface da tabela de pedidos com filtros."""
         self.tabela_layout = QVBoxLayout()
         filtros = processos_filters.criar_filtros(
             parent=self,
             is_admin=self.is_admin,
             on_cliente_timeout=self.aplicar_filtro,
-            on_processo_timeout=self.aplicar_filtro,
+            on_pedido_timeout=self.aplicar_filtro,
             on_ano_changed=self.on_ano_changed,
             on_periodo_changed=self.aplicar_filtro,
             on_usuario_changed=self.on_usuario_changed,
@@ -317,12 +317,12 @@ class ProcessosWidget(QWidget):
 
         self.combo_usuario = filtros.combo_usuario if self.is_admin else None
         self.entry_filtro_cliente = filtros.entry_cliente
-        self.entry_filtro_processo = filtros.entry_processo
+        self.entry_filtro_pedido = filtros.entry_pedido
         self.combo_filtro_ano = filtros.combo_ano
         self.combo_filtro_periodo = filtros.combo_periodo
         self.btn_limpar_filtros = filtros.btn_limpar
         self.timer_cliente = filtros.timer_cliente
-        self.timer_processo = filtros.timer_processo
+        self.timer_pedido = filtros.timer_pedido
 
         self.periodo_controller = processos_periodo.PeriodoFiltroController(
             combo_ano=self.combo_filtro_ano,
@@ -338,7 +338,7 @@ class ProcessosWidget(QWidget):
             parent=self,
             is_admin=self.is_admin,
             on_item_changed=self.on_item_changed,
-            on_excluir=self.excluir_processo,
+            on_excluir=self.excluir_pedido,
         )
 
         self.tabela = tabela_controls.tabela
@@ -348,7 +348,7 @@ class ProcessosWidget(QWidget):
         self.tabela_layout.addWidget(tabela_controls.frame)
 
     def _criar_frame_totais(self):
-        """Cria o frame que exibe os totais (processos, itens, valores)."""
+        """Cria o frame que exibe os totais (pedidos, itens, valores)."""
         controles_totais = processos_totais.criar_totais(
             parent=self,
             espacamento=ESPACAMENTO_PADRAO,
@@ -356,7 +356,7 @@ class ProcessosWidget(QWidget):
 
         self.controles_totais = controles_totais
         self.frame_totais = controles_totais.frame
-        self.label_total_processos = controles_totais.label_processos
+        self.label_total_pedidos = controles_totais.label_pedidos
         self.label_total_itens = controles_totais.label_itens
         self.label_total_valor = controles_totais.label_valor
 
@@ -372,10 +372,10 @@ class ProcessosWidget(QWidget):
             self.entry_filtro_cliente.clear()
             self.entry_filtro_cliente.blockSignals(False)
 
-        if hasattr(self, "entry_filtro_processo"):
-            self.entry_filtro_processo.blockSignals(True)
-            self.entry_filtro_processo.clear()
-            self.entry_filtro_processo.blockSignals(False)
+        if hasattr(self, "entry_filtro_pedido"):
+            self.entry_filtro_pedido.blockSignals(True)
+            self.entry_filtro_pedido.clear()
+            self.entry_filtro_pedido.blockSignals(False)
 
         self.aplicar_filtro_periodo_corrente()
         self.aplicar_filtro()
@@ -512,7 +512,7 @@ class ProcessosWidget(QWidget):
                                 periodo_inicio,
                                 periodo_fim,
                                 dados_linha.cliente,
-                                dados_linha.processo,
+                                dados_linha.pedido,
                                 dados_linha.data_entrada,
                             )
 
@@ -553,7 +553,7 @@ class ProcessosWidget(QWidget):
         periodo_inicio: date,
         periodo_fim: date,
         cliente: str,
-        processo: str,
+        pedido: str,
         data_entrada: str,
     ) -> None:
         """Ajusta o filtro de período se necessário para o registro."""
@@ -600,7 +600,7 @@ class ProcessosWidget(QWidget):
             QTimer.singleShot(
                 100,
                 lambda: self.selecionar_registro_recente(
-                    cliente, processo, data_entrada
+                    cliente, pedido, data_entrada
                 ),
             )
 
@@ -616,7 +616,7 @@ class ProcessosWidget(QWidget):
         return self.usuario_logado
 
     def _obter_filtros_texto(self):
-        """Obtém filtros de cliente e processo a partir dos campos de texto."""
+        """Obtém filtros de cliente e pedido a partir dos campos de texto."""
         cliente_filtro = None
         if (
             hasattr(self, "entry_filtro_cliente")
@@ -624,14 +624,14 @@ class ProcessosWidget(QWidget):
         ):
             cliente_filtro = self.entry_filtro_cliente.text().strip().upper()
 
-        processo_filtro = None
+        pedido_filtro = None
         if (
-            hasattr(self, "entry_filtro_processo")
-            and self.entry_filtro_processo.text().strip()
+            hasattr(self, "entry_filtro_pedido")
+            and self.entry_filtro_pedido.text().strip()
         ):
-            processo_filtro = self.entry_filtro_processo.text().strip()
+            pedido_filtro = self.entry_filtro_pedido.text().strip()
 
-        return cliente_filtro, processo_filtro
+        return cliente_filtro, pedido_filtro
 
     def _obter_periodo_selecionado(self):
         """Retorna (data_inicio, data_fim) do período selecionado, se houver."""
@@ -642,13 +642,13 @@ class ProcessosWidget(QWidget):
     def aplicar_filtro(self, rolar_para_ultimo=True):
         """Aplica filtros e preenche a tabela."""
         usuario_filtro = self._calcular_usuario_filtro()
-        cliente_filtro, processo_filtro = self._obter_filtros_texto()
+        cliente_filtro, pedido_filtro = self._obter_filtros_texto()
         data_inicio, data_fim = self._obter_periodo_selecionado()
 
         registros_ordenados = processos_data.buscar_registros_filtrados(
             usuario=usuario_filtro,
             cliente=cliente_filtro,
-            processo=processo_filtro,
+            pedido=pedido_filtro,
             data_inicio=data_inicio,
             data_fim=data_fim,
         )
@@ -662,7 +662,7 @@ class ProcessosWidget(QWidget):
         filtros = {
             "usuario": usuario_filtro,
             "cliente": cliente_filtro,
-            "processo": processo_filtro,
+            "pedido": pedido_filtro,
             "data_inicio": data_inicio,
             "data_fim": data_fim,
         }
@@ -675,7 +675,7 @@ class ProcessosWidget(QWidget):
     def limpar_formulario(self):
         """Limpa todos os campos do formulário de entrada."""
         self.entry_cliente.clear()
-        self.entry_processo.clear()
+        self.entry_pedido.clear()
         self.entry_qtde_itens.clear()
         self.entry_data_entrada.setDate(obter_data_atual_utc())
         self.entry_data_processo.clear()
@@ -693,7 +693,7 @@ class ProcessosWidget(QWidget):
             self.tabela.setFocus()  # Dá foco à tabela para destacar a seleção
 
     def selecionar_registro_recente(
-        self, cliente: str, processo: str, data_entrada: str
+        self, cliente: str, pedido: str, data_entrada: str
     ):
         """Select the recently added record in the table.
 
@@ -705,12 +705,12 @@ class ProcessosWidget(QWidget):
         for row in range(self.tabela.rowCount()):
             # Verificar se os dados da linha correspondem ao registro recém-adicionado
             cliente_tabela = self.tabela.item(row, offset).text()
-            processo_tabela = self.tabela.item(row, 1 + offset).text()
+            pedido_tabela = self.tabela.item(row, 1 + offset).text()
             data_entrada_tabela = self.tabela.item(row, 3 + offset).text()
 
             if (
                 cliente_tabela.upper() == cliente.upper()
-                and processo_tabela == processo
+                and pedido_tabela == pedido
                 and data_entrada_tabela == data_entrada_formatada
             ):
                 # Encontrou o registro, selecionar e rolar para ele
@@ -730,7 +730,7 @@ class ProcessosWidget(QWidget):
 
         processos_totais.atualizar_totais(
             self.controles_totais,
-            total_processos=estatisticas.total_processos,
+            total_pedidos=estatisticas.total_pedidos,
             total_itens=estatisticas.total_itens,
             total_valor=estatisticas.total_valor,
             formatar_valor=formatar_valor_monetario,
@@ -741,11 +741,11 @@ class ProcessosWidget(QWidget):
 
     # pylint: disable=R0914
 
-    def adicionar_processo(self):
-        """Valida campos e insere novo processo no banco."""
+    def adicionar_pedido(self):
+        """Valida campos e insere novo pedido no banco."""
         form_data = {
             "cliente": normalizar_nome_cliente(self.entry_cliente.text()),
-            "processo": self.entry_processo.text().strip(),
+            "pedido": self.entry_pedido.text().strip(),
             "qtde_itens": self.entry_qtde_itens.text().strip(),
             "valor_pedido": self.entry_valor_pedido.text().strip(),
             "tempo_corte": self.entry_tempo_corte.text().strip(),
@@ -787,7 +787,7 @@ class ProcessosWidget(QWidget):
         resultado = db.adicionar_lancamento(
             usuario=self.usuario_logado,
             cliente=form_data["cliente"],
-            processo=form_data["processo"],
+            pedido=form_data["pedido"],
             qtde_itens=form_data["qtde_itens"],
             data_entrada=data_entrada,
             data_processo=data_processo,
@@ -835,7 +835,7 @@ class ProcessosWidget(QWidget):
                     periodo_inicio,
                     periodo_fim,
                     form_data["cliente"],
-                    form_data["processo"],
+                    form_data["pedido"],
                     data_entrada,
                 )
 
@@ -844,15 +844,15 @@ class ProcessosWidget(QWidget):
         else:
             QMessageBox.warning(self, "Erro", resultado)
 
-    def excluir_processo(self):
-        """Exclui o processo selecionado na tabela."""
+    def excluir_pedido(self):
+        """Exclui o pedido selecionado na tabela."""
         row = self.tabela.currentRow()
         if row < 0:
             QMessageBox.information(
                 self,
                 "Seleção",
                 (
-                    "Selecione um processo na tabela para excluir.\n\n"
+                    "Selecione um pedido na tabela para excluir.\n\n"
                     "Dica: Clique em uma linha e pressione Delete ou "
                     "use o botão 'Excluir Selecionado'."
                 ),
@@ -861,17 +861,17 @@ class ProcessosWidget(QWidget):
 
         if not self.is_admin:
             cliente = self.tabela.item(row, 0).text()
-            processo = self.tabela.item(row, 1).text()
+            pedido = self.tabela.item(row, 1).text()
         else:
             cliente = self.tabela.item(row, 1).text()
-            processo = self.tabela.item(row, 2).text()
+            pedido = self.tabela.item(row, 2).text()
 
         resposta = QMessageBox.question(
             self,
             "Confirmar Exclusão",
             (
-                "Tem certeza que deseja excluir este processo?\n\n"
-                f"Cliente: {cliente}\nProcesso: {processo}"
+                "Tem certeza que deseja excluir este pedido?\n\n"
+                f"Cliente: {cliente}\nPedido: {pedido}"
             ),
             QMessageBox.Yes | QMessageBox.No,
         )

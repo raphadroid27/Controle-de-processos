@@ -25,7 +25,7 @@ CLIENTES = [
     "Lótus Empreendimentos",
 ]
 
-TIPOS_PROCESSO = [
+TIPOS_PEDIDO = [
     "Residencial",
     "Comercial",
     "Industrial",
@@ -47,6 +47,7 @@ ESCOPOS = [
 
 @dataclass
 class Config:
+    """Configurações para geração de dados fictícios."""
     seed: int
     registros_por_mes: int
     anos: List[int]
@@ -69,7 +70,7 @@ def _meses_para_ano(ano: int, hoje: date) -> Iterable[int]:
     return range(1, limite + 1)
 
 
-def _montar_nome_processo(usuario: str, ano: int, mes: int, sequencial: int) -> str:
+def _montar_codigo_pedido(usuario: str, ano: int, mes: int, sequencial: int) -> str:
     prefixo = "".join(
         caractere
         for caractere in usuario.upper()
@@ -87,16 +88,17 @@ def _gerar_registros_para_usuario(
     hoje: date,
 ) -> int:
     rng = random.Random(cfg.seed + hash(usuario) % 10_000)
-    existentes = set(db.buscar_processos_unicos_por_usuario(usuario))
+    existentes = set(db.buscar_pedidos_unicos_por_usuario(usuario))
     inseridos = 0
     sequencial = 1
 
     for ano in cfg.anos:
         for mes in _meses_para_ano(ano, hoje):
             for _ in range(cfg.registros_por_mes):
-                processo = _montar_nome_processo(usuario, ano, mes, sequencial)
+                pedido_codigo = _montar_codigo_pedido(
+                    usuario, ano, mes, sequencial)
                 sequencial += 1
-                if processo in existentes:
+                if pedido_codigo in existentes:
                     continue
 
                 dia = rng.randint(1, 28)
@@ -104,20 +106,20 @@ def _gerar_registros_para_usuario(
                 delta_dias = rng.randint(0, 5)
                 data_entrada = data_processo - timedelta(days=delta_dias)
                 cliente = rng.choice(CLIENTES)
-                descricao = rng.choice(TIPOS_PROCESSO)
+                descricao = rng.choice(TIPOS_PEDIDO)
                 escopo = rng.choice(ESCOPOS)
-                processo_rotulo = f"{processo} | {escopo}"
+                pedido_rotulo = f"{pedido_codigo} | {escopo}"
                 qtde_itens = rng.randint(1, 40)
                 valor = round(rng.uniform(150.0, 7500.0), 2)
                 tempo_corte = _gerar_tempo_corte(rng)
 
-                if processo_rotulo in existentes:
+                if pedido_rotulo in existentes:
                     continue
 
                 resultado = db.adicionar_lancamento(
                     usuario=usuario,
                     cliente=f"{cliente} ({descricao})",
-                    processo=processo_rotulo,
+                    pedido=pedido_rotulo,
                     qtde_itens=str(qtde_itens),
                     data_entrada=data_entrada.isoformat(),
                     data_processo=data_processo.isoformat(),
@@ -127,15 +129,16 @@ def _gerar_registros_para_usuario(
 
                 if resultado.startswith("Sucesso"):
                     inseridos += 1
-                    existentes.add(processo_rotulo)
+                    existentes.add(pedido_rotulo)
                 else:
                     print(
-                        f"[WARN] {usuario}: falha ao inserir {processo}: {resultado}")
+                        f"[WARN] {usuario}: falha ao inserir {pedido_codigo}: {resultado}")
 
     return inseridos
 
 
 def popular_dados(cfg: Config) -> None:
+    """Popula bancos individuais com dados fictícios para testes."""
     usuarios = db.buscar_usuarios_unicos()
     if not usuarios:
         print("Nenhum usuário cadastrado no sistema compartilhado.")
@@ -177,6 +180,7 @@ def _parse_args() -> Config:
 
 
 def main() -> None:
+    """Ponto de entrada do script."""
     cfg = _parse_args()
     popular_dados(cfg)
 

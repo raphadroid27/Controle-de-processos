@@ -6,7 +6,7 @@ from src.widgets.components.processos_data_service import (
     listar_anos_disponiveis, listar_periodos_do_ano, obter_estatisticas_totais)
 from src.widgets.components.processos_filters import (FiltroControls,
                                                       criar_filtros)
-from src.widgets.components.processos_form import (ProcessoFormControls,
+from src.widgets.components.processos_form import (PedidoFormControls,
                                                    criar_formulario)
 from src.widgets.components.processos_layout import (criar_coluna_rotulo,
                                                      criar_layout_botao_padrao)
@@ -14,7 +14,7 @@ from src.widgets.components.processos_periodo import PeriodoFiltroController
 from src.widgets.components.processos_table import (TabelaControls,
                                                     criar_tabela,
                                                     preencher_tabela)
-from src.widgets.components.processos_table_edit import (LinhaProcessoEdicao,
+from src.widgets.components.processos_table_edit import (LinhaPedidoEdicao,
                                                          extrair_campos_linha,
                                                          obter_registro_id,
                                                          validar_edicao_celula)
@@ -31,12 +31,12 @@ __all__ = [
     "AutocompleteManager",
     "FiltroControls",
     "criar_filtros",
-    "ProcessoFormControls",
+    "PedidoFormControls",
     "criar_formulario",
     "TabelaControls",
     "criar_tabela",
     "preencher_tabela",
-    "LinhaProcessoEdicao",
+    "LinhaPedidoEdicao",
     "validar_edicao_celula",
     "extrair_campos_linha",
     "obter_registro_id",

@@ -78,14 +78,14 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
         [
             (lanc.usuario or "").strip(),
             lanc.cliente.strip(),
-            lanc.processo.strip(),
+            lanc.pedido.strip(),
             lanc.qtde_itens.strip(),
             lanc.data_entrada.strip(),
             lanc.valor_pedido.strip(),
         ]
     ):
         return (
-            "Erro: Campos obrigatórios: usuário, cliente, processo, "
+            "Erro: Campos obrigatórios: usuário, cliente, pedido, "
             "qtd itens, data entrada, valor."
         )
 
@@ -99,7 +99,8 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
         return valor_result
     valor = valor_result
 
-    data_result = processar_datas(lanc.data_entrada.strip(), lanc.data_processo)
+    data_result = processar_datas(
+        lanc.data_entrada.strip(), lanc.data_processo)
     if isinstance(data_result[0], str):
         return data_result[0]
     data_entrada, data_processo = data_result
@@ -111,7 +112,7 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
     return {
         "usuario": (lanc.usuario or "").strip(),
         "cliente": lanc.cliente.strip(),
-        "processo": lanc.processo.strip(),
+        "pedido": lanc.pedido.strip(),
         "qtde_itens": qtde,
         "data_entrada": data_entrada,
         "data_processo": data_processo,
@@ -123,8 +124,8 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
 
 def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
     """Valida e normaliza dados antes de atualizar um registro."""
-    if not lanc.cliente or not lanc.processo:
-        return "Erro: Cliente e processo são obrigatórios."
+    if not lanc.cliente or not lanc.pedido:
+        return "Erro: Cliente e pedido são obrigatórios."
 
     qtde_result = validar_qtde_itens(lanc.qtde_itens)
     if isinstance(qtde_result, str):
@@ -147,7 +148,7 @@ def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
 
     return {
         "cliente": lanc.cliente.strip(),
-        "processo": lanc.processo.strip(),
+        "pedido": lanc.pedido.strip(),
         "qtde_itens": qtde,
         "data_entrada": data_entrada,
         "data_processo": data_processo,

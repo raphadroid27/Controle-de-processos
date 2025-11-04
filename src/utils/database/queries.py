@@ -1,4 +1,4 @@
-"""Consultas e agregações sobre os registros de processos."""
+"""Consultas e agregações sobre os registros de pedidos."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class FiltrosLancamentos:
 
     usuario: Optional[str] = None
     cliente: Optional[str] = None
-    processo: Optional[str] = None
+    pedido: Optional[str] = None
     data_inicio: Optional[str] = None
     data_fim: Optional[str] = None
     limite: Optional[int] = None
@@ -61,7 +61,7 @@ def _garantir_periodo_atual(periodos: List[dict]) -> None:
 def _montar_condicoes(
     *,
     cliente: Optional[str] = None,
-    processo: Optional[str] = None,
+    pedido: Optional[str] = None,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
 ):
@@ -71,9 +71,9 @@ def _montar_condicoes(
         condicoes.append(func.upper(
             RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
-    if processo:
+    if pedido:
         condicoes.append(
-            func.upper(RegistroModel.processo).like(f"{processo.upper()}%")
+            func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%")
         )
 
     if data_inicio and data_fim:
@@ -126,7 +126,7 @@ def _buscar_registros_em_session(
                 encode_registro_id(slug, registro.id),
                 registro.usuario,
                 registro.cliente,
-                registro.processo,
+                registro.pedido,
                 registro.qtde_itens,
                 registro.data_entrada.isoformat(),
                 registro.data_processo.isoformat() if registro.data_processo else None,
@@ -147,18 +147,18 @@ def buscar_lancamentos_filtros_completos(
     *,
     usuario: Optional[str] = None,
     cliente: Optional[str] = None,
-    processo: Optional[str] = None,
+    pedido: Optional[str] = None,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
     limite: Optional[int] = None,
     offset: Optional[int] = None,
 ):
-    """Lista lançamentos considerando filtros de usuário, cliente, processo e datas."""
+    """Lista lançamentos considerando filtros de usuário, cliente, pedido e datas."""
 
     if filtros:
         usuario = filtros.usuario or usuario
         cliente = filtros.cliente or cliente
-        processo = filtros.processo or processo
+        pedido = filtros.pedido or pedido
         data_inicio = filtros.data_inicio or data_inicio
         data_fim = filtros.data_fim or data_fim
         limite = filtros.limite or limite
@@ -166,7 +166,7 @@ def buscar_lancamentos_filtros_completos(
 
     condicoes = _montar_condicoes(
         cliente=cliente,
-        processo=processo,
+        pedido=pedido,
         data_inicio=data_inicio,
         data_fim=data_fim,
     )
@@ -230,7 +230,7 @@ def _calcular_estatisticas_agregadas(
     condicoes,
     usuario: Optional[str] = None,
 ) -> dict:
-    """Calcula estatísticas agregadas (total_processos,
+    """Calcula estatísticas agregadas (total_pedidos,
     total_itens, total_valor) para as condições dadas."""
 
     total_proc = total_itens = 0
@@ -257,7 +257,7 @@ def _calcular_estatisticas_agregadas(
             total_valor += tv
 
     return {
-        "total_processos": total_proc,
+        "total_pedidos": total_proc,
         "total_itens": total_itens,
         "total_valor": total_valor,
     }
@@ -273,15 +273,15 @@ def buscar_estatisticas(usuario: Optional[str] = None):
 def buscar_estatisticas_completas(
     usuario: Optional[str] = None,
     cliente: Optional[str] = None,
-    processo: Optional[str] = None,
+    pedido: Optional[str] = None,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
 ):
-    """Retorna totais agregados considerando filtros textuais e de período."""
+    """Retorna totais agregados considerando filtros de usuário, cliente, pedido e período."""
 
     condicoes = _montar_condicoes(
         cliente=cliente,
-        processo=processo,
+        pedido=pedido,
         data_inicio=data_inicio,
         data_fim=data_fim,
     )
@@ -333,9 +333,9 @@ def buscar_clientes_unicos(usuario: Optional[str] = None) -> List[str]:
     return _buscar_valores_unicos("cliente", usuario)
 
 
-def buscar_processos_unicos_por_usuario(usuario: Optional[str] = None) -> List[str]:
-    """Retorna os nomes de processo distintos para o escopo indicado."""
-    return _buscar_valores_unicos("processo", usuario)
+def buscar_pedidos_unicos_por_usuario(usuario: Optional[str] = None) -> List[str]:
+    """Retorna os identificadores de pedido distintos para o escopo indicado."""
+    return _buscar_valores_unicos("pedido", usuario)
 
 
 def buscar_meses_unicos(usuario: Optional[str] = None) -> List[str]:
@@ -362,12 +362,12 @@ def buscar_anos_unicos(usuario: Optional[str] = None) -> List[str]:
     return sorted(anos, reverse=True)
 
 
-def _listar_datas_processo_filtradas(
+def _listar_datas_pedido_filtradas(
     usuario: Optional[str] = None,
     ano: Optional[int] = None,
     incluir_ano_seguinte: bool = False,
 ) -> List[str]:
-    """Lista datas de processo filtradas por usuário e ano, podendo incluir ano seguinte."""
+    """Lista datas de processamento filtradas por usuário e ano, podendo incluir ano seguinte."""
 
     registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     datas = []
@@ -441,7 +441,7 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
 
     if ano == ano_atual:
         # Para o ano atual, mostrar apenas períodos que existem (com dados)
-        datas = _listar_datas_processo_filtradas(
+        datas = _listar_datas_pedido_filtradas(
             usuario=usuario,
             ano=ano_int,
             incluir_ano_seguinte=True,
@@ -454,7 +454,8 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
                 display = _formatar_periodo_exibicao(
-                    inicio, fim, com_ano=False)
+                    inicio, fim, com_ano=False
+                )
                 if display:
                     month = int(inicio[5:7])
                     numero = 1 if month == 12 else month + 1
@@ -462,8 +463,12 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                     if chave not in vistos:
                         vistos.add(chave)
                         periodos.append(
-                            {"display": display, "inicio": inicio,
-                                "fim": fim, "numero": numero}
+                            {
+                                "display": display,
+                                "inicio": inicio,
+                                "fim": fim,
+                                "numero": numero,
+                            }
                         )
 
         # Garantir que o período atual seja incluído se ainda não estiver
@@ -501,7 +506,7 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
 def buscar_periodos_faturamento_unicos(usuario: Optional[str] = None):
     """Retorna todos os períodos de faturamento únicos encontrados nos lançamentos."""
 
-    datas = _listar_datas_processo_filtradas(usuario=usuario)
+    datas = _listar_datas_pedido_filtradas(usuario=usuario)
     periodos = []
     for data in datas:
         intervalo = _periodo_faturamento_datas(data)

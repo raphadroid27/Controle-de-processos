@@ -12,7 +12,7 @@ from src.ui.theme_manager import ThemeManager
 from src.utils import session_manager
 from src.utils.ui_config import aplicar_icone_padrao
 from src.widgets.dashboard_dialog import DashboardDialog
-from src.widgets.processos_widget import ProcessosWidget
+from src.widgets.processos_widget import PedidosWidget
 
 
 def show_timed_message_box(parent, title, message, timeout_ms=10000):
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
 
-        self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
+        self.setCentralWidget(PedidosWidget(usuario_logado, is_admin))
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
     def atualizar_tabela(self):
         """Atualiza a tabela principal com os registros."""
         widget_central = self.centralWidget()
-        if isinstance(widget_central, ProcessosWidget):
+        if isinstance(widget_central, PedidosWidget):
             widget_central.aplicar_filtro()
 
     def fazer_logout(self):

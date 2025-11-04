@@ -1,4 +1,4 @@
-"""Componentes para o painel de totais do widget de processos."""
+"""Componentes para o painel de totais do widget de pedidos."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ class TotaisControls:
     """Agrupa os widgets do painel de totais."""
 
     frame: QFrame
-    label_processos: QLabel
+    label_pedidos: QLabel
     label_itens: QLabel
     label_valor: QLabel
     label_media_dias: QLabel
@@ -34,7 +34,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     font = QFont()
     font.setBold(True)
 
-    label_processos = QLabel("Total Processos: 0")
+    label_pedidos = QLabel("Total Pedidos: 0")
     label_itens = QLabel("Total Itens: 0")
     label_valor = QLabel("Total Valor: R$ 0,00")
     label_media_dias = QLabel("Média dias processamento: --")
@@ -42,7 +42,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     label_estimativa_itens = QLabel("Estimativa itens mês: --")
 
     for label in (
-        label_processos,
+        label_pedidos,
         label_itens,
         label_valor,
         label_media_dias,
@@ -51,7 +51,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     ):
         label.setFont(font)
 
-    layout.addWidget(label_processos)
+    layout.addWidget(label_pedidos)
     layout.addWidget(label_itens)
     layout.addWidget(label_valor)
     layout.addWidget(label_media_dias)
@@ -63,7 +63,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
 
     return TotaisControls(
         frame=frame,
-        label_processos=label_processos,
+        label_pedidos=label_pedidos,
         label_itens=label_itens,
         label_valor=label_valor,
         label_media_dias=label_media_dias,
@@ -75,7 +75,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
 def atualizar_totais(
     controles: TotaisControls,
     *,
-    total_processos: int,
+    total_pedidos: int,
     total_itens: int,
     total_valor: float,
     formatar_valor: Callable[[float], str],
@@ -84,9 +84,10 @@ def atualizar_totais(
     estimativa_itens_mes: int | None,
 ) -> None:
     """Atualiza os rótulos de totais com os valores fornecidos."""
-    controles.label_processos.setText(f"Total Processos: {total_processos}")
+    controles.label_pedidos.setText(f"Total Pedidos: {total_pedidos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
-    controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
+    controles.label_valor.setText(
+        f"Total Valor: {formatar_valor(total_valor)}")
 
     if media_dias_processamento is None:
         controles.label_media_dias.setTextFormat(Qt.TextFormat.PlainText)

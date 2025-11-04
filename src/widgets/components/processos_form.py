@@ -1,4 +1,4 @@
-"""Componentes reutilizáveis do formulário de processos."""
+"""Componentes reutilizáveis do formulário de pedidos."""
 
 from __future__ import annotations
 
@@ -7,23 +7,27 @@ from typing import Callable, Sequence
 
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
-from src.utils.ui_config import (aplicar_estilo_botao,
-                                 configurar_widgets_entrada_uniformes,
-                                 obter_data_atual_utc)
-from src.widgets.components.processos_layout import (criar_coluna_rotulo,
-                                                     criar_layout_botao_padrao)
+from src.utils.ui_config import (
+    aplicar_estilo_botao,
+    configurar_widgets_entrada_uniformes,
+    obter_data_atual_utc,
+)
+from src.widgets.components.processos_layout import (
+    criar_coluna_rotulo,
+    criar_layout_botao_padrao,
+)
 from src.widgets.navigable_widgets import NavigableDateEdit, NavigableLineEdit
 
-__all__ = ["ProcessoFormControls", "criar_formulario"]
+__all__ = ["PedidoFormControls", "criar_formulario"]
 
 
 @dataclass
-class ProcessoFormControls:
-    """Agrupa os widgets relevantes do formulário de processos."""
+class PedidoFormControls:
+    """Agrupa os widgets relevantes do formulário de pedidos."""
 
     frame: QGroupBox
     cliente: NavigableLineEdit
-    processo: NavigableLineEdit
+    pedido: NavigableLineEdit
     qtde_itens: NavigableLineEdit
     data_entrada: NavigableDateEdit
     data_processo: NavigableDateEdit
@@ -39,8 +43,8 @@ def criar_formulario(
     on_cliente_editado: Callable[[str], None],
     on_valor_editado: Callable[[str], None] | None = None,
     on_submit: Callable[[], None],
-) -> ProcessoFormControls:
-    """Monta o formulário de cadastro de processos."""
+) -> PedidoFormControls:
+    """Monta o formulário de cadastro de pedidos."""
 
     # pylint: disable=too-many-locals
 
@@ -51,15 +55,17 @@ def criar_formulario(
     entry_cliente.setToolTip(
         "Nome do cliente. Use Tab para avançar e Ctrl+Enter para adicionar rapidamente."
     )
-    entry_processo = NavigableLineEdit(frame)
-    entry_processo.setPlaceholderText("Número da proposta")
-    entry_processo.setToolTip(
-        "Descrição do processo ou atividade. Campos obrigatórios são marcados."
+
+    entry_pedido = NavigableLineEdit(frame)
+    entry_pedido.setPlaceholderText("Identificador do pedido")
+    entry_pedido.setToolTip(
+        "Identificador do pedido ou atividade. Campos obrigatórios são marcados."
     )
+
     entry_qtde_itens = NavigableLineEdit(frame)
     entry_qtde_itens.setPlaceholderText("0")
     entry_qtde_itens.setToolTip(
-        "Quantidade de itens do processo. Apenas números positivos."
+        "Quantidade de itens do pedido. Apenas números positivos."
     )
 
     entry_data_entrada = NavigableDateEdit(frame)
@@ -67,7 +73,8 @@ def criar_formulario(
     entry_data_entrada.setCalendarPopup(True)
     entry_data_entrada.setMaximumDate(obter_data_atual_utc())
     entry_data_entrada.setToolTip(
-        "Data de entrada do pedido. Não pode ser futura.")
+        "Data de entrada do pedido. Não pode ser futura."
+    )
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
@@ -95,7 +102,7 @@ def criar_formulario(
 
     widgets: Sequence[NavigableLineEdit | NavigableDateEdit] = (
         entry_cliente,
-        entry_processo,
+        entry_pedido,
         entry_qtde_itens,
         entry_data_entrada,
         entry_data_processo,
@@ -115,7 +122,7 @@ def criar_formulario(
 
     colunas_info = (
         ("Cliente:", entry_cliente, 3),
-        ("Proposta:", entry_processo, 3),
+        ("Pedido:", entry_pedido, 3),
         ("Qtd. Itens:", entry_qtde_itens, 2),
         ("Data Entrada:", entry_data_entrada, 2),
         ("Data Processo:", entry_data_processo, 2),
@@ -128,7 +135,7 @@ def criar_formulario(
         campos_layout.addLayout(coluna, peso_col)
 
     btn_adicionar = QPushButton("Adicionar", frame)
-    btn_adicionar.setToolTip("Adicionar novo processo (Atalho: Enter)")
+    btn_adicionar.setToolTip("Adicionar novo pedido (Atalho: Enter)")
     aplicar_estilo_botao(btn_adicionar, "verde", largura_minima=90)
     btn_adicionar.clicked.connect(on_submit)
     btn_layout = criar_layout_botao_padrao(btn_adicionar)
@@ -136,10 +143,10 @@ def criar_formulario(
 
     frame.setLayout(campos_layout)
 
-    return ProcessoFormControls(
+    return PedidoFormControls(
         frame=frame,
         cliente=entry_cliente,
-        processo=entry_processo,
+        pedido=entry_pedido,
         qtde_itens=entry_qtde_itens,
         data_entrada=entry_data_entrada,
         data_processo=entry_data_processo,

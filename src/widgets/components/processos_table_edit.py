@@ -1,4 +1,4 @@
-"""Utilitários para edição e extração de dados da tabela de processos."""
+"""Utilitários para edição e extração de dados da tabela de pedidos."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QTableWidget
 from src.utils.formatters import converter_data_para_banco, normalizar_nome_cliente
 
 __all__ = [
-    "LinhaProcessoEdicao",
+    "LinhaPedidoEdicao",
     "validar_edicao_celula",
     "extrair_campos_linha",
     "obter_registro_id",
@@ -20,11 +20,11 @@ __all__ = [
 
 
 @dataclass
-class LinhaProcessoEdicao:
+class LinhaPedidoEdicao:
     """Representa os valores de uma linha da tabela após edição."""
 
     cliente: str
-    processo: str
+    pedido: str
     qtde_itens: str
     data_entrada: str
     data_processo: str
@@ -36,7 +36,7 @@ class LinhaProcessoEdicao:
         """Retorna os campos prontos para atualização no banco."""
         return {
             "cliente": self.cliente,
-            "processo": self.processo,
+            "pedido": self.pedido,
             "qtde_itens": self.qtde_itens,
             "data_entrada": self.data_entrada,
             "data_processo": self.data_processo,
@@ -69,10 +69,10 @@ def extrair_campos_linha(
     tabela: QTableWidget,
     row: int,
     col_offset: int,
-) -> LinhaProcessoEdicao:
+) -> LinhaPedidoEdicao:
     """Extrai os campos da linha informada, convertendo para formatos de banco."""
     cliente = normalizar_nome_cliente(_texto_item(tabela, row, col_offset))
-    processo = _texto_item(tabela, row, col_offset + 1)
+    pedido = _texto_item(tabela, row, col_offset + 1)
     qtde_itens = _texto_item(tabela, row, col_offset + 2)
 
     data_entrada_text = _texto_item(tabela, row, col_offset + 3)
@@ -89,9 +89,9 @@ def extrair_campos_linha(
 
     valor_pedido = valor_text.replace("R$", "").strip()
 
-    return LinhaProcessoEdicao(
+    return LinhaPedidoEdicao(
         cliente,
-        processo,
+        pedido,
         qtde_itens,
         data_entrada,
         data_processo,
