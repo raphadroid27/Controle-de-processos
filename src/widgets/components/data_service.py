@@ -351,11 +351,6 @@ def obter_estatisticas_totais(
         int(totais.get("total_itens", 0)),
         dias_uteis_decorridos,
     )
-    estimativa = _calcular_estimativa_itens_mes(
-        media_por_dia,
-        dias_uteis_periodo,
-    )
-
     total_segundos_dia = _somar_tempo_processado_no_dia(
         registros,
         date.today(),
