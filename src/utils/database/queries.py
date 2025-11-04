@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, List, Optional, Tuple
+from functools import lru_cache
+from typing import Any, Iterable, List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
@@ -30,6 +31,18 @@ class FiltrosLancamentos:
     data_fim: Optional[str] = None
     limite: Optional[int] = None
     offset: Optional[int] = None
+
+
+def _congelar_dict(dados: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
+    """Converte um dicionário em uma estrutura imutável ordenada."""
+
+    return tuple(sorted(dados.items()))
+
+
+def _descongelar_dict(congelado: Iterable[tuple[str, Any]]) -> dict[str, Any]:
+    """Restaura um dicionário a partir da representação imutável."""
+
+    return dict(congelado)
 
 
 def _garantir_periodo_atual(periodos: List[dict]) -> None:
@@ -263,11 +276,49 @@ def _calcular_estatisticas_agregadas(
     }
 
 
+@lru_cache(maxsize=128)
+def _buscar_estatisticas_cache(usuario: Optional[str]) -> tuple[int, int, float]:
+    condicoes = _montar_condicoes()
+    totais = _calcular_estatisticas_agregadas(condicoes, usuario)
+    return (
+        int(totais.get("total_pedidos", 0)),
+        int(totais.get("total_itens", 0)),
+        float(totais.get("total_valor", 0.0)),
+    )
+
+
 def buscar_estatisticas(usuario: Optional[str] = None):
     """Obtém totais agregados globais ou por usuário para indicadores principais."""
 
-    condicoes = _montar_condicoes()
-    return _calcular_estatisticas_agregadas(condicoes, usuario)
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(
+        usuario)
+    return {
+        "total_pedidos": total_pedidos,
+        "total_itens": total_itens,
+        "total_valor": total_valor,
+    }
+
+
+@lru_cache(maxsize=256)
+def _buscar_estatisticas_completas_cache(
+    usuario: Optional[str],
+    cliente: Optional[str],
+    pedido: Optional[str],
+    data_inicio: Optional[str],
+    data_fim: Optional[str],
+) -> tuple[int, int, float]:
+    condicoes = _montar_condicoes(
+        cliente=cliente,
+        pedido=pedido,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+    totais = _calcular_estatisticas_agregadas(condicoes, usuario)
+    return (
+        int(totais.get("total_pedidos", 0)),
+        int(totais.get("total_itens", 0)),
+        float(totais.get("total_valor", 0.0)),
+    )
 
 
 def buscar_estatisticas_completas(
@@ -279,13 +330,18 @@ def buscar_estatisticas_completas(
 ):
     """Retorna totais agregados considerando filtros de usuário, cliente, pedido e período."""
 
-    condicoes = _montar_condicoes(
-        cliente=cliente,
-        pedido=pedido,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_completas_cache(
+        usuario,
+        cliente,
+        pedido,
+        data_inicio,
+        data_fim,
     )
-    return _calcular_estatisticas_agregadas(condicoes, usuario)
+    return {
+        "total_pedidos": total_pedidos,
+        "total_itens": total_itens,
+        "total_valor": total_valor,
+    }
 
 
 def _buscar_valores_unicos(
@@ -328,47 +384,68 @@ def buscar_usuarios_unicos(*, incluir_arquivados: bool = False) -> List[str]:
     return list(nomes)
 
 
+@lru_cache(maxsize=256)
+def _clientes_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
+    return tuple(_buscar_valores_unicos("cliente", usuario))
+
+
 def buscar_clientes_unicos(usuario: Optional[str] = None) -> List[str]:
     """Retorna clientes distintos globalmente ou para um usuário específico."""
-    return _buscar_valores_unicos("cliente", usuario)
+
+    return list(_clientes_unicos_cache(usuario))
+
+
+@lru_cache(maxsize=256)
+def _pedidos_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
+    return tuple(_buscar_valores_unicos("pedido", usuario))
 
 
 def buscar_pedidos_unicos_por_usuario(usuario: Optional[str] = None) -> List[str]:
     """Retorna os identificadores de pedido distintos para o escopo indicado."""
-    return _buscar_valores_unicos("pedido", usuario)
+
+    return list(_pedidos_unicos_cache(usuario))
 
 
-def buscar_meses_unicos(usuario: Optional[str] = None) -> List[str]:
-    """Recupera meses (MM) com lançamentos processados para o usuário ou geral."""
-
+@lru_cache(maxsize=256)
+def _meses_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
     meses: set[str] = set()
     registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     for registro in registros:
         data_proc = registro[6]
         if data_proc:
             meses.add(data_proc[5:7])
-    return sorted(meses)
+    return tuple(sorted(meses))
 
 
-def buscar_anos_unicos(usuario: Optional[str] = None) -> List[str]:
-    """Retorna anos distintos com lançamentos processados para o escopo fornecido."""
+def buscar_meses_unicos(usuario: Optional[str] = None) -> List[str]:
+    """Recupera meses (MM) com lançamentos processados para o usuário ou geral."""
 
+    return list(_meses_unicos_cache(usuario))
+
+
+@lru_cache(maxsize=256)
+def _anos_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
     anos: set[str] = set()
     registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     for registro in registros:
         data_proc = registro[6]
         if data_proc:
             anos.add(data_proc[:4])
-    return sorted(anos, reverse=True)
+    return tuple(sorted(anos, reverse=True))
 
 
-def _listar_datas_pedido_filtradas(
-    usuario: Optional[str] = None,
-    ano: Optional[int] = None,
-    incluir_ano_seguinte: bool = False,
-) -> List[str]:
-    """Lista datas de processamento filtradas por usuário e ano, podendo incluir ano seguinte."""
+def buscar_anos_unicos(usuario: Optional[str] = None) -> List[str]:
+    """Retorna anos distintos com lançamentos processados para o escopo fornecido."""
 
+    return list(_anos_unicos_cache(usuario))
+
+
+@lru_cache(maxsize=256)
+def _listar_datas_pedido_filtradas_cache(
+    usuario: Optional[str],
+    ano: Optional[int],
+    incluir_ano_seguinte: bool,
+) -> tuple[str, ...]:
     registros = buscar_lancamentos_filtros_completos(usuario=usuario)
     datas = []
     for registro in registros:
@@ -383,7 +460,21 @@ def _listar_datas_pedido_filtradas(
             elif ano_proc != ano:
                 continue
         datas.append(data_proc)
-    return sorted(set(datas))
+    return tuple(sorted(set(datas)))
+
+
+def _listar_datas_pedido_filtradas(
+    usuario: Optional[str] = None,
+    ano: Optional[int] = None,
+    incluir_ano_seguinte: bool = False,
+) -> List[str]:
+    """Lista datas de processamento filtradas por usuário e ano, podendo incluir ano seguinte."""
+
+    return list(_listar_datas_pedido_filtradas_cache(
+        usuario,
+        ano,
+        incluir_ano_seguinte,
+    ))
 
 
 def _periodo_faturamento_datas(data_str: str) -> Optional[Tuple[str, str]]:
@@ -430,9 +521,10 @@ def _formatar_periodo_exibicao(
     return f"{formato_inicio} a {formato_fim}"
 
 
-def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
-    """Produz os períodos de faturamento (26/25) de um ano específico."""
-
+def _gerar_periodos_faturamento_por_ano(
+    ano: str,
+    usuario: Optional[str],
+) -> List[dict[str, Any]]:
     ano_int = int(ano)
 
     # Verificar se é o ano atual
@@ -470,8 +562,6 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                                 "numero": numero,
                             }
                         )
-
-        # Garantir que o período atual seja incluído se ainda não estiver
     else:
         # Para anos anteriores, gerar todos os 12 períodos do ano
         periodos = []
@@ -498,14 +588,30 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
                     }
                 )
 
-    # Ordenar por início, mais recentes primeiro
     periodos.sort(key=lambda p: p["inicio"], reverse=True)
     return periodos
 
 
-def buscar_periodos_faturamento_unicos(usuario: Optional[str] = None):
-    """Retorna todos os períodos de faturamento únicos encontrados nos lançamentos."""
+@lru_cache(maxsize=128)
+def _buscar_periodos_faturamento_por_ano_cache(
+    ano: str,
+    usuario: Optional[str],
+) -> tuple[tuple[tuple[str, Any], ...], ...]:
+    periodos = _gerar_periodos_faturamento_por_ano(ano, usuario)
+    return tuple(_congelar_dict(periodo) for periodo in periodos)
 
+
+def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
+    """Produz os períodos de faturamento (26/25) de um ano específico."""
+
+    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
+        ano, usuario)
+    return [_descongelar_dict(periodo) for periodo in periodos_congelados]
+
+
+def _gerar_periodos_faturamento_unicos(
+    usuario: Optional[str],
+) -> List[dict[str, Any]]:
     datas = _listar_datas_pedido_filtradas(usuario=usuario)
     periodos = []
     for data in datas:
@@ -525,3 +631,40 @@ def buscar_periodos_faturamento_unicos(usuario: Optional[str] = None):
             vistos.add(chave)
             resultado.append(periodo)
     return resultado
+
+
+@lru_cache(maxsize=128)
+def _buscar_periodos_faturamento_unicos_cache(
+    usuario: Optional[str],
+) -> tuple[tuple[tuple[str, Any], ...], ...]:
+    periodos = _gerar_periodos_faturamento_unicos(usuario)
+    return tuple(_congelar_dict(periodo) for periodo in periodos)
+
+
+def buscar_periodos_faturamento_unicos(usuario: Optional[str] = None):
+    """Retorna todos os períodos de faturamento únicos encontrados nos lançamentos."""
+
+    periodos_congelados = _buscar_periodos_faturamento_unicos_cache(usuario)
+    return [_descongelar_dict(periodo) for periodo in periodos_congelados]
+
+
+def limpar_caches_consultas() -> None:
+    """Limpa caches derivados de consultas para refletir mudanças nos dados."""
+
+    _clientes_unicos_cache.cache_clear()
+    _pedidos_unicos_cache.cache_clear()
+    _meses_unicos_cache.cache_clear()
+    _anos_unicos_cache.cache_clear()
+    _listar_datas_pedido_filtradas_cache.cache_clear()
+    _buscar_periodos_faturamento_por_ano_cache.cache_clear()
+    _buscar_periodos_faturamento_unicos_cache.cache_clear()
+    _buscar_estatisticas_cache.cache_clear()
+    _buscar_estatisticas_completas_cache.cache_clear()
+
+    try:
+        # Import adiado para evitar ciclos entre consultas e métricas de dashboard.
+        # pylint: disable=import-outside-toplevel
+        from src.utils.dashboard_metrics import limpar_cache_metricas_dashboard
+    except ImportError:
+        return
+    limpar_cache_metricas_dashboard()

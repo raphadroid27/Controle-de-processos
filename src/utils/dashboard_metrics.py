@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date
+from functools import lru_cache
 from typing import Any, DefaultDict, Dict, Iterable, List, Set
 
 from sqlalchemy import select
@@ -249,9 +251,23 @@ def _carregar_registros() -> Iterable[RegistroResumo]:
             session.close()
 
 
-def obter_metricas_dashboard() -> Dict[str, Any]:
-    """Reúne métricas consolidadas para o dashboard administrativo."""
+@lru_cache(maxsize=1)
+def _obter_metricas_dashboard_cached() -> Dict[str, Any]:
+    """Executa o cálculo completo e mantém o resultado em cache."""
+
     acumulador = DashboardAccumulator()
     for registro in _carregar_registros():
         acumulador.acumular(registro)
     return acumulador.finalizar()
+
+
+def obter_metricas_dashboard() -> Dict[str, Any]:
+    """Reúne métricas consolidadas para o dashboard administrativo."""
+
+    return deepcopy(_obter_metricas_dashboard_cached())
+
+
+def limpar_cache_metricas_dashboard() -> None:
+    """Invalida o cache local usado pelo dashboard administrativo."""
+
+    _obter_metricas_dashboard_cached.cache_clear()

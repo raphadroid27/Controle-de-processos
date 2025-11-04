@@ -15,7 +15,8 @@ from src.utils.database.queries import (buscar_anos_unicos,
                                         buscar_pedidos_unicos_por_usuario,
                                         buscar_periodos_faturamento_por_ano,
                                         buscar_periodos_faturamento_unicos,
-                                        buscar_usuarios_unicos)
+                                        buscar_usuarios_unicos,
+                                        limpar_caches_consultas)
 from src.utils.database.sessions import (ensure_user_database,
                                          get_sessionmaker_for_slug,
                                          get_shared_engine, get_shared_session,
@@ -42,6 +43,7 @@ __all__ = [
     "buscar_anos_unicos",
     "buscar_periodos_faturamento_por_ano",
     "buscar_periodos_faturamento_unicos",
+    "limpar_caches_consultas",
     "ensure_user_database",
     "iter_user_databases",
     "remover_banco_usuario",

@@ -10,6 +10,7 @@ from src.utils.database.config import decode_registro_id
 from src.utils.database.helpers import (preparar_lancamento_para_insert,
                                         preparar_lancamento_para_update)
 from src.utils.database.models import Lancamento, RegistroModel
+from src.utils.database.queries import limpar_caches_consultas
 from src.utils.database.sessions import (ensure_user_database,
                                          get_sessionmaker_for_slug,
                                          get_user_session)
@@ -60,6 +61,7 @@ def adicionar_lancamento(
         registro = RegistroModel(**preparado)
         session.add(registro)
         session.commit()
+        limpar_caches_consultas()
         return "Sucesso: registro adicionado!"
     except SQLAlchemyError as exc:
         session.rollback()
@@ -86,6 +88,7 @@ def excluir_lancamento(identificador: str | int) -> str:
             return "Erro: Registro não encontrado."
         session.delete(registro)
         session.commit()
+        limpar_caches_consultas()
         return "Sucesso: Registro excluído!"
     except SQLAlchemyError as exc:
         session.rollback()
@@ -147,6 +150,7 @@ def atualizar_lancamento(  # pylint: disable=too-many-locals
             setattr(registro, campo, valor)
 
         session.commit()
+        limpar_caches_consultas()
         return "Sucesso: Registro atualizado com sucesso!"
     except SQLAlchemyError as exc:
         session.rollback()
