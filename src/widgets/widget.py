@@ -23,10 +23,10 @@ from src.utils.periodo_faturamento import (
     calcular_periodo_faturamento_para_data_datas,
 )
 from src.utils.ui_config import ESPACAMENTO_PADRAO, obter_data_atual_utc
-from src.widgets.components import filters, processos_autocomplete, table_edit, totais
-from src.widgets.components import data_service as processos_data
-from src.widgets.components import (processos_form,
-                                    processos_periodo, processos_table)
+from src.widgets.components import filters, autocomplete, table_edit, totais
+from src.widgets.components import data_service as data
+from src.widgets.components import (form,
+                                    periodo, table)
 
 
 class PedidosWidget(QWidget):
@@ -68,9 +68,9 @@ class PedidosWidget(QWidget):
         self.combo_filtro_periodo = None
         self.aplicar_larguras_colunas = None
         self.controles_totais = None
-        self.autocomplete_manager = processos_autocomplete.AutocompleteManager(
+        self.autocomplete_manager = autocomplete.AutocompleteManager(
             parent=self,
-            carregar_clientes=processos_data.carregar_clientes_upper,
+            carregar_clientes=data.carregar_clientes_upper,
         )
         self.periodo_controller = None
         self._timer_atualizacao_datas = None
@@ -279,7 +279,7 @@ class PedidosWidget(QWidget):
 
     def _criar_frame_entrada(self):
         """Cria o frame de entrada de dados."""
-        controles = processos_form.criar_formulario(
+        controles = form.criar_formulario(
             parent=self,
             on_tempo_editado=self._on_tempo_corte_editado,
             on_cliente_editado=self._converter_cliente_maiuscula,
@@ -323,17 +323,17 @@ class PedidosWidget(QWidget):
         self.timer_cliente = filtros.timer_cliente
         self.timer_pedido = filtros.timer_pedido
 
-        self.periodo_controller = processos_periodo.PeriodoFiltroController(
+        self.periodo_controller = periodo.PeriodoFiltroController(
             combo_ano=self.combo_filtro_ano,
             combo_periodo=self.combo_filtro_periodo,
-            listar_anos=processos_data.listar_anos_disponiveis,
-            listar_periodos=processos_data.listar_periodos_do_ano,
+            listar_anos=data.listar_anos_disponiveis,
+            listar_periodos=data.listar_periodos_do_ano,
             obter_usuario=self._calcular_usuario_filtro,
         )
 
         self.autocomplete_manager.configure_filter(self.entry_filtro_cliente)
 
-        tabela_controls = processos_table.criar_tabela(
+        tabela_controls = table.criar_tabela(
             parent=self,
             is_admin=self.is_admin,
             on_item_changed=self.on_item_changed,
@@ -644,7 +644,7 @@ class PedidosWidget(QWidget):
         cliente_filtro, pedido_filtro = self._obter_filtros_texto()
         data_inicio, data_fim = self._obter_periodo_selecionado()
 
-        registros_ordenados = processos_data.buscar_registros_filtrados(
+        registros_ordenados = data.buscar_registros_filtrados(
             usuario=usuario_filtro,
             cliente=cliente_filtro,
             pedido=pedido_filtro,
@@ -652,7 +652,7 @@ class PedidosWidget(QWidget):
             data_fim=data_fim,
         )
 
-        processos_table.preencher_tabela(
+        table.preencher_tabela(
             tabela=self.tabela,
             registros=registros_ordenados,
             is_admin=self.is_admin,
@@ -725,7 +725,7 @@ class PedidosWidget(QWidget):
             return
 
         filtros = filtros or {}
-        estatisticas = processos_data.obter_estatisticas_totais(filtros)
+        estatisticas = data.obter_estatisticas_totais(filtros)
 
         totais.atualizar_totais(
             self.controles_totais,
@@ -782,7 +782,7 @@ class PedidosWidget(QWidget):
         # Capturar anos disponíveis antes da adição
         usuario_filtro = self._calcular_usuario_filtro()
         anos_antes = set(
-            processos_data.listar_anos_disponiveis(usuario_filtro))
+            data.listar_anos_disponiveis(usuario_filtro))
 
         resultado = db.adicionar_lancamento(
             usuario=self.usuario_logado,
@@ -803,7 +803,7 @@ class PedidosWidget(QWidget):
 
             # Verificar se novos anos foram criados e recarregar filtros se necessário
             anos_depois = set(
-                processos_data.listar_anos_disponiveis(usuario_filtro))
+                data.listar_anos_disponiveis(usuario_filtro))
             novos_anos_criados = anos_depois != anos_antes
 
             if novos_anos_criados:
