@@ -16,7 +16,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.utils import session_manager
 from src.utils.database import (UsuarioModel, ensure_user_database,
-                                get_shared_engine, remover_banco_usuario)
+                                get_shared_engine, limpar_caches_consultas,
+                                remover_banco_usuario)
 from src.utils.database.sessions import executar_sessao_compartilhada
 
 
@@ -73,6 +74,7 @@ def inserir_usuario(nome: str, senha: str, admin: bool = False) -> str:
             raise
 
         ensure_user_database(nome_limpo)
+        limpar_caches_consultas()
         return "Sucesso: Usuário criado com sucesso."
 
     def _on_error(exc: SQLAlchemyError) -> str:
@@ -207,6 +209,7 @@ def excluir_usuario_por_id(user_id: int) -> str:
             raise
 
         remover_banco_usuario(usuario.nome)
+        limpar_caches_consultas()
         return "Sucesso: Usuário excluído com sucesso."
 
     def _on_error(exc: SQLAlchemyError) -> str:
@@ -292,6 +295,7 @@ def excluir_usuario(nome: str) -> str:
             raise
 
         remover_banco_usuario(usuario.nome)
+        limpar_caches_consultas()
         return "Sucesso: Usuário excluído com sucesso."
 
     def _on_error(exc: SQLAlchemyError) -> str:
@@ -324,6 +328,7 @@ def arquivar_usuario(nome: str) -> str:
             raise
 
         session_manager.encerrar_sessoes_usuario(usuario.nome)
+        limpar_caches_consultas()
         return "Sucesso: Usuário arquivado."
 
     def _on_error(exc: SQLAlchemyError) -> str:
@@ -354,6 +359,7 @@ def restaurar_usuario(nome: str) -> str:
             raise
 
         ensure_user_database(usuario.nome)
+        limpar_caches_consultas()
         return "Sucesso: Usuário restaurado."
 
     def _on_error(exc: SQLAlchemyError) -> str:
