@@ -737,6 +737,7 @@ class PedidosWidget(QWidget):
             media_dias_processamento=estatisticas.media_dias_processamento,
             media_itens_por_dia=estatisticas.media_itens_por_dia,
             estimativa_itens_mes=estatisticas.estimativa_itens_mes,
+            horas_processadas_dia=estatisticas.horas_processadas_dia,
         )
 
     # pylint: disable=R0914

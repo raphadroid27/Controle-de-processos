@@ -34,6 +34,7 @@ class EstatisticasTotais:
     media_dias_processamento: float | None
     media_itens_por_dia: float | None
     estimativa_itens_mes: int | None
+    horas_processadas_dia: str | None
 
 
 def carregar_clientes_upper() -> List[str]:
@@ -259,6 +260,50 @@ def _calcular_estimativa_itens_mes(
     return int(round(media_itens_por_dia * dias_uteis_periodo))
 
 
+def _somar_tempo_processado_no_dia(
+    registros: Sequence[Sequence[Any]],
+    referencia: date,
+) -> int:
+    total_segundos = 0
+    referencia_str = referencia.strftime("%Y-%m-%d")
+
+    for registro in registros:
+        data_processo = registro[6]
+        tempo_corte = registro[7]
+
+        if not data_processo or data_processo != referencia_str:
+            continue
+        if not tempo_corte:
+            continue
+
+        partes = tempo_corte.split(":")
+        if len(partes) != 3:
+            continue
+        try:
+            horas, minutos, segundos = (int(p) for p in partes)
+        except ValueError:
+            continue
+
+        total_segundos += horas * 3600 + minutos * 60 + segundos
+
+    return total_segundos
+
+
+def _formatar_segundos_para_horas(total_segundos: int) -> str | None:
+    if total_segundos <= 0:
+        return None
+
+    horas = total_segundos // 3600
+    minutos = (total_segundos % 3600) // 60
+    segundos = total_segundos % 60
+
+    if segundos:
+        return f"{horas:02d}h {minutos:02d}m {segundos:02d}s"
+    if minutos:
+        return f"{horas:02d}h {minutos:02d}m"
+    return f"{horas:02d}h"
+
+
 def obter_estatisticas_totais(
     filtros: Optional[Dict[str, Any]] = None,
 ) -> EstatisticasTotais:
@@ -290,7 +335,7 @@ def obter_estatisticas_totais(
         ValueError,
     ) as exc:
         print(f"Erro ao buscar estatísticas: {exc}")
-        return EstatisticasTotais(0, 0, 0.0, None, None, None)
+        return EstatisticasTotais(0, 0, 0.0, None, None, None, None)
 
     periodo_inicio, periodo_fim = _obter_limites_periodo(filtros, registros)
 
@@ -311,6 +356,12 @@ def obter_estatisticas_totais(
         dias_uteis_periodo,
     )
 
+    total_segundos_dia = _somar_tempo_processado_no_dia(
+        registros,
+        date.today(),
+    )
+    horas_processadas_dia = _formatar_segundos_para_horas(total_segundos_dia)
+
     # Estimativa baseada na média do período filtrado
     # multiplicada pelos dias úteis do período filtrado
     estimativa = _calcular_estimativa_itens_mes(
@@ -325,4 +376,5 @@ def obter_estatisticas_totais(
         media_dias_processamento=media_dias,
         media_itens_por_dia=media_por_dia,
         estimativa_itens_mes=estimativa,
+        horas_processadas_dia=horas_processadas_dia,
     )
