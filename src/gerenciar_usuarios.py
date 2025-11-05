@@ -1,9 +1,9 @@
 """
 Módulo para gerenciamento de usuários do sistema.
 
-Este módulo implementa uma interface gráfica para administradores
+Este módulo implementa componentes de interface para administradores
 gerenciarem usuários, incluindo reset de senhas, exclusão de
-usuários, alteração de senhas próprias e controle de sessões ativas.
+usuários e alteração de senhas próprias.
 """
 
 from datetime import datetime, timezone
@@ -12,25 +12,18 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
                                QInputDialog, QLabel, QLineEdit, QMessageBox,
-                               QPushButton, QTabWidget, QTreeWidget,
-                               QTreeWidgetItem, QVBoxLayout, QWidget)
-
-from src.utils import session_manager, usuario
+                               QPushButton, QTreeWidget, QTreeWidgetItem,
+                               QVBoxLayout, QWidget)
+from src.utils import usuario
 from src.utils.ui_config import aplicar_estilo_botao, aplicar_icone_padrao
 
 
-class GerenciarUsuariosDialog(QDialog):
-    """Dialog para gerenciamento de usuários e sessões do sistema."""
+class GerenciarUsuariosWidget(QWidget):
+    """Widget dedicado ao gerenciamento de usuários do sistema."""
 
-    def __init__(self, parent=None, *, modal: bool = True):
-        """Inicializa o diálogo de gerenciamento de usuários."""
+    def __init__(self, parent=None):
+        """Inicializa o widget de gerenciamento de usuários."""
         super().__init__(parent)
-
-        self.setFixedSize(600, 400)
-        self.setModal(modal)
-
-        # Aplicar ícone padrão
-        aplicar_icone_padrao(self)
 
         # Atributos inicializados para satisfazer Pylint
         # (definidos em métodos auxiliares)
@@ -42,29 +35,23 @@ class GerenciarUsuariosDialog(QDialog):
         self.btn_restaurar = None
         self.btn_excluir = None
         self.btn_alterar_senha = None
-        self.botoes_sessoes_layout = None
-        self.btn_atualizar_sessoes = None
-        self.btn_shutdown_sistema = None
         self.tree_usuarios = None
-        self.tree_sessoes = None
 
         self.init_ui()
         self.carregar_usuarios()
-        self.carregar_sessoes()
 
     def init_ui(self):
-        """Inicializa a interface do usuário com abas distintas."""
+        """Inicializa a interface dedicada ao gerenciamento de usuários."""
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        self.tabs = QTabWidget()
-        self.tabs.addTab(self._criar_tab_usuarios(), "Usuários")
-        self.tabs.addTab(self._criar_tab_sessoes(), "Sessões")
+        usuarios_widget = self._criar_conteudo_usuarios()
+        layout.addWidget(usuarios_widget)
 
-        layout.addWidget(self.tabs)
         self.setLayout(layout)
 
-    def _criar_tab_usuarios(self) -> QWidget:
-        """Monta a aba de gerenciamento de usuários."""
+    def _criar_conteudo_usuarios(self) -> QWidget:
+        """Monta a área principal de gerenciamento de usuários."""
         container = QWidget()
         tab_layout = QVBoxLayout(container)
 
@@ -86,28 +73,6 @@ class GerenciarUsuariosDialog(QDialog):
 
         self.criar_botoes_acao()
         tab_layout.addLayout(self.botoes_layout)
-
-        return container
-
-    def _criar_tab_sessoes(self) -> QWidget:
-        """Monta a aba de sessões ativas."""
-        container = QWidget()
-        tab_layout = QVBoxLayout(container)
-        tab_layout.addWidget(QLabel("Sessões Ativas:"))
-
-        self.tree_sessoes = QTreeWidget()
-        self.tree_sessoes.setHeaderLabels(
-            ["Usuário", "Computador", "Última Atividade"])
-        self.tree_sessoes.setColumnWidth(0, 120)
-        self.tree_sessoes.setColumnWidth(1, 120)
-        self.tree_sessoes.setColumnWidth(2, 160)
-        self.tree_sessoes.setToolTip(
-            "Visualize as sessões ativas e selecione uma para ações disponíveis."
-        )
-        tab_layout.addWidget(self.tree_sessoes)
-
-        self.criar_botoes_sessoes()
-        tab_layout.addLayout(self.botoes_sessoes_layout)
 
         return container
 
@@ -188,28 +153,6 @@ Use as teclas de seta para navegar pelos resultados."""
         self.botoes_layout.addWidget(self.btn_excluir)
         self.botoes_layout.addWidget(self.btn_alterar_senha)
 
-    def criar_botoes_sessoes(self):
-        """Cria os botões de ação para gerenciamento de sessões."""
-        self.botoes_sessoes_layout = QHBoxLayout()
-
-        self.btn_atualizar_sessoes = QPushButton("Atualizar")
-        self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
-        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 80)
-        self.btn_atualizar_sessoes.setToolTip(
-            "Atualizar a lista de sessões (F5)")
-        self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
-
-        self.btn_shutdown_sistema = QPushButton("Shutdown Sistema")
-        self.btn_shutdown_sistema.clicked.connect(self.shutdown_sistema)
-        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 80)
-        self.btn_shutdown_sistema.setToolTip(
-            "Enviar comando de desligamento para todas as instâncias (Ctrl+Shift+Q)"
-        )
-        self.btn_shutdown_sistema.setShortcut(QKeySequence("Ctrl+Shift+Q"))
-
-        self.botoes_sessoes_layout.addWidget(self.btn_atualizar_sessoes)
-        self.botoes_sessoes_layout.addWidget(self.btn_shutdown_sistema)
-
     def carregar_usuarios(self):
         """Carrega e exibe os usuários do sistema."""
         self.tree_usuarios.clear()
@@ -255,21 +198,6 @@ Use as teclas de seta para navegar pelos resultados."""
                 self.tree_usuarios.topLevelItem(0))
         else:
             self.atualizar_estado_botoes(None, None)
-
-    def carregar_sessoes(self):
-        """Carrega e exibe as sessões ativas."""
-        self.tree_sessoes.clear()
-
-        sessoes = session_manager.obter_sessoes_ativas()
-
-        for sessao in sessoes:
-            item = QTreeWidgetItem(
-                [sessao["usuario"], sessao["hostname"], sessao["last_updated"]]
-            )
-            # Armazenar o session_id no item para uso posterior
-            # Qt.UserRole = 0x0100
-            item.setData(0, 0x0100, sessao["session_id"])
-            self.tree_sessoes.addTopLevelItem(item)
 
     def atualizar_estado_botoes(self, item_atual, _item_anterior):
         """Habilita ou desabilita botões conforme o usuário selecionado."""
@@ -477,8 +405,8 @@ Use as teclas de seta para navegar pelos resultados."""
 
     def alterar_senha(self):
         """Permite ao usuário logado alterar sua própria senha."""
-        # Obter o usuário logado da janela principal
-        main_window = self.parent()
+        # Obter o usuário logado a partir da janela que hospeda o widget
+        main_window = self.window()
         if not hasattr(main_window, "usuario_logado"):
             QMessageBox.warning(
                 self, "Erro", "Não foi possível identificar o usuário logado."
@@ -532,25 +460,25 @@ Use as teclas de seta para navegar pelos resultados."""
         else:
             QMessageBox.warning(self, "Erro", resultado)
 
-    def shutdown_sistema(self):
-        """Envia comando de shutdown para todas as instâncias do sistema."""
-        resposta = QMessageBox.question(
-            self,
-            "Shutdown do Sistema",
-            (
-                "Deseja enviar comando de fechamento para todas as instâncias do "
-                "sistema?\n\n"
-                "Isso irá fechar automaticamente todas as aplicações ativas."
-            ),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
 
-        if resposta == QMessageBox.StandardButton.Yes:
-            session_manager.definir_comando_sistema("SHUTDOWN")
-            QMessageBox.information(
-                self,
-                "Comando Enviado",
-                "Comando de shutdown enviado para todas as instâncias.\n"
-                "As aplicações serão fechadas automaticamente.",
-            )
-            self.carregar_sessoes()
+class GerenciarUsuariosDialog(QDialog):
+    """Diálogo que encapsula o widget de gerenciamento de usuários."""
+
+    def __init__(self, parent=None, *, modal: bool = True):
+        super().__init__(parent)
+
+        self.setWindowTitle("Gerenciamento de Usuários")
+        self.setFixedSize(600, 400)
+        self.setModal(modal)
+
+        aplicar_icone_padrao(self)
+
+        self._widget = GerenciarUsuariosWidget(self)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self._widget)
+        self.setLayout(layout)
+
+    def carregar_usuarios(self) -> None:
+        """Recarrega a listagem de usuários exibida no diálogo."""
+        self._widget.carregar_usuarios()

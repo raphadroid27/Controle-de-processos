@@ -10,18 +10,53 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QFileSystemWatcher
-from PySide6.QtWidgets import QDialog, QApplication, QMessageBox
+from PySide6.QtWidgets import (QApplication, QDialog, QMessageBox, QTabWidget,
+                               QVBoxLayout)
 
-from src.gerenciar_usuarios import GerenciarUsuariosDialog
+from src.gerenciar_sessoes import GerenciarSessoesWidget
+from src.gerenciar_usuarios import GerenciarUsuariosWidget
 from src.login_dialog import LoginDialog
 from src.ui.theme_manager import ThemeManager
 from src.utils import database as db, ipc_manager, session_manager
 from src.utils.ipc_config import COMMAND_DIR
 from src.utils.logging_config import configurar_logging
+from src.utils.ui_config import aplicar_icone_padrao
 from src.utils.usuario import criar_tabela_usuario
 
 ADMIN_LOCK_PATH = Path(COMMAND_DIR) / "admin.lock"
 _ADMIN_WATCHERS: list[QFileSystemWatcher] = []
+
+
+class AdminToolsDialog(QDialog):
+    """Janela principal das ferramentas administrativas com abas."""
+
+    def __init__(self, usuario_admin: str, parent=None):
+        super().__init__(parent)
+
+        self.usuario_logado = usuario_admin
+        self.setModal(False)
+        self.setFixedSize(600, 400)
+        self.setWindowTitle(f"Ferramentas Administrativas - {usuario_admin}")
+
+        aplicar_icone_padrao(self)
+
+        layout = QVBoxLayout()
+        self.tabs = QTabWidget()
+
+        self.usuarios_widget = GerenciarUsuariosWidget(self)
+        self.sessoes_widget = GerenciarSessoesWidget(self)
+
+        self.tabs.addTab(self.usuarios_widget, "Usuários")
+        self.tabs.addTab(self.sessoes_widget, "Sessões")
+        self.tabs.currentChanged.connect(self._on_tab_changed)
+
+        layout.addWidget(self.tabs)
+        self.setLayout(layout)
+
+    def _on_tab_changed(self, index: int) -> None:
+        """Atualiza a aba de sessões sempre que for exibida."""
+        if self.tabs.widget(index) is self.sessoes_widget:
+            self.sessoes_widget.carregar_sessoes()
 
 
 def _executar_login_admin() -> Optional[str]:
@@ -258,8 +293,7 @@ def main() -> int:
             "Não foi possível criar admin.lock para '%s'", usuario_admin)
         return 1
 
-    janela = GerenciarUsuariosDialog(modal=False)
-    janela.setWindowTitle(f"Gerenciar Usuários e Sessões - {usuario_admin}")
+    janela = AdminToolsDialog(usuario_admin)
     janela.finished.connect(app.quit)
     _configurar_monitoramento_shutdown(app, janela)
 
