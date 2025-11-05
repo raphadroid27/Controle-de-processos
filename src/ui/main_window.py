@@ -1,10 +1,10 @@
 """Módulo da janela principal do aplicativo."""
 
 import logging
-import subprocess
 import sys
 
-from PySide6.QtCore import QFileSystemWatcher, QSignalBlocker, QTimer, Signal
+from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
+                            QTimer, Signal)
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
@@ -249,7 +249,8 @@ class MainWindow(QMainWindow):
     def abrir_gerenciar_usuarios(self):
         """Abre o diálogo de gerenciamento de usuários."""
         try:
-            subprocess.Popen([sys.executable, "-m", "src.admin_app"])
+            if not QProcess.startDetached(sys.executable, ["-m", "src.admin_app"]):
+                raise RuntimeError("Falha ao iniciar processo administrativo.")
         except (OSError, RuntimeError) as exc:
             QMessageBox.warning(
                 self,
