@@ -663,7 +663,7 @@ def limpar_caches_consultas() -> None:
 
     try:
         # Import adiado para evitar ciclos entre consultas e métricas de dashboard.
-        # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel, cyclic-import
         from src.utils.dashboard_metrics import limpar_cache_metricas_dashboard
     except ImportError:
         return
