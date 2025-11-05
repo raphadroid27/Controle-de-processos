@@ -70,6 +70,16 @@ python main.py
 python src/main.py
 ```
 
+### Ferramenta Administrativa
+
+O gerenciamento de usuários e sessões foi movido para um utilitário independente.
+Execute-o quando precisar arquivar/restaurar usuários, redefinir senhas ou
+encerrar sessões ativas:
+
+```bash
+python -m src.admin_app
+```
+
 ### Primeiro Acesso
 
 1. Na tela de login, clique em "Novo Usuário"
