@@ -38,7 +38,7 @@ class EstatisticasTotais:
     media_dias_processamento: float | None
     media_itens_por_dia: float | None
     estimativa_itens_mes: int | None
-    horas_processadas_dia: str | None
+    tempo_corte_dia: str | None
 
 
 def carregar_clientes_upper() -> List[str]:
@@ -363,7 +363,7 @@ def obter_estatisticas_totais(
         registros,
         date.today(),
     )
-    horas_processadas_dia = _formatar_segundos_para_horas(total_segundos_dia)
+    tempo_corte_dia = _formatar_segundos_para_horas(total_segundos_dia)
 
     # Estimativa baseada na média do período filtrado
     # multiplicada pelos dias úteis do período filtrado
@@ -379,5 +379,5 @@ def obter_estatisticas_totais(
         media_dias_processamento=media_dias,
         media_itens_por_dia=media_por_dia,
         estimativa_itens_mes=estimativa,
-        horas_processadas_dia=horas_processadas_dia,
+        tempo_corte_dia=tempo_corte_dia,
     )

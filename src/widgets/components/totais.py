@@ -21,7 +21,7 @@ class TotaisControls:
     label_media_dias: QLabel
     label_media_itens_por_dia: QLabel
     label_estimativa_itens: QLabel
-    label_horas_processadas_dia: QLabel
+    label_tempo_corte_dia: QLabel
 
 
 def criar_totais(*, parent, espacamento: int) -> TotaisControls:
@@ -41,7 +41,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     label_media_dias = QLabel("Média dias processamento: --")
     label_media_itens_por_dia = QLabel("Itens/dia: --")
     label_estimativa_itens = QLabel("Estimativa itens mês: --")
-    label_horas_processadas_dia = QLabel("Horas processadas hoje: --")
+    label_tempo_corte_dia = QLabel("Tempo corte hoje: --")
 
     for label in (
         label_pedidos,
@@ -50,7 +50,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
         label_media_dias,
         label_media_itens_por_dia,
         label_estimativa_itens,
-        label_horas_processadas_dia,
+        label_tempo_corte_dia,
     ):
         label.setFont(font)
 
@@ -60,7 +60,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     layout.addWidget(label_media_dias)
     layout.addWidget(label_media_itens_por_dia)
     layout.addWidget(label_estimativa_itens)
-    layout.addWidget(label_horas_processadas_dia)
+    layout.addWidget(label_tempo_corte_dia)
     layout.addStretch()
 
     frame.setLayout(layout)
@@ -73,7 +73,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
         label_media_dias=label_media_dias,
         label_media_itens_por_dia=label_media_itens_por_dia,
         label_estimativa_itens=label_estimativa_itens,
-        label_horas_processadas_dia=label_horas_processadas_dia,
+        label_tempo_corte_dia=label_tempo_corte_dia,
     )
 
 
@@ -87,7 +87,7 @@ def atualizar_totais(
     media_dias_processamento: float | None,
     media_itens_por_dia: float | None,
     estimativa_itens_mes: int | None,
-    horas_processadas_dia: str | None,
+    tempo_corte_dia: str | None,
 ) -> None:
     """Atualiza os rótulos de totais com os valores fornecidos."""
     controles.label_pedidos.setText(f"Total Pedidos: {total_pedidos}")
@@ -120,13 +120,13 @@ def atualizar_totais(
             f"Estimativa itens: {estimativa_itens_mes}"
         )
 
-    if horas_processadas_dia:
-        controles.label_horas_processadas_dia.setText(
-            f"Horas processadas hoje: {horas_processadas_dia}"
+    if tempo_corte_dia:
+        controles.label_tempo_corte_dia.setText(
+            f"Tempo corte hoje: {tempo_corte_dia}"
         )
     else:
-        controles.label_horas_processadas_dia.setText(
-            "Horas processadas hoje: --"
+        controles.label_tempo_corte_dia.setText(
+            "Tempo corte hoje: --"
         )
 
 
