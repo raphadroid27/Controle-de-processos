@@ -35,7 +35,7 @@ class EstatisticasTotais:
     total_pedidos: int
     total_itens: int
     total_valor: float
-    media_dias_processamento: float | None
+    media_dias_processo: float | None
     media_itens_por_dia: float | None
     estimativa_itens_mes: int | None
     tempo_corte_dia: str | None
@@ -232,7 +232,7 @@ def _dias_uteis_entre(inicio: date | None, fim: date | None) -> int:
     return dias
 
 
-def _calcular_media_dias_processamento(
+def _calcular_media_dias_processo(
     registros: Sequence[Sequence[Any]],
 ) -> float | None:
     diferencas: list[int] = []
@@ -354,7 +354,7 @@ def obter_estatisticas_totais(
     dias_uteis_decorridos = _dias_uteis_entre(periodo_inicio, fim_para_media)
     dias_uteis_periodo = _dias_uteis_entre(periodo_inicio, periodo_fim)
 
-    media_dias = _calcular_media_dias_processamento(registros)
+    media_dias = _calcular_media_dias_processo(registros)
     media_por_dia = _calcular_media_itens_por_dia(
         int(totais.get("total_itens", 0)),
         dias_uteis_decorridos,
@@ -376,7 +376,7 @@ def obter_estatisticas_totais(
         total_pedidos=totais.get("total_pedidos", 0),
         total_itens=totais.get("total_itens", 0),
         total_valor=totais.get("total_valor", 0.0),
-        media_dias_processamento=media_dias,
+        media_dias_processo=media_dias,
         media_itens_por_dia=media_por_dia,
         estimativa_itens_mes=estimativa,
         tempo_corte_dia=tempo_corte_dia,

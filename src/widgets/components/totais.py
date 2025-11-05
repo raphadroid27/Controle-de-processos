@@ -38,7 +38,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     label_pedidos = QLabel("Total Pedidos: 0")
     label_itens = QLabel("Total Itens: 0")
     label_valor = QLabel("Total Valor: R$ 0,00")
-    label_media_dias = QLabel("Média dias processamento: --")
+    label_media_dias = QLabel("Média dias processo: --")
     label_media_itens_por_dia = QLabel("Itens/dia: --")
     label_estimativa_itens = QLabel("Estimativa itens mês: --")
     label_tempo_corte_dia = QLabel("Tempo corte hoje: --")
@@ -84,7 +84,7 @@ def atualizar_totais(
     total_itens: int,
     total_valor: float,
     formatar_valor: Callable[[float], str],
-    media_dias_processamento: float | None,
+    media_dias_processo: float | None,
     media_itens_por_dia: float | None,
     estimativa_itens_mes: int | None,
     tempo_corte_dia: str | None,
@@ -95,15 +95,15 @@ def atualizar_totais(
     controles.label_valor.setText(
         f"Total Valor: {formatar_valor(total_valor)}")
 
-    if media_dias_processamento is None:
+    if media_dias_processo is None:
         controles.label_media_dias.setTextFormat(Qt.TextFormat.PlainText)
-        controles.label_media_dias.setText("Média dias processamento: --")
+        controles.label_media_dias.setText("Média dias processo: --")
     else:
-        cor = _obter_cor_media_dias(media_dias_processamento)
+        cor = _obter_cor_media_dias(media_dias_processo)
         controles.label_media_dias.setTextFormat(Qt.TextFormat.RichText)
         controles.label_media_dias.setText(
-            f"Média dias processamento: <span style='color: {cor}; font-weight: bold'>"
-            f"{media_dias_processamento:.1f}</span>"
+            f"Média dias processo: <span style='color: {cor}; font-weight: bold'>"
+            f"{media_dias_processo:.1f}</span>"
         )
 
     if media_itens_por_dia is None:

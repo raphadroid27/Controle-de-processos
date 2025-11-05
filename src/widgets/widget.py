@@ -738,7 +738,7 @@ class PedidosWidget(QWidget):
             total_itens=estatisticas.total_itens,
             total_valor=estatisticas.total_valor,
             formatar_valor=formatar_valor_monetario,
-            media_dias_processamento=estatisticas.media_dias_processamento,
+            media_dias_processo=estatisticas.media_dias_processo,
             media_itens_por_dia=estatisticas.media_itens_por_dia,
             estimativa_itens_mes=estatisticas.estimativa_itens_mes,
             tempo_corte_dia=estatisticas.tempo_corte_dia,
