@@ -214,12 +214,12 @@ class MainWindow(QMainWindow):
         if self.is_admin:
             admin_menu = menubar.addMenu("Admin")
 
-            usuarios_action = QAction("Gerenciar Usuários", self)
+            usuarios_action = QAction("Ferramentas Administrativas", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
             usuarios_action.setStatusTip(
                 "Abrir gerenciamento de usuários e sessões")
-            usuarios_action.setToolTip("Gerenciar usuários (Ctrl+G)")
+            usuarios_action.setToolTip("Ferramentas Administrativas (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
             dashboard_action = QAction("Dashboard", self)
