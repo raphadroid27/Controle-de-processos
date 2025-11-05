@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, Iterator, Optional, Tuple, TypeVar
@@ -14,6 +15,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.utils.database.config import (DATABASE_DIR, SHARED_DB_PATH,
                                        slugify_usuario, user_db_path)
 from src.utils.database.models import SharedBase, UserBase, UsuarioModel
+
+
+logger = logging.getLogger(__name__)
 
 _user_sessionmakers: Dict[Path, sessionmaker[Session]] = {}
 
@@ -200,9 +204,9 @@ def limpar_bancos_orfaos() -> None:
         if slug not in slugs_existentes:
             try:
                 path.unlink()
-                print(f"Banco órfão removido: {path}")
+                logger.info("Banco órfão removido: %s", path)
             except OSError as e:
-                print(f"Erro ao remover banco órfão {path}: {e}")
+                logger.exception("Erro ao remover banco órfão %s: %s", path, e)
 
 
 __all__ = [

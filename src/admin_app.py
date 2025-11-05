@@ -3,19 +3,21 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 import time
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QFileSystemWatcher
-from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
+from PySide6.QtWidgets import QDialog, QApplication, QMessageBox
 
 from src.gerenciar_usuarios import GerenciarUsuariosDialog
 from src.login_dialog import LoginDialog
 from src.ui.theme_manager import ThemeManager
 from src.utils import database as db, ipc_manager, session_manager
 from src.utils.ipc_config import COMMAND_DIR
+from src.utils.logging_config import configurar_logging
 from src.utils.usuario import criar_tabela_usuario
 
 ADMIN_LOCK_PATH = Path(COMMAND_DIR) / "admin.lock"
@@ -169,9 +171,65 @@ def _configurar_monitoramento_shutdown(app: QApplication, janela: QDialog) -> No
     _ADMIN_WATCHERS.append(watcher)
 
 
+def _tratar_instancia_ativa(app: QApplication, logger: logging.Logger) -> bool:
+    """Gerencia o fluxo quando já existe uma instância administrativa ativa."""
+
+    if not _admin_lock_em_uso():
+        return True
+
+    lock_info = _ler_admin_lock_info()
+    usuario_travado = lock_info.get("usuario", "Desconhecido")
+    hostname_travado = lock_info.get("hostname", "Desconhecido")
+    if hostname_travado == session_manager.HOSTNAME:
+        destino_texto = "este mesmo computador (instância ainda aberta)"
+    elif hostname_travado == "Desconhecido":
+        destino_texto = "a instância ativa (local não informado)"
+    else:
+        destino_texto = f"o computador '{hostname_travado}'"
+
+    mensagem = (
+        "Já existe uma instância da ferramenta administrativa ativa (usuário: "
+        f"{usuario_travado}) em {destino_texto}.\n\n"
+        "Deseja solicitar o encerramento da instância em uso?"
+    )
+
+    resposta = QMessageBox.question(
+        None,
+        "Administração em uso",
+        mensagem,
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.No,
+    )
+
+    if resposta != QMessageBox.StandardButton.Yes:
+        logger.info(
+            "Usuário optou por não encerrar a instância administrativa ativa")
+        return False
+
+    if not _solicitar_encerramento_admin_existente(app):
+        logger.error(
+            "Falha ao solicitar encerramento de instância administrativa ativa")
+        return False
+
+    if _aguardar_remocao_lock(app):
+        return True
+
+    QMessageBox.warning(
+        None,
+        "Administração ainda em uso",
+        (
+            "Não foi possível encerrar a instância administrativa atual.\n"
+            "Finalize-a manualmente e tente novamente."
+        ),
+    )
+    return False
+
+
 def main() -> int:
     """Ponto de entrada da aplicação administrativa."""
-
+    configurar_logging()
+    logger = logging.getLogger(__name__)
+    logger.info("Inicializando ferramenta administrativa")
     app = QApplication(sys.argv)
     app.setApplicationName("Controle de Pedidos")
     app.setApplicationDisplayName("Controle de Pedidos - Administração")
@@ -185,51 +243,19 @@ def main() -> int:
     theme_manager = ThemeManager.instance()
     theme_manager.initialize()
 
-    if _admin_lock_em_uso():
-        lock_info = _ler_admin_lock_info()
-        usuario_travado = lock_info.get("usuario", "Desconhecido")
-        hostname_travado = lock_info.get("hostname", "Desconhecido")
-        if hostname_travado == session_manager.HOSTNAME:
-            destino_texto = "este mesmo computador (instância ainda aberta)"
-        elif hostname_travado == "Desconhecido":
-            destino_texto = "a instância ativa (local não informado)"
-        else:
-            destino_texto = f"o computador '{hostname_travado}'"
-        resposta = QMessageBox.question(
-            None,
-            "Administração em uso",
-            (
-                "Já existe uma instância da ferramenta administrativa ativa (usuário: "
-                f"{usuario_travado}) em {destino_texto}.\n\nDeseja solicitar o encerramento da instância em uso?"
-            ),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if resposta == QMessageBox.StandardButton.Yes:
-            if not _solicitar_encerramento_admin_existente(app):
-                return 0
-
-            if not _aguardar_remocao_lock(app):
-                QMessageBox.warning(
-                    None,
-                    "Administração ainda em uso",
-                    (
-                        "Não foi possível encerrar a instância administrativa atual.\n"
-                        "Finalize-a manualmente e tente novamente."
-                    ),
-                )
-                return 0
-        else:
-            return 0
+    if not _tratar_instancia_ativa(app, logger):
+        return 0
 
     usuario_admin = _executar_login_admin()
     if not usuario_admin:
         session_manager.remover_sessao()
+        logger.info("Login administrativo cancelado")
         return 0
 
     if not _criar_admin_lock(usuario_admin):
         session_manager.remover_sessao()
+        logger.error(
+            "Não foi possível criar admin.lock para '%s'", usuario_admin)
         return 1
 
     janela = GerenciarUsuariosDialog(modal=False)
@@ -241,12 +267,15 @@ def main() -> int:
     janela.show()
 
     try:
+        logger.info("Ferramenta administrativa iniciada para '%s'",
+                    usuario_admin)
         return app.exec()
     finally:
         _remover_admin_lock()
         session_manager.limpar_comando_shutdown_admin()
         _ADMIN_WATCHERS.clear()
         session_manager.remover_sessao()
+        logger.info("Ferramenta administrativa finalizada")
 
 
 if __name__ == "__main__":

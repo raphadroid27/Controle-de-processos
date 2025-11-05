@@ -5,6 +5,7 @@ Contém a interface principal do sistema com formulário de entrada,
 tabela de dados e controles de filtros.
 """
 
+import logging
 from datetime import date, datetime
 
 from PySide6.QtCore import Qt, QTimer
@@ -27,6 +28,9 @@ from src.widgets.components import filters, autocomplete, table_edit, totais
 from src.widgets.components import data_service as data
 from src.widgets.components import (form,
                                     periodo, table)
+
+
+logger = logging.getLogger(__name__)
 
 
 class PedidosWidget(QWidget):
@@ -389,7 +393,8 @@ class PedidosWidget(QWidget):
                 calcular_periodo_faturamento_atual_datas()
             )
         except (RuntimeError, AttributeError, TypeError, ValueError) as e:
-            print(f"Erro ao aplicar filtro do período corrente: {e}")
+            logger.exception(
+                "Erro ao aplicar filtro do período corrente: %s", e)
             return
 
         ano_atual = str(data_inicio_atual.year)

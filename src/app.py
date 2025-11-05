@@ -1,5 +1,6 @@
 """Módulo principal da aplicação de Controle de Pedidos."""
 
+import logging
 import sys
 
 from PySide6.QtWidgets import QApplication, QDialog
@@ -9,6 +10,7 @@ from src.ui.main_window import MainWindow
 from src.ui.theme_manager import ThemeManager
 from src.utils import database as db
 from src.utils import ipc_manager
+from src.utils.logging_config import configurar_logging
 from src.utils.usuario import criar_tabela_usuario
 
 
@@ -17,6 +19,9 @@ class ControleProcessosApp:
 
     def __init__(self):
         """Inicializa a aplicação."""
+        configurar_logging()
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Inicializando ControleProcessosApp")
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Controle de Pedidos")
         self.app.setOrganizationName("Controle de Pedidos")
@@ -35,7 +40,9 @@ class ControleProcessosApp:
     def run(self):
         """Executa a aplicação."""
         if self.mostrar_login() == 0:
+            self.logger.info("Encerrando aplicação sem abrir janela principal")
             return 0
+        self.logger.info("Aplicação iniciada com sessão autenticada")
         return self.app.exec()
 
     def mostrar_login(self):
@@ -52,6 +59,11 @@ class ControleProcessosApp:
             )
             self.main_window.logout_requested.connect(self.mostrar_login)
             self.main_window.show()
+            self.logger.info(
+                "Usuário '%s' autenticado (admin=%s)",
+                login_dialog.usuario_logado,
+                login_dialog.is_admin,
+            )
             return 1
         return 0
 

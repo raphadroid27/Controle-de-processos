@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Sequence
@@ -24,6 +25,9 @@ __all__ = [
 ]
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclass
 class EstatisticasTotais:
     """Estrutura agregadora para exibir métricas no painel de totais."""
@@ -43,7 +47,7 @@ def carregar_clientes_upper() -> List[str]:
     try:
         clientes_raw = db.buscar_clientes_unicos()
     except (SQLAlchemyError, RuntimeError, AttributeError, TypeError) as exc:
-        print(f"Erro ao carregar clientes: {exc}")
+        logger.exception("Erro ao carregar clientes: %s", exc)
         return []
     clientes_normalizados = {
         normalizar_nome_cliente(cliente)
@@ -65,7 +69,7 @@ def listar_anos_disponiveis(usuario_filtro: Optional[str]) -> List[str]:
         TypeError,
         ValueError,
     ) as exc:
-        print(f"Erro ao buscar anos únicos: {exc}")
+        logger.exception("Erro ao buscar anos únicos: %s", exc)
         anos = []
 
     data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
@@ -95,7 +99,7 @@ def listar_periodos_do_ano(
         TypeError,
         ValueError,
     ) as exc:
-        print(f"Erro ao buscar períodos de faturamento: {exc}")
+        logger.exception("Erro ao buscar períodos de faturamento: %s", exc)
         return []
 
     data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
@@ -127,7 +131,11 @@ def _ordenacao_chave(registro: Sequence[Any]) -> tuple[datetime, datetime]:
         else:
             timestamp_obj = datetime.min
     except (ValueError, AttributeError) as exc:
-        print(f"Erro ao converter timestamp '{data_lancamento}': {exc}")
+        logger.exception(
+            "Erro ao converter timestamp '%s': %s",
+            data_lancamento,
+            exc,
+        )
         timestamp_obj = datetime.min
 
     # Usar data_processo se existir, senão data_entrada
@@ -172,7 +180,7 @@ def buscar_registros_filtrados(
         TypeError,
         ValueError,
     ) as exc:
-        print(f"Erro ao buscar registros filtrados: {exc}")
+        logger.exception("Erro ao buscar registros filtrados: %s", exc)
         registros = []
 
     return sorted(registros, key=_ordenacao_chave)
@@ -334,7 +342,7 @@ def obter_estatisticas_totais(
         TypeError,
         ValueError,
     ) as exc:
-        print(f"Erro ao buscar estatísticas: {exc}")
+        logger.exception("Erro ao buscar estatísticas: %s", exc)
         return EstatisticasTotais(0, 0, 0.0, None, None, None, None)
 
     periodo_inicio, periodo_fim = _obter_limites_periodo(filtros, registros)

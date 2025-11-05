@@ -9,6 +9,7 @@ e controle de permissões administrativas.
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select, update
@@ -19,6 +20,9 @@ from src.utils.database import (UsuarioModel, ensure_user_database,
                                 get_shared_engine, limpar_caches_consultas,
                                 remover_banco_usuario)
 from src.utils.database.sessions import executar_sessao_compartilhada
+
+
+logger = logging.getLogger(__name__)
 
 
 def _executar_operacao_usuario(operacao, error_handler=None, fallback=None):
@@ -153,7 +157,7 @@ def listar_usuarios(*, incluir_arquivados: bool = True) -> list[dict]:
         ]
 
     def _on_error(exc: SQLAlchemyError) -> list[dict]:
-        print(f"Erro ao listar usuários: {exc}")
+        logger.exception("Erro ao listar usuários: %s", exc)
         return []
 
     return _executar_operacao_usuario(
@@ -259,7 +263,7 @@ def verificar_senha_reset(nome: str) -> bool:
         return bool(usuario.senha == hash_senha("nova_senha"))
 
     def _on_error(exc: SQLAlchemyError) -> bool:
-        print(f"Erro ao verificar reset de senha: {exc}")
+        logger.exception("Erro ao verificar reset de senha: %s", exc)
         return False
 
     return _executar_operacao_usuario(

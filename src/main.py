@@ -1,13 +1,22 @@
 """Ponto de entrada principal para o aplicativo de Controle de Pedidos."""
 
+from __future__ import annotations
+
+import logging
 import sys
 
-try:
-    from app import ControleProcessosApp
-except ImportError as e:
-    print(f"Erro ao importar ControleProcessosApp: {e}")
-    sys.exit(1)
+from src.app import ControleProcessosApp
+from src.utils.logging_config import configurar_logging
 
-if __name__ == "__main__":
+
+def main() -> None:
+    """Executa a aplicação principal com logging configurado."""
+    configurar_logging()
+    logging.getLogger(__name__).info(
+        "Inicializando ControleProcessosApp via main")
     app = ControleProcessosApp()
     sys.exit(app.run())
+
+
+if __name__ == "__main__":  # pragma: no mutate - ponto de entrada
+    main()
