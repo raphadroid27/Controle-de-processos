@@ -48,7 +48,7 @@ def ensure_ipc_dirs_exist() -> None:
 def create_session_file(session_id: str, usuario: str, hostname: str) -> None:
     """Cria um arquivo para representar uma sessão ativa, armazenando usuario e hostname."""
     session_file = os.path.join(SESSION_DIR, f"{session_id}.session")
-    data = {"usuario": usuario, "hostname": hostname}
+    data = {"usuario": (usuario or "").strip(), "hostname": hostname}
     try:
         with open(session_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
@@ -122,8 +122,18 @@ def get_active_sessions() -> List[Dict[str, Any]]:
 
 
 def get_sessions_by_user(usuario: str) -> List[Dict[str, Any]]:
-    """Retorna sessões ativas para um usuário específico."""
-    return [s for s in get_active_sessions() if s["usuario"] == usuario]
+    """Retorna sessões ativas para um usuário específico (case-insensível)."""
+    alvo_normalizado = (usuario or "").strip().casefold()
+    if not alvo_normalizado:
+        return []
+
+    sessoes_usuario: List[Dict[str, Any]] = []
+    for sessao in get_active_sessions():
+        nome_sessao = str(sessao.get("usuario", "")).strip()
+        if nome_sessao.casefold() == alvo_normalizado:
+            sessoes_usuario.append(sessao)
+
+    return sessoes_usuario
 
 
 def remove_sessions_by_user(usuario: str) -> int:

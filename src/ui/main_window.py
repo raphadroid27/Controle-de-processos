@@ -1,13 +1,14 @@
 """Módulo da janela principal do aplicativo."""
 
 import logging
+import subprocess
+import sys
 
 from PySide6.QtCore import QFileSystemWatcher, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
 from src.forms.form_sobre import main as mostrar_sobre
-from src.gerenciar_usuarios import GerenciarUsuariosDialog
 from src.ui.theme_manager import ThemeManager
 from src.utils import session_manager
 from src.utils.ui_config import aplicar_icone_padrao
@@ -110,6 +111,11 @@ class MainWindow(QMainWindow):
         self.command_watcher.fileChanged.connect(
             self.verificar_comando_sistema)
 
+        comando_dir = session_manager.get_comando_dir()
+        self.command_watcher.addPath(str(comando_dir))
+        self.command_watcher.directoryChanged.connect(
+            self.verificar_comando_sistema)
+
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
         self.command_timer.timeout.connect(self.verificar_comando_sistema)
@@ -149,6 +155,18 @@ class MainWindow(QMainWindow):
 
     def verificar_comando_sistema(self):
         """Verifica se há comandos do sistema para executar."""
+        if session_manager.obter_comando_encerrar_sessao(session_manager.SESSION_ID):
+            show_timed_message_box(
+                self,
+                "Sessão Encerrada",
+                "Sua sessão foi encerrada por outro login.\n"
+                "A aplicação será fechada.",
+                5000,
+            )
+
+            QApplication.quit()
+            return
+
         comando_global = session_manager.obter_comando_sistema()
         if comando_global == "SHUTDOWN":
             show_timed_message_box(
@@ -231,14 +249,16 @@ class MainWindow(QMainWindow):
     def abrir_gerenciar_usuarios(self):
         """Abre o diálogo de gerenciamento de usuários."""
         try:
-            dialog = GerenciarUsuariosDialog(self)
-            dialog.exec()
-        except ImportError as e:
+            subprocess.Popen([sys.executable, "-m", "src.admin_app"])
+        except (OSError, RuntimeError) as exc:
             QMessageBox.warning(
-                self, "Erro", f"Erro ao carregar gerenciador de usuários: {e}"
+                self,
+                "Erro",
+                (
+                    "Não foi possível iniciar a ferramenta administrativa.\n"
+                    f"Detalhes: {exc}"
+                ),
             )
-        except (OSError, RuntimeError) as e:
-            QMessageBox.warning(self, "Erro", f"Erro inesperado: {e}")
 
     def abrir_dashboard(self):
         """Abre o dashboard administrativo."""

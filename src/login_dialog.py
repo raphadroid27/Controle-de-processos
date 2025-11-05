@@ -10,7 +10,14 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
                                QInputDialog, QLineEdit, QMessageBox,
                                QPushButton, QSizePolicy, QSpacerItem)
 
-from src.utils import session_manager, usuario
+from src.utils import usuario
+from src.utils.session_manager import (
+    HOSTNAME,
+    definir_comando_encerrar_sessao,
+    registrar_sessao as registrar_sessao_arquivo,
+    remover_sessao_por_id,
+    verificar_usuario_ja_logado,
+)
 from src.utils.ui_config import (ALTURA_DIALOG_LOGIN,
                                  ALTURA_DIALOG_NOVO_USUARIO,
                                  ESPACAMENTO_PADRAO, LARGURA_DIALOG_LOGIN,
@@ -22,14 +29,15 @@ from src.utils.ui_config import (ALTURA_DIALOG_LOGIN,
 class LoginDialog(QDialog):
     """Dialog de login para autenticação de usuários."""
 
-    def __init__(self):
+    def __init__(self, parent=None, *, registrar_sessao: bool = True):
         """Inicializa o diálogo de login."""
-        super().__init__()
+        super().__init__(parent)
         self.setWindowTitle("Login - Controle de Pedidos")
         self.setFixedSize(LARGURA_DIALOG_LOGIN, ALTURA_DIALOG_LOGIN)
         self.setModal(True)
         self.usuario_logado = None
         self.is_admin = False
+        self._registrar_sessao = registrar_sessao
 
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
@@ -114,42 +122,41 @@ Use Tab para avançar para o campo de senha."""
             self.solicitar_nova_senha(nome)
             return
 
-        # Verificar se usuário já está logado em outra máquina
-        ja_logado, info_sessao = session_manager.verificar_usuario_ja_logado(
-            nome)
-        if ja_logado and info_sessao:
-            resposta = QMessageBox.question(
-                self,
-                "Usuário já logado",
-                (
-                    f"O usuário '{nome}' já está logado no computador "
-                    f"'{info_sessao['hostname']}'.\n\n"
-                    "Deseja encerrar a sessão anterior e fazer login neste computador?"
-                ),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-
-            if resposta == QMessageBox.StandardButton.Yes:
-                # Remove a sessão anterior
-                if hasattr(session_manager, "remover_sessao_por_id"):
-                    session_manager.remover_sessao_por_id(
-                        # type: ignore[attr-defined]
-                        info_sessao["session_id"]
-                    )
-                else:
-                    # Fallback: limpar comando e seguir (mantém compatibilidade)
-                    session_manager.limpar_comando_sistema()
-            else:
-                return
-
         resultado = usuario.verificar_login(nome, senha)
 
         if resultado["sucesso"]:
-            # Registra a nova sessão
-            session_manager.registrar_sessao(nome)
+            nome_autenticado = resultado["nome"]
 
-            self.usuario_logado = resultado["nome"]
+            ja_logado, info_sessao = verificar_usuario_ja_logado(
+                nome_autenticado)
+            if ja_logado and info_sessao:
+                hostname_destino = info_sessao.get("hostname", "Desconhecido")
+                if hostname_destino == HOSTNAME:
+                    destino_texto = "neste mesmo computador (sessão anterior ainda aberta)."
+                else:
+                    destino_texto = f"no computador '{hostname_destino}'."
+
+                resposta = QMessageBox.question(
+                    self,
+                    "Usuário já logado",
+                    (
+                        f"O usuário '{nome_autenticado}' já está logado {destino_texto}\n\n"
+                        "Deseja encerrar a sessão anterior e fazer login neste computador?"
+                    ),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+
+                if resposta == QMessageBox.StandardButton.Yes:
+                    definir_comando_encerrar_sessao(info_sessao["session_id"])
+                    remover_sessao_por_id(info_sessao["session_id"])
+                else:
+                    return
+
+            if self._registrar_sessao:
+                registrar_sessao_arquivo(nome_autenticado)
+
+            self.usuario_logado = nome_autenticado
             self.is_admin = resultado["admin"]
             self.accept()
         else:
