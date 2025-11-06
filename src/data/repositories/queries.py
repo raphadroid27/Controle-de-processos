@@ -104,10 +104,12 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if pedido:
-        condicoes.append(func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.pedido).like(f"{pedido.upper()}%"))
 
     if data_inicio and data_fim:
         data_inicio_parsed = parse_iso_date(data_inicio)
@@ -142,31 +144,48 @@ def _buscar_registros_em_session(
     limite: Optional[int] = None,
     offset: Optional[int] = None,
 ) -> List[Tuple[Any, ...]]:
-    stmt = select(RegistroModel)
+    # Usar apenas as colunas necessárias para melhor performance
+    stmt = select(
+        RegistroModel.id,
+        RegistroModel.usuario,
+        RegistroModel.cliente,
+        RegistroModel.pedido,
+        RegistroModel.qtde_itens,
+        RegistroModel.data_entrada,
+        RegistroModel.data_processo,
+        RegistroModel.tempo_corte,
+        RegistroModel.observacoes,
+        RegistroModel.valor_pedido,
+        RegistroModel.data_lancamento,
+    )
+
     for cond in condicoes:
         stmt = stmt.where(cond)
+
+    # Adicionar hint de índice para ordenação
+    stmt = stmt.order_by(RegistroModel.data_lancamento.desc())
 
     if limite is not None:
         stmt = stmt.limit(limite)
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    resultados = session.execute(stmt).scalars().all()
+    resultados = session.execute(stmt).all()
     dados = []
-    for registro in resultados:
+    for row in resultados:
         dados.append(
             (
-                encode_registro_id(slug, registro.id),
-                registro.usuario,
-                registro.cliente,
-                registro.pedido,
-                registro.qtde_itens,
-                registro.data_entrada.isoformat(),
-                registro.data_processo.isoformat() if registro.data_processo else None,
-                registro.tempo_corte,
-                registro.observacoes,
-                float(registro.valor_pedido),
-                format_datetime(registro.data_lancamento),
+                encode_registro_id(slug, row[0]),
+                row[1],  # usuario
+                row[2],  # cliente
+                row[3],  # pedido
+                row[4],  # qtde_itens
+                row[5].isoformat(),  # data_entrada
+                row[6].isoformat() if row[6] else None,  # data_processo
+                row[7],  # tempo_corte
+                row[8],  # observacoes
+                float(row[9]),  # valor_pedido
+                format_datetime(row[10]),  # data_lancamento
             )
         )
     return dados
@@ -236,21 +255,19 @@ def buscar_lancamentos_filtros_completos(
 
 def _agregar_em_session(session: Session, condicoes) -> Tuple[int, int, float]:
     """Calcula totais de registros, itens e valor dentro de uma sessão filtrada."""
+    # Usar uma única consulta agregada é mais eficiente
+    # pylint: disable=not-callable
+    stmt = select(
+        func.count(RegistroModel.id),
+        func.coalesce(func.sum(RegistroModel.qtde_itens), 0),
+        func.coalesce(func.sum(RegistroModel.valor_pedido), 0.0),
+    )
 
-    stmt = select(RegistroModel.qtde_itens, RegistroModel.valor_pedido)
     for cond in condicoes:
         stmt = stmt.where(cond)
 
-    total_registros = 0
-    total_itens = 0
-    total_valor = 0.0
-
-    for qtde_itens, valor_pedido in session.execute(stmt).all():
-        total_registros += 1
-        total_itens += int(qtde_itens or 0)
-        total_valor += float(valor_pedido or 0.0)
-
-    return total_registros, total_itens, total_valor
+    resultado = session.execute(stmt).one()
+    return (int(resultado[0]), int(resultado[1]), float(resultado[2]))
 
 
 def _calcular_estatisticas_agregadas(
@@ -313,7 +330,8 @@ def buscar_estatisticas(usuario: Optional[str] = None):
         Resultados são cacheados. Use limpar_caches_consultas() após inserções.
     """
 
-    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(usuario)
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(
+        usuario)
     return {
         "total_pedidos": total_pedidos,
         "total_itens": total_itens,
@@ -377,12 +395,14 @@ def _buscar_valores_unicos(
     if usuario:
         with closing(get_user_session(usuario)) as session:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,) in session.execute(stmt) if value)
+            valores.update(value for (value,)
+                           in session.execute(stmt) if value)
     else:
         for slug, _ in iter_user_databases():
             with closing(get_sessionmaker_for_slug(slug)()) as session:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,) in session.execute(stmt) if value)
+                valores.update(value for (value,)
+                               in session.execute(stmt) if value)
 
     return sorted(valores)
 
@@ -569,7 +589,8 @@ def _gerar_periodos_faturamento_por_ano(
             intervalo = _periodo_faturamento_datas(data)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
-                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(
+                    inicio, fim, com_ano=False)
                 if display:
                     month = int(inicio[5:7])
                     numero = 1 if month == 12 else month + 1
@@ -628,7 +649,8 @@ def _buscar_periodos_faturamento_por_ano_cache(
 def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
     """Produz os períodos de faturamento (26/25) de um ano específico."""
 
-    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(ano, usuario)
+    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
+        ano, usuario)
     return [_descongelar_dict(periodo) for periodo in periodos_congelados]
 
 

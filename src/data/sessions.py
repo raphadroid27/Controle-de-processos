@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, Iterator, Optional, Tuple, TypeVar
 
-from sqlalchemy import create_engine, inspect, select, text
+from sqlalchemy import create_engine, event, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
@@ -22,15 +22,49 @@ _user_sessionmakers: Dict[Path, sessionmaker[Session]] = {}
 T = TypeVar("T")
 
 
+def _configure_sqlite_pragmas(dbapi_connection, _connection_record) -> None:
+    """Configura PRAGMAs do SQLite para melhor performance sem WAL."""
+    cursor = dbapi_connection.cursor()
+
+    # Configurações de performance (modo DELETE)
+    cursor.execute("PRAGMA journal_mode = DELETE")
+    cursor.execute(
+        "PRAGMA synchronous = NORMAL"
+    )  # Balance entre segurança e velocidade
+    cursor.execute("PRAGMA temp_store = MEMORY")
+    cursor.execute("PRAGMA cache_size = -64000")  # 64MB de cache
+    cursor.execute("PRAGMA page_size = 4096")
+
+    # Otimizações adicionais
+    cursor.execute("PRAGMA mmap_size = 268435456")  # 256MB memory-mapped I/O
+    cursor.execute("PRAGMA optimize")
+
+    # Configurações para melhor concorrência
+    cursor.execute("PRAGMA busy_timeout = 5000")  # 5 segundos de timeout
+
+    cursor.close()
+
+
 def _criar_engine_sqlite(db_path: Path) -> Engine:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     url = f"sqlite+pysqlite:///{db_path.resolve()}"
-    return create_engine(
+    engine = create_engine(
         url,
         future=True,
-        connect_args={"check_same_thread": False, "timeout": 30},
+        connect_args={
+            "check_same_thread": False,
+            "timeout": 30.0,  # Timeout maior para operações concorrentes
+        },
         pool_pre_ping=True,
+        pool_size=10,  # Pool maior para melhor concorrência
+        max_overflow=20,
+        pool_recycle=3600,
     )
+
+    # Registrar listener para configurar PRAGMAs em cada conexão
+    event.listen(engine, "connect", _configure_sqlite_pragmas)
+
+    return engine
 
 
 @lru_cache(maxsize=1)
@@ -62,7 +96,8 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(
+                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -77,7 +112,8 @@ def _ensure_usuario_schema(engine: Engine) -> None:
                 "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
             )
         if "arquivado_em" not in colunas:
-            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
 
         if statements:
             with engine.begin() as conn:

@@ -13,6 +13,7 @@ from src import data as db
 from src.domain.usuario_service import criar_tabela_usuario
 from src.infrastructure.ipc.manager import ensure_ipc_dirs_exist
 from src.infrastructure.logging.config import configurar_logging
+from src.infrastructure.maintenance import executar_manutencao_automatica
 from src.ui.dialogs.login_dialog import LoginDialog
 from src.ui.main_window import MainWindow
 from src.ui.theme_manager import ThemeManager
@@ -39,6 +40,9 @@ class ControleProcessosApp:
         db.inicializar_todas_tabelas()
         ensure_ipc_dirs_exist()
         criar_tabela_usuario()
+
+        # Executar manutenção automática em background (otimiza se necessário)
+        executar_manutencao_automatica()
         # db.limpar_bancos_orfaos()
 
     def run(self):
@@ -95,12 +99,14 @@ class ControleProcessosApp:
                     session_service.definir_comando_encerrar_sessao(
                         info_sessao["session_id"]
                     )
-                    session_service.remover_sessao_por_id(info_sessao["session_id"])
+                    session_service.remover_sessao_por_id(
+                        info_sessao["session_id"])
                 else:
                     return 0
 
             # Registrar nova sessão após todas as verificações
-            session_service.registrar_sessao(usuario_autenticado, admin_tool=False)
+            session_service.registrar_sessao(
+                usuario_autenticado, admin_tool=False)
 
             if self.main_window:
                 self.main_window.close()
