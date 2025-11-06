@@ -1,7 +1,6 @@
 """Canvas helper para integrar gráficos do Matplotlib ao Qt."""
 
-from matplotlib.backends.backend_qt5agg import \
-    FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from src.ui.styles import _FIGURE_FACE

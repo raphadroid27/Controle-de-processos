@@ -4,9 +4,10 @@ import os
 import sys
 from datetime import datetime
 
-import src.utils.database as db
-from src.utils.database.queries import FiltrosLancamentos
-from src.utils.periodo_faturamento import calcular_periodo_faturamento_atual_datas
+import src.data as db
+from src.data.repositories.queries import FiltrosLancamentos
+from src.core.periodo_faturamento import \
+    calcular_periodo_faturamento_atual_datas
 
 # Ajuste para execução direta sem PYTHONPATH configurado
 CURR_DIR = os.path.dirname(__file__)
@@ -27,7 +28,7 @@ def run():
     msg = db.adicionar_lancamento(
         usuario="SMOKE",
         cliente="CLIENTE_X",
-        processo="PROC_X",
+        pedido="PROC_X",
         qtde_itens="1",
         data_entrada=hoje,
         data_processo="",
@@ -45,7 +46,7 @@ def run():
         up = db.atualizar_lancamento(
             rid,
             cliente="CLIENTE_X",
-            processo="PROC_X",
+            pedido="PROC_X",
             qtde_itens="2",
             data_entrada=hoje,
             data_processo="",

@@ -144,3 +144,5 @@ temp/
 *_backup.*
 database/*
 .runtime/
+reports/*
+report.html

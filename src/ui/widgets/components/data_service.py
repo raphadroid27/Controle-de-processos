@@ -10,10 +10,8 @@ from typing import Any, Dict, List, Optional, Sequence
 from sqlalchemy.exc import SQLAlchemyError
 
 from src import data as db
-from src.data.repositories.queries import _garantir_periodo_atual
 from src.core.formatters import normalizar_nome_cliente
-from src.core.periodo_faturamento import \
-    calcular_periodo_faturamento_atual_datas
+from src.core.periodo_faturamento import calcular_periodo_faturamento_atual_datas
 
 __all__ = [
     "carregar_clientes_upper",
@@ -106,7 +104,7 @@ def listar_periodos_do_ano(
     ano_atual = str(data_inicio_atual.year)
 
     if ano == ano_atual:
-        _garantir_periodo_atual(periodos)
+        db.garantir_periodo_atual(periodos)
 
     return periodos
 

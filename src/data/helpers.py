@@ -5,16 +5,39 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
-from src.data.models import Lancamento
 from src.core.tempo_corte import normalizar_tempo_corte
+from src.data.models import Lancamento
 
 
 def parse_iso_date(value: Optional[str]) -> Optional[date]:
-    """Convert ISO string (YYYY-MM-DD) to ``date`` or ``None``."""
-    if not value:
+    """Converte string ISO (YYYY-MM-DD) ou DD/MM/YYYY para date.
+
+    Args:
+        value: String com data no formato YYYY-MM-DD ou DD/MM/YYYY
+
+    Returns:
+        Objeto date ou None se a conversão falhar ou valor for vazio
+
+    Examples:
+        >>> parse_iso_date("2025-11-06")
+        date(2025, 11, 6)
+        >>> parse_iso_date("06/11/2025")
+        date(2025, 11, 6)
+        >>> parse_iso_date("")
+        None
+    """
+    if not value or value == "Não processado":
         return None
+
+    # Tenta formato ISO (YYYY-MM-DD)
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        pass
+
+    # Tenta formato brasileiro (DD/MM/YYYY)
+    try:
+        return datetime.strptime(value, "%d/%m/%Y").date()
     except ValueError:
         return None
 
@@ -27,7 +50,14 @@ def format_datetime(value: Optional[datetime]) -> Optional[str]:
 
 
 def validar_qtde_itens(qtde_str: str) -> str | int:
-    """Valida e converte quantidade de itens."""
+    """Valida e converte quantidade de itens.
+
+    Args:
+        qtde_str: String representando a quantidade
+
+    Returns:
+        int se válido, ou str com mensagem de erro
+    """
     try:
         qtde = int(qtde_str)
         if qtde <= 0:
@@ -38,7 +68,14 @@ def validar_qtde_itens(qtde_str: str) -> str | int:
 
 
 def validar_e_processar_valor(valor_str: str) -> str | float:
-    """Valida e processa valor do pedido."""
+    """Valida e processa valor do pedido.
+
+    Args:
+        valor_str: String representando o valor monetário
+
+    Returns:
+        float arredondado se válido, ou str com mensagem de erro
+    """
     try:
         valor = float(valor_str)
         if valor < 0:
@@ -57,8 +94,17 @@ def validar_e_processar_valor(valor_str: str) -> str | float:
 
 def processar_datas(
     data_entrada_str: str, data_processo_str: Optional[str] = None
-) -> tuple[str | date, Optional[date]]:
-    """Processa datas de entrada e processo."""
+) -> tuple[date | str, Optional[date]]:
+    """Processa datas de entrada e processo.
+
+    Args:
+        data_entrada_str: Data de entrada no formato YYYY-MM-DD
+        data_processo_str: Data de processo no formato YYYY-MM-DD (opcional)
+
+    Returns:
+        Tupla com (data_entrada, data_processo) se válido,
+        ou (mensagem_erro, None) se inválido
+    """
     data_entrada = parse_iso_date(data_entrada_str.strip())
     if data_entrada is None:
         return "Erro: Data de entrada inválida.", None
@@ -73,7 +119,15 @@ def processar_observacoes(observacoes: Optional[str]) -> Optional[str]:
 
 
 def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
-    """Valida e normaliza dados para inserção."""
+    """Valida e normaliza dados para inserção.
+
+    Args:
+        lanc: Objeto Lancamento com dados a serem validados
+
+    Returns:
+        Dicionário com dados normalizados se válido,
+        ou string com mensagem de erro se inválido
+    """
     if not all(
         [
             (lanc.usuario or "").strip(),
@@ -99,8 +153,7 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
         return valor_result
     valor = valor_result
 
-    data_result = processar_datas(
-        lanc.data_entrada.strip(), lanc.data_processo)
+    data_result = processar_datas(lanc.data_entrada.strip(), lanc.data_processo)
     if isinstance(data_result[0], str):
         return data_result[0]
     data_entrada, data_processo = data_result
@@ -123,7 +176,15 @@ def preparar_lancamento_para_insert(lanc: Lancamento) -> str | Dict[str, Any]:
 
 
 def preparar_lancamento_para_update(lanc: Lancamento) -> str | Dict[str, Any]:
-    """Valida e normaliza dados antes de atualizar um registro."""
+    """Valida e normaliza dados antes de atualizar um registro.
+
+    Args:
+        lanc: Objeto Lancamento com dados a serem validados
+
+    Returns:
+        Dicionário com dados normalizados se válido,
+        ou string com mensagem de erro se inválido
+    """
     if not lanc.cliente or not lanc.pedido:
         return "Erro: Cliente e pedido são obrigatórios."
 

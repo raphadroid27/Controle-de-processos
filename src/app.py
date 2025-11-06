@@ -1,17 +1,21 @@
 """Módulo principal da aplicação de Controle de Pedidos."""
 
+# pylint: disable=duplicate-code
+# A lógica de verificação de sessão ativa é similar ao admin_app.py
+# mas mantida separada por contextos distintos de aplicação
+
 import logging
 import sys
 
 from PySide6.QtWidgets import QApplication, QDialog
 
+from src import data as db
+from src.domain.usuario_service import criar_tabela_usuario
+from src.infrastructure.ipc.manager import ensure_ipc_dirs_exist
+from src.infrastructure.logging.config import configurar_logging
 from src.ui.dialogs.login_dialog import LoginDialog
 from src.ui.main_window import MainWindow
 from src.ui.theme_manager import ThemeManager
-from src import data as db
-from src.infrastructure.ipc.manager import ensure_ipc_dirs_exist
-from src.infrastructure.logging.config import configurar_logging
-from src.domain.usuario_service import criar_tabela_usuario
 
 
 class ControleProcessosApp:
@@ -47,10 +51,13 @@ class ControleProcessosApp:
 
     def mostrar_login(self):
         """Mostra a tela de login e abre a janela principal ao autenticar."""
-        from src.domain import session_service
+        # pylint: disable=import-outside-toplevel
+        # Imports dentro do método para evitar importação circular
         from PySide6.QtWidgets import QMessageBox
 
-        # Não registrar sessão automaticamente no dialog - faremos manualmente após verificações
+        from src.domain import session_service
+
+        # Não registrar sessão automaticamente - faremos após verificações
         login_dialog = LoginDialog(registrar_sessao=False)
 
         if login_dialog.exec() == QDialog.Accepted:
@@ -65,7 +72,9 @@ class ControleProcessosApp:
             if ja_logado and info_sessao:
                 hostname_destino = info_sessao.get("hostname", "Desconhecido")
                 if hostname_destino == session_service.HOSTNAME:
-                    destino_texto = "neste mesmo computador (sessão anterior ainda aberta)."
+                    destino_texto = (
+                        "neste mesmo computador (sessão anterior ainda aberta)."
+                    )
                 else:
                     destino_texto = f"no computador '{hostname_destino}'."
 
@@ -73,8 +82,10 @@ class ControleProcessosApp:
                     login_dialog,
                     "Usuário já logado",
                     (
-                        f"O usuário '{usuario_autenticado}' já está logado {destino_texto}\n\n"
-                        "Deseja encerrar a sessão anterior e fazer login neste computador?"
+                        f"O usuário '{usuario_autenticado}' já está logado "
+                        f"{destino_texto}\n\n"
+                        "Deseja encerrar a sessão anterior e fazer login "
+                        "neste computador?"
                     ),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,
@@ -84,14 +95,12 @@ class ControleProcessosApp:
                     session_service.definir_comando_encerrar_sessao(
                         info_sessao["session_id"]
                     )
-                    session_service.remover_sessao_por_id(
-                        info_sessao["session_id"])
+                    session_service.remover_sessao_por_id(info_sessao["session_id"])
                 else:
                     return 0
 
             # Registrar nova sessão após todas as verificações
-            session_service.registrar_sessao(
-                usuario_autenticado, admin_tool=False)
+            session_service.registrar_sessao(usuario_autenticado, admin_tool=False)
 
             if self.main_window:
                 self.main_window.close()

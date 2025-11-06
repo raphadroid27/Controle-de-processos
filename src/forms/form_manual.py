@@ -27,6 +27,7 @@ from src.ui.resources.help_loader import (
 @dataclass(frozen=True)
 class ManualSection:
     """Representa uma seção do manual do sistema."""
+
     key: str
     label: str
 
@@ -47,6 +48,7 @@ class ManualDialog(QDialog):
     """Janela do manual do sistema."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Inicializa o diálogo do manual."""
         super().__init__(parent)
         self.setWindowTitle("Manual do Sistema")
         self.resize(600, 400)
@@ -64,11 +66,8 @@ class ManualDialog(QDialog):
 
         self._section_list = QListWidget(splitter)
         self._section_list.setUniformItemSizes(True)
-        self._section_list.setSelectionMode(
-            QListWidget.SelectionMode.SingleSelection
-        )
-        self._section_list.currentItemChanged.connect(
-            self._on_section_selected)
+        self._section_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self._section_list.currentItemChanged.connect(self._on_section_selected)
 
         self._content_browser = QTextBrowser(splitter)
         self._content_browser.setOpenExternalLinks(True)
@@ -141,7 +140,7 @@ class ManualDialog(QDialog):
     # Qt overrides
     # ------------------------------------------------------------------
     def closeEvent(self, event: QCloseEvent) -> None:  # pylint: disable=invalid-name
-        """Intercepta o evento de fechamento para esconder a janela ao invés de destruí-la."""
+        """Intercepta fechamento para esconder a janela."""
         self.hide()
         event.ignore()
 

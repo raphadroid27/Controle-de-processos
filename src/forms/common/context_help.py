@@ -63,7 +63,7 @@ def _load_help_contents() -> None:
         body = text
         stripped = body.lstrip()
         if title and stripped.startswith(title):
-            body = stripped[len(title):].lstrip()
+            body = stripped[len(title) :].lstrip()
         _HELP_CONTENT[key] = (title, body)
 
 

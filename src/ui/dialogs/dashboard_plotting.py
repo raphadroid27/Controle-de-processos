@@ -18,9 +18,9 @@ from src.ui.styles import (
 )
 
 if TYPE_CHECKING:
-    from pandas import DataFrame, Series
+    from pandas import DataFrame, Series  # noqa: F401
 
-    from .dashboard_dialog import DashboardDialog
+    from .dashboard_dialog import DashboardDialog  # noqa: F401
 
 # Rótulos fixos para períodos de faturamento, independentes do ano
 _ROTULOS_PERIODOS_FIXOS = [

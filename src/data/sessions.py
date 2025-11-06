@@ -12,10 +12,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.data.config import (DATABASE_DIR, SHARED_DB_PATH,
-                                       slugify_usuario, user_db_path)
+from src.data.config import DATABASE_DIR, SHARED_DB_PATH, slugify_usuario, user_db_path
 from src.data.models import SharedBase, UserBase, UsuarioModel
-
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +62,7 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(
-                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -80,8 +77,7 @@ def _ensure_usuario_schema(engine: Engine) -> None:
                 "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
             )
         if "arquivado_em" not in colunas:
-            statements.append(
-                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
 
         if statements:
             with engine.begin() as conn:

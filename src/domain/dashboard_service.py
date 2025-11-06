@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from functools import lru_cache
 from typing import Any, DefaultDict, Dict, Iterable, List, Set
 
@@ -33,7 +33,8 @@ class RegistroResumo:
     @property
     def ano(self) -> int:
         """Ano associado ao lançamento baseado no período de faturamento."""
-        numero = int(calcular_periodo_faturamento_para_data(self.data_base)[0])
+        data_dt = datetime.combine(self.data_base, datetime.min.time())
+        numero = int(calcular_periodo_faturamento_para_data(data_dt)[0])
         return (
             self.data_base.year + 1
             if numero == 1 and self.data_base.month == 12
@@ -43,7 +44,8 @@ class RegistroResumo:
     @property
     def mes(self) -> int:
         """Mês numérico do lançamento baseado no período de faturamento."""
-        return int(calcular_periodo_faturamento_para_data(self.data_base)[0])
+        data_dt = datetime.combine(self.data_base, datetime.min.time())
+        return int(calcular_periodo_faturamento_para_data(data_dt)[0])
 
     @property
     def dia_iso(self) -> str:
@@ -71,8 +73,7 @@ class DashboardAccumulator:
         self.dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
         self.dias_totais: Set[str] = set()
         self.horas_total_por_usuario: DefaultDict[str, int] = defaultdict(int)
-        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(
-            set)
+        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
         self.usuarios_registrados: Set[str] = set()
         self.registros_raw: List[Dict[str, Any]] = []
 
@@ -173,8 +174,7 @@ class DashboardAccumulator:
             totais_usuario = self.totais_por_usuario.get(usuario, {})
             itens_total = float(totais_usuario.get("itens", 0.0))
             os_total = float(totais_usuario.get("proposta", 0.0))
-            dias_com_horas = len(
-                self.horas_dias_por_usuario.get(usuario, set()))
+            dias_com_horas = len(self.horas_dias_por_usuario.get(usuario, set()))
             horas_total_usuario = self.horas_total_por_usuario.get(usuario, 0)
 
             medias_por_usuario[usuario] = {
@@ -198,8 +198,7 @@ class DashboardAccumulator:
             valor.get("proposta", 0.0) for valor in self.totais_por_usuario.values()
         )
         dias_totais_contagem = len(self.dias_totais)
-        total_horas_geral = sum(info["total"]
-                                for info in self.horas_por_dia.values())
+        total_horas_geral = sum(info["total"] for info in self.horas_por_dia.values())
         dias_com_horas_geral = len(self.horas_por_dia)
 
         media_geral = {

@@ -11,27 +11,32 @@ try:  # pragma: no cover - fallback executado apenas sem pandas instalado
 except ImportError:  # pragma: no cover
     pd = None  # type: ignore[assignment]
     if TYPE_CHECKING:  # pragma: no cover - apenas para análise estática
-        from pandas import DataFrame, Series  # pylint: disable=import-error
+        from pandas import DataFrame  # pylint: disable=import-error
     else:
         DataFrame = Any  # type: ignore[assignment]
-        Series = Any  # type: ignore[assignment]
 else:
-    from pandas import DataFrame, Series
+    pass
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
-from src.domain.dashboard_service import obter_metricas_dashboard
 from src.core.formatters import segundos_para_horas
-from src.core.periodo_faturamento import \
-    calcular_periodo_faturamento_para_data
-from src.ui.styles import (METRIC_MAP, aplicar_icone_padrao,
-                                 configurar_tabela_padrao)
-from src.ui.widgets.components.matplotlib_canvas import MatplotlibCanvas
+from src.core.periodo_faturamento import calcular_periodo_faturamento_para_data
+from src.domain.dashboard_service import obter_metricas_dashboard
 from src.ui.dialogs.dashboard_plotting import DashboardPlotting
 from src.ui.dialogs.dashboard_tables import DashboardTableUpdates
+from src.ui.styles import METRIC_MAP, aplicar_icone_padrao, configurar_tabela_padrao
+from src.ui.widgets.components.matplotlib_canvas import MatplotlibCanvas
 
 
 class DashboardDialog(QDialog):
@@ -145,8 +150,7 @@ class DashboardDialog(QDialog):
         )
         # Alterado para usar o mês de faturamento em vez do mês calendário
         self.df_registros["mes"] = self.df_registros["data"].apply(
-            lambda d: int(calcular_periodo_faturamento_para_data(
-                d.to_pydatetime())[0])
+            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
         )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"

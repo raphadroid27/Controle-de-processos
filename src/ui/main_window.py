@@ -3,19 +3,18 @@
 import logging
 import sys
 
-from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
-                            QTimer, Signal)
+from PySide6.QtCore import QFileSystemWatcher, QProcess, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
+from src.domain import session_service
+from src.ui.dialogs.dashboard_dialog import DashboardDialog
 from src.ui.dialogs.manual_dialog import mostrar_manual
 from src.ui.dialogs.sobre_dialog import main as mostrar_sobre
-from src.ui.theme_manager import ThemeManager
-from src.domain import session_service
-from src.ui.styles import aplicar_icone_padrao
-from src.ui.dialogs.dashboard_dialog import DashboardDialog
-from src.ui.widgets.processos_widget import ProcessosWidget
 from src.ui.message_utils import show_timed_message_box
+from src.ui.styles import aplicar_icone_padrao
+from src.ui.theme_manager import ThemeManager
+from src.ui.widgets.processos_widget import ProcessosWidget
 
 
 def _criar_menu_com_acoes_checkaveis(  # pylint: disable=too-many-positional-arguments
@@ -69,8 +68,7 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -88,13 +86,11 @@ class MainWindow(QMainWindow):
         comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
-        self.command_watcher.fileChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.fileChanged.connect(self.verificar_comando_sistema)
 
         comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
-        self.command_watcher.directoryChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.directoryChanged.connect(self.verificar_comando_sistema)
 
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
@@ -163,8 +159,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
         session_service.remover_sessao()
         event.accept()
 
@@ -196,8 +191,7 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Ferramentas Administrativas", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip(
-                "Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Ferramentas Administrativas (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -211,8 +205,7 @@ class MainWindow(QMainWindow):
             atualizar_action = QAction("Atualizar", self)
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip(
-                "Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 

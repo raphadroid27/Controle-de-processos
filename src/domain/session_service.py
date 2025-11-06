@@ -1,4 +1,4 @@
-"""Gerenciamento de sessões do sistema e comandos, usando comunicação baseada em arquivos (IPC)."""
+"""Gerenciamento de sessões do sistema e comandos de IPC."""
 
 import logging
 import socket
@@ -53,7 +53,8 @@ def registrar_sessao(usuario: str, *, admin_tool: bool = False) -> None:
         session_type,
     )
     manager.create_session_file(
-        SESSION_ID, usuario_registrado, HOSTNAME, session_type=session_type)
+        SESSION_ID, usuario_registrado, HOSTNAME, session_type=session_type
+    )
 
 
 def remover_sessao() -> None:
@@ -96,7 +97,7 @@ def verificar_sessao_admin_duplicada(usuario_nome: str) -> tuple[bool, dict | No
         usuario_nome: Nome do usuário a verificar
 
     Returns:
-        Tupla (tem_duplicata, info_sessao) onde info_sessao contém detalhes se encontrada
+        Tupla (tem_duplicata, info_sessao) com detalhes se encontrada
     """
     return _verificar_sessao_por_tipo(
         usuario_nome,
@@ -183,12 +184,12 @@ def get_comando_dir() -> Path:
 
 
 def get_comando_sessao_path(session_id: str) -> Path:
-    """Retorna o caminho do arquivo de comando para encerramento da sessão específica."""
+    """Retorna o caminho do comando para encerramento da sessão específica."""
     return Path(COMMAND_DIR) / f"{_SESSION_SHUTDOWN_PREFIX}{session_id}.cmd"
 
 
 def definir_comando_encerrar_sessao(session_id: str) -> None:
-    """Solicita o encerramento de uma sessão específica criando arquivo de comando direcionado."""
+    """Solicita encerramento criando arquivo de comando direcionado."""
     comando_path = get_comando_sessao_path(session_id)
     try:
         comando_path.parent.mkdir(parents=True, exist_ok=True)

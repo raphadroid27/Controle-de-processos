@@ -92,8 +92,7 @@ def atualizar_totais(
     """Atualiza os rótulos de totais com os valores fornecidos."""
     controles.label_pedidos.setText(f"Total Pedidos: {total_pedidos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
-    controles.label_valor.setText(
-        f"Total Valor: {formatar_valor(total_valor)}")
+    controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
 
     if media_dias_processo is None:
         controles.label_media_dias.setTextFormat(Qt.TextFormat.PlainText)
@@ -121,13 +120,9 @@ def atualizar_totais(
         )
 
     if tempo_corte_dia:
-        controles.label_tempo_corte_dia.setText(
-            f"Tempo corte hoje: {tempo_corte_dia}"
-        )
+        controles.label_tempo_corte_dia.setText(f"Tempo corte hoje: {tempo_corte_dia}")
     else:
-        controles.label_tempo_corte_dia.setText(
-            "Tempo corte hoje: --"
-        )
+        controles.label_tempo_corte_dia.setText("Tempo corte hoje: --")
 
 
 def _obter_cor_media_dias(valor: float) -> str:

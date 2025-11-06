@@ -72,9 +72,7 @@ def criar_formulario(
     entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
     entry_data_entrada.setMaximumDate(obter_data_atual_utc())
-    entry_data_entrada.setToolTip(
-        "Data de entrada do pedido. Não pode ser futura."
-    )
+    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)

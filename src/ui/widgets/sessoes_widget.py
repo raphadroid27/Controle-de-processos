@@ -22,6 +22,7 @@ class GerenciarSessoesWidget(QWidget):
     """Widget reutilizável para visualizar e controlar sessões ativas."""
 
     def __init__(self, parent=None):
+        """Inicializa o widget de sessões."""
         super().__init__(parent)
 
         self.tree_sessoes = QTreeWidget()
@@ -54,16 +55,12 @@ class GerenciarSessoesWidget(QWidget):
 
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
         aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 90)
-        self.btn_atualizar_sessoes.setToolTip(
-            "Atualizar a lista de sessões (F5)")
+        self.btn_atualizar_sessoes.setToolTip("Atualizar a lista de sessões (F5)")
         self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
 
-        self.btn_encerrar_sessao.clicked.connect(
-            self.encerrar_sessao_selecionada)
+        self.btn_encerrar_sessao.clicked.connect(self.encerrar_sessao_selecionada)
         aplicar_estilo_botao(self.btn_encerrar_sessao, "vermelho", 130)
-        self.btn_encerrar_sessao.setToolTip(
-            "Encerrar a sessão selecionada (Del)"
-        )
+        self.btn_encerrar_sessao.setToolTip("Encerrar a sessão selecionada (Del)")
         self.btn_encerrar_sessao.setShortcut(QKeySequence("Del"))
 
         self.btn_limpar_inativas.clicked.connect(self.limpar_sessoes_inativas)
@@ -104,7 +101,7 @@ class GerenciarSessoesWidget(QWidget):
                     sessao["usuario"],
                     app_name,
                     sessao["hostname"],
-                    sessao["last_updated"]
+                    sessao["last_updated"],
                 ]
             )
             item.setData(0, 0x0100, sessao["session_id"])
@@ -115,9 +112,7 @@ class GerenciarSessoesWidget(QWidget):
         item_selecionado = self.tree_sessoes.currentItem()
         if not item_selecionado:
             QMessageBox.warning(
-                self,
-                "Aviso",
-                "Selecione uma sessão na lista para encerrar."
+                self, "Aviso", "Selecione uma sessão na lista para encerrar."
             )
             return
 
@@ -132,7 +127,7 @@ class GerenciarSessoesWidget(QWidget):
                 self,
                 "Aviso",
                 "Você não pode encerrar sua própria sessão.\n"
-                "Use 'Logout' ou 'Sair' no menu Arquivo."
+                "Use 'Logout' ou 'Sair' no menu Arquivo.",
             )
             return
 
@@ -164,9 +159,9 @@ class GerenciarSessoesWidget(QWidget):
             self,
             "Limpar Sessões Inativas",
             (
-                "Deseja remover sessões que não foram atualizadas nos últimos 2 minutos?\n\n"
-                "Isso remove sessões de aplicações que podem ter crashado ou "
-                "sido fechadas incorretamente."
+                "Deseja remover sessões não atualizadas há 2 minutos?\n\n"
+                "Isso remove sessões de aplicações que podem ter "
+                "crashado ou sido fechadas incorretamente."
             ),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -227,6 +222,7 @@ class GerenciarSessoesDialog(QDialog):
     """Diálogo independente que encapsula o widget de sessões."""
 
     def __init__(self, parent=None, *, modal: bool = True):
+        """Inicializa o diálogo de sessões."""
         super().__init__(parent)
 
         self.setWindowTitle("Sessões Ativas")

@@ -8,8 +8,7 @@ from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QWidget
 
 from src import __version__  # pylint: disable=import-error
 
@@ -60,7 +59,8 @@ def main(root: Optional[QWidget]) -> None:
 
     # Link para o GitHub
     label_link = QLabel(
-        '<a href="https://github.com/raphadroid27/Controle-de-processos">Repositório no GitHub</a>'
+        '<a href="https://github.com/raphadroid27/'
+        'Controle-de-processos">Repositório no GitHub</a>'
     )
     label_link.setFont(font_normal)
     label_link.setAlignment(Qt.AlignmentFlag.AlignCenter)

@@ -1,7 +1,25 @@
-"""Consultas e agregações sobre os registros de pedidos."""
+"""Consultas e agregações sobre os registros de pedidos.
+
+Este módulo implementa um sistema de cache multinível para otimizar consultas:
+
+Cache LRU (Least Recently Used):
+- maxsize=128: Cache para estatísticas gerais por usuário
+- maxsize=256: Cache para listas de valores únicos (clientes, pedidos, meses, anos)
+- maxsize=512: Cache para períodos de faturamento
+
+A estratégia de cache:
+1. Funções públicas não são cacheadas diretamente
+2. Funções privadas com sufixo '_cache' implementam o cache LRU
+3. Cache é invalidado via limpar_caches_consultas() após operações de escrita
+4. Valores são armazenados como tuplas imutáveis para compatibilidade com lru_cache
+
+Nota: Caches são mantidos em memória durante toda a execução da aplicação.
+Para liberar memória ou após mudanças nos dados, use limpar_caches_consultas().
+"""
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
@@ -10,14 +28,16 @@ from typing import Any, Iterable, List, Optional, Tuple
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from src.core.periodo_faturamento import calcular_periodo_faturamento_atual_datas
 from src.data.config import encode_registro_id, slugify_usuario
 from src.data.helpers import format_datetime, parse_iso_date
 from src.data.models import RegistroModel, UsuarioModel
-from src.data.sessions import (get_sessionmaker_for_slug,
-                                         get_shared_session, get_user_session,
-                                         iter_user_databases)
-from src.core.periodo_faturamento import \
-    calcular_periodo_faturamento_atual_datas
+from src.data.sessions import (
+    get_sessionmaker_for_slug,
+    get_shared_session,
+    get_user_session,
+    iter_user_databases,
+)
 
 
 @dataclass
@@ -45,10 +65,13 @@ def _descongelar_dict(congelado: Iterable[tuple[str, Any]]) -> dict[str, Any]:
     return dict(congelado)
 
 
-def _garantir_periodo_atual(periodos: List[dict]) -> None:
+def garantir_periodo_atual(periodos: List[dict]) -> None:
     """Garante que o período atual de faturamento esteja na lista de períodos.
 
     Se o período atual não estiver presente, ele é inserido no início da lista.
+
+    Args:
+        periodos: Lista de dicionários com períodos de faturamento
     """
     data_inicio_atual, data_fim_atual = calcular_periodo_faturamento_atual_datas()
 
@@ -81,13 +104,10 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(
-            RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if pedido:
-        condicoes.append(
-            func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%")
-        )
+        condicoes.append(func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%"))
 
     if data_inicio and data_fim:
         data_inicio_parsed = parse_iso_date(data_inicio)
@@ -95,7 +115,7 @@ def _montar_condicoes(
         if data_inicio_parsed and data_fim_parsed:
             # Filtrar por data_processo se existir, senão por data_entrada
             condicoes.append(
-                or_(
+                or_(  # type: ignore[arg-type]
                     and_(
                         RegistroModel.data_processo.is_not(None),
                         RegistroModel.data_processo.between(
@@ -188,8 +208,7 @@ def buscar_lancamentos_filtros_completos(
 
     if usuario:
         slug = slugify_usuario(usuario)
-        session = get_user_session(usuario)
-        try:
+        with closing(get_user_session(usuario)) as session:
             registros.extend(
                 _buscar_registros_em_session(
                     session,
@@ -199,12 +218,9 @@ def buscar_lancamentos_filtros_completos(
                     offset=offset,
                 )
             )
-        finally:
-            session.close()
     else:
         for slug, _ in iter_user_databases():
-            session = get_sessionmaker_for_slug(slug)()
-            try:
+            with closing(get_sessionmaker_for_slug(slug)()) as session:
                 registros.extend(
                     _buscar_registros_em_session(
                         session,
@@ -214,8 +230,6 @@ def buscar_lancamentos_filtros_completos(
                         offset=offset,
                     )
                 )
-            finally:
-                session.close()
 
     return registros
 
@@ -250,24 +264,18 @@ def _calcular_estatisticas_agregadas(
     total_valor = 0.0
 
     if usuario:
-        session = get_user_session(usuario)
-        try:
+        with closing(get_user_session(usuario)) as session:
             tp, ti, tv = _agregar_em_session(session, condicoes)
-        finally:
-            session.close()
-        total_proc += tp
-        total_itens += ti
-        total_valor += tv
-    else:
-        for slug, _ in iter_user_databases():
-            session = get_sessionmaker_for_slug(slug)()
-            try:
-                tp, ti, tv = _agregar_em_session(session, condicoes)
-            finally:
-                session.close()
             total_proc += tp
             total_itens += ti
             total_valor += tv
+    else:
+        for slug, _ in iter_user_databases():
+            with closing(get_sessionmaker_for_slug(slug)()) as session:
+                tp, ti, tv = _agregar_em_session(session, condicoes)
+                total_proc += tp
+                total_itens += ti
+                total_valor += tv
 
     return {
         "total_pedidos": total_proc,
@@ -278,6 +286,11 @@ def _calcular_estatisticas_agregadas(
 
 @lru_cache(maxsize=128)
 def _buscar_estatisticas_cache(usuario: Optional[str]) -> tuple[int, int, float]:
+    """Cache LRU para estatísticas globais.
+
+    maxsize=128: Suficiente para cachear estatísticas de ~100 usuários ativos
+    mais algumas combinações de filtros comuns.
+    """
     condicoes = _montar_condicoes()
     totais = _calcular_estatisticas_agregadas(condicoes, usuario)
     return (
@@ -288,10 +301,19 @@ def _buscar_estatisticas_cache(usuario: Optional[str]) -> tuple[int, int, float]
 
 
 def buscar_estatisticas(usuario: Optional[str] = None):
-    """Obtém totais agregados globais ou por usuário para indicadores principais."""
+    """Obtém totais agregados globais ou por usuário para indicadores principais.
 
-    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(
-        usuario)
+    Args:
+        usuario: Nome do usuário para filtrar estatísticas (None = todos)
+
+    Returns:
+        Dicionário com total_pedidos, total_itens e total_valor
+
+    Note:
+        Resultados são cacheados. Use limpar_caches_consultas() após inserções.
+    """
+
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(usuario)
     return {
         "total_pedidos": total_pedidos,
         "total_itens": total_itens,
@@ -328,7 +350,7 @@ def buscar_estatisticas_completas(
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
 ):
-    """Retorna totais agregados considerando filtros de usuário, cliente, pedido e período."""
+    """Retorna totais agregados considerando filtros aplicados."""
 
     total_pedidos, total_itens, total_valor = _buscar_estatisticas_completas_cache(
         usuario,
@@ -353,22 +375,14 @@ def _buscar_valores_unicos(
     valores: set[str] = set()
 
     if usuario:
-        session = get_user_session(usuario)
-        try:
+        with closing(get_user_session(usuario)) as session:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,)
-                           in session.execute(stmt) if value)
-        finally:
-            session.close()
+            valores.update(value for (value,) in session.execute(stmt) if value)
     else:
         for slug, _ in iter_user_databases():
-            session = get_sessionmaker_for_slug(slug)()
-            try:
+            with closing(get_sessionmaker_for_slug(slug)()) as session:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,)
-                               in session.execute(stmt) if value)
-            finally:
-                session.close()
+                valores.update(value for (value,) in session.execute(stmt) if value)
 
     return sorted(valores)
 
@@ -386,6 +400,10 @@ def buscar_usuarios_unicos(*, incluir_arquivados: bool = False) -> List[str]:
 
 @lru_cache(maxsize=256)
 def _clientes_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
+    """Cache LRU para lista de clientes únicos.
+
+    maxsize=256: Comporta múltiplos usuários e consultas globais sem filtro.
+    """
     return tuple(_buscar_valores_unicos("cliente", usuario))
 
 
@@ -397,6 +415,10 @@ def buscar_clientes_unicos(usuario: Optional[str] = None) -> List[str]:
 
 @lru_cache(maxsize=256)
 def _pedidos_unicos_cache(usuario: Optional[str]) -> tuple[str, ...]:
+    """Cache LRU para lista de pedidos únicos.
+
+    maxsize=256: Comporta múltiplos usuários e consultas globais.
+    """
     return tuple(_buscar_valores_unicos("pedido", usuario))
 
 
@@ -468,13 +490,15 @@ def _listar_datas_pedido_filtradas(
     ano: Optional[int] = None,
     incluir_ano_seguinte: bool = False,
 ) -> List[str]:
-    """Lista datas de processamento filtradas por usuário e ano, podendo incluir ano seguinte."""
+    """Lista datas de processamento filtradas opcionalmente."""
 
-    return list(_listar_datas_pedido_filtradas_cache(
-        usuario,
-        ano,
-        incluir_ano_seguinte,
-    ))
+    return list(
+        _listar_datas_pedido_filtradas_cache(
+            usuario,
+            ano,
+            incluir_ano_seguinte,
+        )
+    )
 
 
 def _periodo_faturamento_datas(data_str: str) -> Optional[Tuple[str, str]]:
@@ -545,9 +569,7 @@ def _gerar_periodos_faturamento_por_ano(
             intervalo = _periodo_faturamento_datas(data)
             if intervalo and int(intervalo[0][:4]) == ano_int:
                 inicio, fim = intervalo
-                display = _formatar_periodo_exibicao(
-                    inicio, fim, com_ano=False
-                )
+                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
                 if display:
                     month = int(inicio[5:7])
                     numero = 1 if month == 12 else month + 1
@@ -568,26 +590,28 @@ def _gerar_periodos_faturamento_por_ano(
         for mes in range(1, 13):
             if mes == 1:
                 # Janeiro: 26/12/(ano-1) a 25/01/ano
-                inicio = date(ano_int - 1, 12, 26)
-                fim = date(ano_int, 1, 25)
+                inicio_date = date(ano_int - 1, 12, 26)
+                fim_date = date(ano_int, 1, 25)
             else:
                 # Outros meses: 26/(mes-1) a 25/mes
-                inicio = date(ano_int, mes - 1, 26)
-                fim = date(ano_int, mes, 25)
+                inicio_date = date(ano_int, mes - 1, 26)
+                fim_date = date(ano_int, mes, 25)
 
-            display = _formatar_periodo_exibicao(
-                inicio.isoformat(), fim.isoformat(), com_ano=False
-            )
+            inicio = inicio_date.isoformat()
+            fim = fim_date.isoformat()
+
+            display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
             if display:
                 periodos.append(
                     {
                         "display": display,
-                        "inicio": inicio.isoformat(),
-                        "fim": fim.isoformat(),
+                        "inicio": inicio,
+                        "fim": fim,
                         "numero": mes,
                     }
                 )
 
+    # type: ignore[arg-type, return-value]
     periodos.sort(key=lambda p: p["inicio"], reverse=True)
     return periodos
 
@@ -604,8 +628,7 @@ def _buscar_periodos_faturamento_por_ano_cache(
 def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
     """Produz os períodos de faturamento (26/25) de um ano específico."""
 
-    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
-        ano, usuario)
+    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(ano, usuario)
     return [_descongelar_dict(periodo) for periodo in periodos_congelados]
 
 

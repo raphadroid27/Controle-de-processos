@@ -1,4 +1,4 @@
-"""Módulo para Gerenciamento de Comunicação entre Processos (IPC) via sistema de arquivos."""
+"""Módulo para Gerenciamento de IPC via sistema de arquivos."""
 
 import ctypes
 import json
@@ -9,8 +9,7 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List
 
-from src.infrastructure.ipc.config import (COMMAND_DIR, RUNTIME_DIR,
-                                           SESSION_DIR)
+from src.infrastructure.ipc.config import COMMAND_DIR, RUNTIME_DIR, SESSION_DIR
 
 FILE_ATTRIBUTE_HIDDEN = 0x02
 
@@ -21,8 +20,7 @@ def _hide_path(path: str) -> None:
     """Define o atributo 'oculto' em um arquivo ou diretório no Windows."""
     if os.name == "nt":
         try:
-            ctypes.windll.kernel32.SetFileAttributesW(
-                path, FILE_ATTRIBUTE_HIDDEN)
+            ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
         except (AttributeError, OSError):
             pass  # Silenciar warnings não críticos
 
@@ -59,8 +57,7 @@ def create_session_file(
         with open(session_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
     except IOError as e:
-        logging.error(
-            "Erro ao criar arquivo de sessão '%s': %s", session_id, e)
+        logging.error("Erro ao criar arquivo de sessão '%s': %s", session_id, e)
 
 
 def remove_session_file(session_id: str) -> None:
@@ -70,8 +67,7 @@ def remove_session_file(session_id: str) -> None:
         try:
             os.remove(session_file)
         except OSError as e:
-            logging.error(
-                "Erro ao remover arquivo de sessão '%s': %s", session_id, e)
+            logging.error("Erro ao remover arquivo de sessão '%s': %s", session_id, e)
 
 
 def touch_session_file(session_id: str, usuario: str, hostname: str) -> None:
@@ -94,8 +90,7 @@ def get_active_sessions() -> List[Dict[str, Any]]:
         return []
 
     try:
-        session_files = [f for f in os.listdir(
-            SESSION_DIR) if f.endswith(".session")]
+        session_files = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
         for filename in session_files:
             session_id = filename.replace(".session", "")
             filepath = os.path.join(SESSION_DIR, filename)
@@ -156,8 +151,7 @@ def cleanup_inactive_sessions(timeout_seconds: int = 120) -> None:
     """Remove arquivos de sessão que não foram atualizados dentro do timeout."""
     now = time.time()
     for session in get_active_sessions():
-        session_file = os.path.join(
-            SESSION_DIR, f"{session['session_id']}.session")
+        session_file = os.path.join(SESSION_DIR, f"{session['session_id']}.session")
         try:
             last_modified = os.path.getmtime(session_file)
             if (now - last_modified) > timeout_seconds:
@@ -213,8 +207,7 @@ def clear_command(command: str) -> None:
         try:
             os.remove(command_file)
         except OSError as e:
-            logging.error(
-                "Erro ao remover arquivo de comando '%s': %s", command, e)
+            logging.error("Erro ao remover arquivo de comando '%s': %s", command, e)
 
 
 def clear_all_commands() -> None:
