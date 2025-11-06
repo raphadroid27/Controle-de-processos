@@ -9,7 +9,7 @@ from datetime import datetime
 from PySide6.QtCore import QDate
 from PySide6.QtWidgets import QDateEdit, QStyledItemDelegate
 
-from src.utils.ui_config import obter_data_atual_utc
+from src.ui.styles import obter_data_atual_utc
 
 
 class DateEditDelegate(QStyledItemDelegate):

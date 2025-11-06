@@ -6,7 +6,7 @@ import logging
 import sys
 
 from src.app import ControleProcessosApp
-from src.utils.logging_config import configurar_logging
+from src.infrastructure.logging.config import configurar_logging
 
 
 def main() -> None:

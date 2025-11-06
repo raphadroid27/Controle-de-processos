@@ -97,7 +97,7 @@ class ManualDialog(QDialog):
         self._section_list.clear()
 
         keys = [section.key for section in self._sections]
-        help_map = {key: entry for key, entry in iter_help_entries(keys)}
+        help_map = dict(iter_help_entries(keys))
 
         for section in self._sections:
             item = QListWidgetItem(section.label)

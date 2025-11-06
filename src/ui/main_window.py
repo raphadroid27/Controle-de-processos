@@ -8,13 +8,13 @@ from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
-from src.forms.form_manual import mostrar_manual
-from src.forms.form_sobre import main as mostrar_sobre
+from src.ui.dialogs.manual_dialog import mostrar_manual
+from src.ui.dialogs.sobre_dialog import main as mostrar_sobre
 from src.ui.theme_manager import ThemeManager
-from src.utils import session_manager
-from src.utils.ui_config import aplicar_icone_padrao
-from src.widgets.dashboard_dialog import DashboardDialog
-from src.widgets.widget import PedidosWidget
+from src.domain import session_service
+from src.ui.styles import aplicar_icone_padrao
+from src.ui.dialogs.dashboard_dialog import DashboardDialog
+from src.ui.widgets.processos_widget import ProcessosWidget
 
 
 def show_timed_message_box(parent, title, message, timeout_ms=10000):
@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
 
-        self.setCentralWidget(PedidosWidget(usuario_logado, is_admin))
+        self.setCentralWidget(ProcessosWidget(usuario_logado, is_admin))
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
@@ -107,13 +107,13 @@ class MainWindow(QMainWindow):
 
         # Usar QFileSystemWatcher para monitorar comandos em vez de polling
         self.command_watcher = QFileSystemWatcher(self)
-        comando_path = session_manager.get_comando_path()
+        comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
         self.command_watcher.fileChanged.connect(
             self.verificar_comando_sistema)
 
-        comando_dir = session_manager.get_comando_dir()
+        comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
         self.command_watcher.directoryChanged.connect(
             self.verificar_comando_sistema)
@@ -127,9 +127,9 @@ class MainWindow(QMainWindow):
         """Atualiza o heartbeat da sessão e verifica se a sessão ainda é válida."""
         try:
             # Verificar se a sessão ainda existe
-            sessoes = session_manager.obter_sessoes_ativas()
+            sessoes = session_service.obter_sessoes_ativas()
             sessao_atual_existe = any(
-                s["session_id"] == session_manager.SESSION_ID for s in sessoes
+                s["session_id"] == session_service.SESSION_ID for s in sessoes
             )
 
             if not sessao_atual_existe:
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Atualizar heartbeat se a sessão ainda existe
-            session_manager.atualizar_heartbeat_sessao()
+            session_service.atualizar_heartbeat_sessao()
 
         except (OSError, RuntimeError) as e:
             # Em caso de erro, assumir que a sessão não é válida
@@ -157,7 +157,7 @@ class MainWindow(QMainWindow):
 
     def verificar_comando_sistema(self):
         """Verifica se há comandos do sistema para executar."""
-        if session_manager.obter_comando_encerrar_sessao(session_manager.SESSION_ID):
+        if session_service.obter_comando_encerrar_sessao(session_service.SESSION_ID):
             show_timed_message_box(
                 self,
                 "Sessão Encerrada",
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
             QApplication.quit()
             return
 
-        comando_global = session_manager.obter_comando_sistema()
+        comando_global = session_service.obter_comando_sistema()
         if comando_global == "SHUTDOWN":
             show_timed_message_box(
                 self,
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
                 10000,
             )
 
-            session_manager.limpar_comando_sistema()
+            session_service.limpar_comando_sistema()
             QApplication.quit()
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
@@ -187,7 +187,7 @@ class MainWindow(QMainWindow):
         self._theme_manager.unregister_listener(self._on_tema_atualizado)
         self._theme_manager.unregister_color_listener(
             self._on_cor_tema_atualizada)
-        session_manager.remover_sessao()
+        session_service.remover_sessao()
         event.accept()
 
     def criar_menu(self):
@@ -307,7 +307,7 @@ class MainWindow(QMainWindow):
     def atualizar_tabela(self):
         """Atualiza a tabela principal com os registros."""
         widget_central = self.centralWidget()
-        if isinstance(widget_central, PedidosWidget):
+        if isinstance(widget_central, ProcessosWidget):
             widget_central.aplicar_filtro()
 
     def fazer_logout(self):
@@ -321,7 +321,7 @@ class MainWindow(QMainWindow):
 
         if resposta == QMessageBox.StandardButton.Yes:
             self._logout_voluntario = True  # Marcar como logout voluntário
-            session_manager.remover_sessao()
+            session_service.remover_sessao()
             self.logout_requested.emit()
             self.close()
 

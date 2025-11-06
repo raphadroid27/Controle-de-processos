@@ -1,0 +1,63 @@
+<h2>Ferramentas Administrativas</h2>
+<p>Disponíveis apenas para administradores. Oferecem gestão de usuários e sessões em abas separadas.</p>
+<p>Acesso através do menu <b>Admin → Ferramentas Administrativas (Ctrl+G)</b> na janela principal. Isso abre uma aplicação independente que exige login administrativo.</p>
+
+<h3>Estrutura da janela</h3>
+<p>A janela de Ferramentas Administrativas possui duas abas:</p>
+<ul>
+  <li><b>Aba "Usuários"</b>: gerenciamento completo de contas (resetar senha, arquivar, restaurar, excluir).</li>
+  <li><b>Aba "Sessões"</b>: monitoramento de sessões ativas e comando de encerramento global do sistema.</li>
+</ul>
+<h3>Aba "Usuários" — botões e funcionamento</h3>
+<p>Use a aba <b>Usuários</b> para localizar e administrar contas. A lista mostra Nome, Tipo (admin/padrão) e Status (ativo/arquivado).</p>
+
+<h4>Barra de busca</h4>
+<ul>
+  <li><b>Filtro por texto</b>: digite parte do nome ou status (ex.: "ativo", "arquivado"). A lista atualiza em tempo real.</li>
+  <li><b>Limpar</b>: remove o filtro e exibe todos novamente.</li>
+</ul>
+
+<h4>Botões de ação</h4>
+<ul>
+  <li>
+    <b>Resetar Senha</b> (<code>Ctrl+Shift+R</code>)<br/>
+    <i>Pré-requisito:</i> selecionar um usuário ativo.<br/>
+    <i>Efeito:</i> redefine a senha do usuário para a senha padrão (armazenada com hash). O usuário deve criar uma nova senha no próximo login.
+  </li>
+  <li>
+    <b>Arquivar</b> (<code>Ctrl+Shift+A</code>)<br/>
+    <i>Pré-requisitos:</i> usuário não-admin e ativo.<br/>
+    <i>Efeito:</i> desativa o acesso imediatamente, registra a data de arquivamento e encerra sessões ativas do usuário. O histórico é preservado.
+  </li>
+  <li>
+    <b>Restaurar</b> (<code>Ctrl+Shift+T</code>)<br/>
+    <i>Pré-requisitos:</i> usuário arquivado.<br/>
+    <i>Efeito:</i> reativa o acesso e limpa a data de arquivamento. O banco individual do usuário é garantido/reativado se necessário.
+  </li>
+  <li>
+    <b>Excluir Usuário</b> (<code>Ctrl+Shift+Del</code>)<br/>
+    <i>Pré-requisitos:</i> usuário arquivado e não-admin.<br/>
+    <i>Efeito:</i> remove o registro permanentemente e apaga o banco individual do usuário. Exige confirmação.<br/>
+    <i>Observação:</i> para excluir, <u>arquive primeiro</u>.
+  </li>
+  <li>
+    <b>Alterar Minha Senha</b> (<code>Ctrl+Alt+S</code>)<br/>
+    <i>Contexto:</i> altera a senha do usuário atualmente logado no sistema administrativo.<br/>
+    <i>Fluxo:</i> solicita senha atual, nova senha e confirmação — validações são aplicadas antes de salvar.
+  </li>
+</ul>
+
+<p><b>Dicas:</b> selecione um usuário para habilitar/desabilitar automaticamente os botões válidos para aquele status. A exclusão e o arquivamento exibem caixas de confirmação.</p>
+
+<h3>Sessões e manutenção</h3>
+<ul>
+  <li><b>Listar/encerrar sessões</b> ativas por usuário para liberar acessos.</li>
+  <li><b>Shutdown</b> coordenado para manutenção programada.</li>
+</ul>
+
+<h3>Aba “Sessões” — botões e funcionamento</h3>
+<ul>
+  <li><b>Lista de sessões ativas</b>: mostra Usuário, Computador (hostname) e Última Atividade.</li>
+  <li><b>Atualizar</b> (<code>F5</code>): recarrega a listagem de sessões ativas.</li>
+  <li><b>Shutdown Sistema</b> (<code>Ctrl+Shift+Q</code>): envia comando para que instâncias do sistema encerrem com aviso. Útil para manutenção/atualizações.</li>
+</ul>

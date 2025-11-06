@@ -5,13 +5,13 @@ import sys
 
 from PySide6.QtWidgets import QApplication, QDialog
 
-from src.login_dialog import LoginDialog
+from src.ui.dialogs.login_dialog import LoginDialog
 from src.ui.main_window import MainWindow
 from src.ui.theme_manager import ThemeManager
-from src.utils import database as db
-from src.utils import ipc_manager
-from src.utils.logging_config import configurar_logging
-from src.utils.usuario import criar_tabela_usuario
+from src import data as db
+from src.infrastructure.ipc.manager import ensure_ipc_dirs_exist
+from src.infrastructure.logging.config import configurar_logging
+from src.domain.usuario_service import criar_tabela_usuario
 
 
 class ControleProcessosApp:
@@ -33,7 +33,7 @@ class ControleProcessosApp:
 
         # Inicialização explícita das tabelas para evitar ciclos de import
         db.inicializar_todas_tabelas()
-        ipc_manager.ensure_ipc_dirs_exist()
+        ensure_ipc_dirs_exist()
         criar_tabela_usuario()
         # db.limpar_bancos_orfaos()
 
