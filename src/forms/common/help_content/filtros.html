@@ -1,0 +1,33 @@
+<h2>Filtros e Pesquisa</h2>
+<p>Use os filtros para localizar registros. A listagem e os totais são atualizados conforme as alterações.</p>
+
+<h3>Tipos de filtro</h3>
+<ul>
+  <li><b>Cliente</b>: autocompletar com nomes conhecidos; padronize a grafia para evitar duplicidades.</li>
+  <li><b>Pedido/Proposta</b>: busca por prefixo do identificador.</li>
+  <li><b>Ano</b>: restringe os resultados a um ano específico (opção “Todos os anos” mostra todos).</li>
+  <li><b>Período de faturamento</b>: janelas do dia 26 de um mês ao dia 25 do seguinte. O período vigente é sugerido automaticamente. “Todos os períodos” remove o recorte mensal (respeitando o Ano, se selecionado).</li>
+  <li><b>Usuário (admin)</b>: permite focar em um desenhista específico ou “Todos os usuários”.</li>
+</ul>
+
+<h3>Como funcionam os períodos</h3>
+<ul>
+  <li>O mês “de faturamento” é aquele em que o dia 25 está incluído.</li>
+  <li>Ex.: 26/03 → 25/04 corresponde ao período de <b>abril</b>.</li>
+  <li>Ao selecionar <b>Todos os períodos</b> + um <b>Ano</b>, o filtro considera o ano inteiro (01/01 → 31/12).</li>
+</ul>
+
+<h3>Boas práticas</h3>
+<ul>
+  <li>Combine <b>Cliente + Ano</b> para análises anuais por cliente.</li>
+  <li>Use o <b>Período de faturamento</b> para comparações mensais consistentes.</li>
+  <li>Use “Limpar Filtros” para remover texto e manter o período vigente selecionado.</li>
+</ul>
+
+<h3>Exemplos</h3>
+<ul>
+  <li>“Todos os pedidos do Cliente X no ano corrente.”</li>
+  <li>“Pedidos registrados no período 26/03 a 25/04.”</li>
+</ul>
+
+<p>Observação: datas futuras não são permitidas; períodos são ajustados automaticamente para limites válidos.</p>

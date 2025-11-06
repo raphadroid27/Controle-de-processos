@@ -8,6 +8,7 @@ from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
 
+from src.forms.form_manual import mostrar_manual
 from src.forms.form_sobre import main as mostrar_sobre
 from src.ui.theme_manager import ThemeManager
 from src.utils import session_manager
@@ -241,6 +242,13 @@ class MainWindow(QMainWindow):
 
         ajuda_menu = menubar.addMenu("Ajuda")
 
+        manual_action = QAction("Manual do Sistema", self)
+        manual_action.triggered.connect(self.abrir_manual)
+        manual_action.setShortcut(QKeySequence("F1"))
+        manual_action.setStatusTip("Consultar o manual do sistema")
+        manual_action.setToolTip("Manual do sistema (F1)")
+        ajuda_menu.addAction(manual_action)
+
         sobre_action = QAction("Sobre", self)
         sobre_action.triggered.connect(self.abrir_sobre)
         sobre_action.setStatusTip("Informações sobre a aplicação")
@@ -283,6 +291,17 @@ class MainWindow(QMainWindow):
                 self,
                 "Erro",
                 f"Não foi possível abrir a janela Sobre: {exc}",
+            )
+
+    def abrir_manual(self):
+        """Abre o manual do sistema."""
+        try:
+            mostrar_manual(self)
+        except (ImportError, AttributeError, RuntimeError) as exc:
+            QMessageBox.warning(
+                self,
+                "Erro",
+                f"Não foi possível abrir o manual: {exc}",
             )
 
     def atualizar_tabela(self):

@@ -1,0 +1,115 @@
+<h2>Dashboard</h2>
+<p>
+  O Dashboard é exclusivo para administradores e permite visualizar métricas consolidadas,
+  comparar períodos e acompanhar indicadores de produtividade. Acesse pelo menu <b>Admin → Dashboard (Ctrl+D)</b>.
+  <br>
+  <i>Observação sobre períodos:</i> todo o sistema trabalha com o período de faturamento
+  <b>do dia 26 de um mês ao dia 25 do mês seguinte</b> (ex.: 26 de março a 25 de abril).
+  As colunas "mensais" do dashboard refletem exatamente esses períodos.
+</p>
+
+<h3>Pré-requisitos</h3>
+<ul>
+  <li>Requer permissões de administrador.</li>
+  <li>Se não houver dados suficientes, o dashboard informará a ausência de informações.</li>
+</ul>
+
+<h3>Visão geral do Dashboard</h3>
+<p>
+  O Dashboard reúne métricas por usuário, período de faturamento e ano. Ele tem duas áreas:
+</p>
+<ul>
+  <li><b>Aba “Resumo”</b>: tabelas de totais e de distribuição mensal, além de uma seção de horas por dia.</li>
+  <li><b>Aba “Gráficos”</b>: gráficos de barras por mês (período de faturamento) e por ano, com filtros por usuário e métrica.</li>
+</ul>
+
+<h3>Aba “Resumo”</h3>
+
+<h4>Controles superiores</h4>
+<ul>
+  <li><b>Ano</b>: define o ano a ser exibido nas tabelas mensais. A lista mostra apenas anos com dados.</li>
+  <li><b>Métrica</b>: escolhe o indicador da tabela mensal. Opções usuais:
+    <ul>
+      <li><b>Itens</b>: quantidade total de itens lançados.</li>
+      <li><b>Valor (R$)</b>: soma do valor de pedido.</li>
+      <li><b>Propostas</b>: contagem de propostas.</li>
+      <li><b>Horas</b>: tempo de corte acumulado (somado em segundos e exibido como horas).</li>
+    </ul>
+  </li>
+</ul>
+
+<h4>Tabela mensal (por período de faturamento)</h4>
+<p>
+  Exibe linhas por usuário e colunas por <b>período de faturamento</b> (26/MM → 25/(MM+1)), mais a coluna <b>Total</b>.
+  A métrica exibida vem do seletor “Métrica”. A última linha resume o total do ano para cada período e no consolidado.
+</p>
+<ul>
+  <li>Use o seletor de <b>Ano</b> para comparar anos diferentes rapidamente.</li>
+  <li>As colunas seguem a sequência cronológica de períodos do ano selecionado.</li>
+  <li>Valores de <b>Horas</b> já são formatados como h:mm para facilitar leitura.</li>
+</ul>
+
+<h4>Totais por ano</h4>
+<p>
+  Tabela compacta com a soma anual de Itens, Valor, Propostas e Horas (considerando todos os usuários).
+  Útil para tendências de longo prazo e comparação entre anos.
+  
+</p>
+
+<h4>Médias por dia (por desenhista)</h4>
+<p>
+  Mostra, por usuário, as médias diárias de Itens, Propostas e Horas, calculadas sobre os dias com atividade.
+  A última linha “Todos” exibe a média geral do time.
+</p>
+<ul>
+  <li><b>Itens/dia</b> e <b>Propostas/dia</b> consideram os dias em que houve lançamentos do usuário.</li>
+  <li><b>Horas/dia</b> considera apenas dias com tempo de corte registrado.</li>
+</ul>
+
+<h4>Horas por dia</h4>
+<p>
+  Lista a soma de horas de corte por dia, com uma coluna para cada usuário e o total diário. O seletor <b>Intervalo</b> permite reduzir a janela:
+</p>
+<ul>
+  <li><b>Últimos 7/15/30/90 dias</b>: recorte rápido para acompanhamento tático.</li>
+  <li><b>Todos os registros</b>: visão completa disponível.</li>
+  <li>O rótulo “Total acumulado no período” mostra a soma no corte escolhido.</li>
+</ul>
+
+<h3>Aba “Gráficos”</h3>
+<p>
+  Disponibiliza dois gráficos de barras:
+</p>
+<ul>
+  <li><b>Métrica por mês</b>: barras agrupadas por <b>ano</b> dentro de cada período de faturamento (26/MM → 25/(MM+1)).</li>
+  <li><b>Métrica por ano</b>: total anual consolidado.</li>
+</ul>
+<p>
+  Controles disponíveis:
+</p>
+<ul>
+  <li><b>Desenhista</b>: “Todos” ou um usuário específico.</li>
+  <li><b>Métrica</b>: Itens, Valor (R$), Propostas ou Horas.</li>
+</ul>
+<p>
+  Passe o mouse sobre as barras para ver o <b>valor exato</b> (tooltip). Os eixos usam formatação apropriada:
+  inteiros para Itens/Propostas, moeda para Valor e horas para tempo.
+</p>
+
+<h3>Boas práticas</h3>
+<ul>
+  <li>Mantenha o padrão de períodos de faturamento (26 → 25) ao interpretar as colunas da tabela mensal.</li>
+  <li>Use <b>Ano</b> + <b>Métrica</b> para focar a tabela mensal; a linha <b>Total</b> resume o ano rapidamente.</li>
+  <li>Para visão macro, consulte <b>Totais por ano</b>; para produtividade individual, use <b>Médias por dia (por desenhista)</b>.</li>
+  <li>Para acompanhamento recente do <b>tempo de corte</b>, use <b>Horas por dia</b> com o <b>Intervalo</b> (7/15/30/90 dias).</li>
+  <li>Se a aba <b>Gráficos</b> estiver disponível, utilize-a para comparar períodos (mês de faturamento) e anos com visualização rápida e tooltip de valores.</li>
+  <li>Para exportar dados, utilize recursos de captura de tela ou anote manualmente as métricas relevantes.</li>
+</ul>
+
+<h3>Exemplos de uso</h3>
+<ul>
+  <li>Na <b>Tabela mensal</b>, selecione "Métrica: Valor (R$)" para avaliar sazonalidade dentro do ano; em seguida troque para "Horas" para relacionar <b>tempo de corte</b> e valor no mesmo recorte.</li>
+  <li>Para acompanhar a produtividade da equipe, use <b>Médias por dia (por desenhista)</b> e compare "Itens/dia" e "Horas/dia" entre usuários.</li>
+  <li>Para análise de tendências, consulte <b>Totais por ano</b> e depois use a aba <b>Gráficos</b> com "Métrica por ano" para visualizar a evolução.</li>
+  <li>Para identificar picos de trabalho, veja <b>Horas por dia</b> com intervalo de "Últimos 30 dias" e observe quais dias tiveram maior volume de corte.</li>
+</ul>
