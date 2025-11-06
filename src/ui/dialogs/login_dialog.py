@@ -19,11 +19,11 @@ from src.domain.session_service import (
     verificar_usuario_ja_logado,
 )
 from src.ui.styles import (ALTURA_DIALOG_LOGIN,
-                                 ALTURA_DIALOG_NOVO_USUARIO,
-                                 ESPACAMENTO_PADRAO, LARGURA_DIALOG_LOGIN,
-                                 LARGURA_DIALOG_NOVO_USUARIO, MARGEM_DIALOG,
-                                 aplicar_estilo_botao, aplicar_icone_padrao,
-                                 configurar_widgets_entrada_uniformes)
+                           ALTURA_DIALOG_NOVO_USUARIO,
+                           ESPACAMENTO_PADRAO, LARGURA_DIALOG_LOGIN,
+                           LARGURA_DIALOG_NOVO_USUARIO, MARGEM_DIALOG,
+                           aplicar_estilo_botao, aplicar_icone_padrao,
+                           configurar_widgets_entrada_uniformes)
 
 
 class LoginDialog(QDialog):
@@ -127,34 +127,40 @@ Use Tab para avançar para o campo de senha."""
         if resultado["sucesso"]:
             nome_autenticado = resultado["nome"]
 
-            ja_logado, info_sessao = verificar_usuario_ja_logado(
-                nome_autenticado)
-            if ja_logado and info_sessao:
-                hostname_destino = info_sessao.get("hostname", "Desconhecido")
-                if hostname_destino == HOSTNAME:
-                    destino_texto = "neste mesmo computador (sessão anterior ainda aberta)."
-                else:
-                    destino_texto = f"no computador '{hostname_destino}'."
-
-                resposta = QMessageBox.question(
-                    self,
-                    "Usuário já logado",
-                    (
-                        f"O usuário '{nome_autenticado}' já está logado {destino_texto}\n\n"
-                        "Deseja encerrar a sessão anterior e fazer login neste computador?"
-                    ),
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
-                )
-
-                if resposta == QMessageBox.StandardButton.Yes:
-                    definir_comando_encerrar_sessao(info_sessao["session_id"])
-                    remover_sessao_por_id(info_sessao["session_id"])
-                else:
-                    return
-
+            # Apenas verificar duplicatas se for para registrar sessão
+            # (quando registrar_sessao=False, a verificação é feita externamente)
             if self._registrar_sessao:
-                registrar_sessao_arquivo(nome_autenticado)
+                # Ignorar sessões de ferramentas administrativas ao verificar duplicatas
+                ja_logado, info_sessao = verificar_usuario_ja_logado(
+                    nome_autenticado, ignorar_admin_tools=True
+                )
+                if ja_logado and info_sessao:
+                    hostname_destino = info_sessao.get(
+                        "hostname", "Desconhecido")
+                    if hostname_destino == HOSTNAME:
+                        destino_texto = "neste mesmo computador (sessão anterior ainda aberta)."
+                    else:
+                        destino_texto = f"no computador '{hostname_destino}'."
+
+                    resposta = QMessageBox.question(
+                        self,
+                        "Usuário já logado",
+                        (
+                            f"O usuário '{nome_autenticado}' já está logado {destino_texto}\n\n"
+                            "Deseja encerrar a sessão anterior e fazer login neste computador?"
+                        ),
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+
+                    if resposta == QMessageBox.StandardButton.Yes:
+                        definir_comando_encerrar_sessao(
+                            info_sessao["session_id"])
+                        remover_sessao_por_id(info_sessao["session_id"])
+                    else:
+                        return
+
+                registrar_sessao_arquivo(nome_autenticado, admin_tool=False)
 
             self.usuario_logado = nome_autenticado
             self.is_admin = resultado["admin"]

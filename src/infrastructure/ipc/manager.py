@@ -45,10 +45,16 @@ def ensure_ipc_dirs_exist() -> None:
 # --- Gerenciamento de Sessões ---
 
 
-def create_session_file(session_id: str, usuario: str, hostname: str) -> None:
-    """Cria um arquivo para representar uma sessão ativa, armazenando usuario e hostname."""
+def create_session_file(
+    session_id: str, usuario: str, hostname: str, *, session_type: str = "app"
+) -> None:
+    """Cria arquivo de sessão ativa, armazenando usuario, hostname e tipo."""
     session_file = os.path.join(SESSION_DIR, f"{session_id}.session")
-    data = {"usuario": (usuario or "").strip(), "hostname": hostname}
+    data = {
+        "usuario": (usuario or "").strip(),
+        "hostname": hostname,
+        "session_type": session_type,
+    }
     try:
         with open(session_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
@@ -98,6 +104,7 @@ def get_active_sessions() -> List[Dict[str, Any]]:
                     data = json.load(f)
                     usuario = data.get("usuario", "Desconhecido")
                     hostname = data.get("hostname", "N/A")
+                    session_type = data.get("session_type", "app")
                 last_modified_timestamp = os.path.getmtime(filepath)
                 last_updated = datetime.fromtimestamp(last_modified_timestamp).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -107,6 +114,7 @@ def get_active_sessions() -> List[Dict[str, Any]]:
                         "session_id": session_id,
                         "usuario": usuario,
                         "hostname": hostname,
+                        "session_type": session_type,
                         "last_updated": last_updated,
                     }
                 )

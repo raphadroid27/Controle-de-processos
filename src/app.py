@@ -47,21 +47,64 @@ class ControleProcessosApp:
 
     def mostrar_login(self):
         """Mostra a tela de login e abre a janela principal ao autenticar."""
-        login_dialog = LoginDialog()
+        from src.domain import session_service
+        from PySide6.QtWidgets import QMessageBox
+
+        # Não registrar sessão automaticamente no dialog - faremos manualmente após verificações
+        login_dialog = LoginDialog(registrar_sessao=False)
 
         if login_dialog.exec() == QDialog.Accepted:
+            usuario_autenticado = login_dialog.usuario_logado
+
+            # Verificar se já existe sessão ativa para este usuário
+            # (ignorar sessões de ferramentas administrativas)
+            ja_logado, info_sessao = session_service.verificar_usuario_ja_logado(
+                usuario_autenticado, ignorar_admin_tools=True
+            )
+
+            if ja_logado and info_sessao:
+                hostname_destino = info_sessao.get("hostname", "Desconhecido")
+                if hostname_destino == session_service.HOSTNAME:
+                    destino_texto = "neste mesmo computador (sessão anterior ainda aberta)."
+                else:
+                    destino_texto = f"no computador '{hostname_destino}'."
+
+                resposta = QMessageBox.question(
+                    login_dialog,
+                    "Usuário já logado",
+                    (
+                        f"O usuário '{usuario_autenticado}' já está logado {destino_texto}\n\n"
+                        "Deseja encerrar a sessão anterior e fazer login neste computador?"
+                    ),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+
+                if resposta == QMessageBox.StandardButton.Yes:
+                    session_service.definir_comando_encerrar_sessao(
+                        info_sessao["session_id"]
+                    )
+                    session_service.remover_sessao_por_id(
+                        info_sessao["session_id"])
+                else:
+                    return 0
+
+            # Registrar nova sessão após todas as verificações
+            session_service.registrar_sessao(
+                usuario_autenticado, admin_tool=False)
+
             if self.main_window:
                 self.main_window.close()
 
             self.main_window = MainWindow(
-                login_dialog.usuario_logado,
+                usuario_autenticado,
                 login_dialog.is_admin,
             )
             self.main_window.logout_requested.connect(self.mostrar_login)
             self.main_window.show()
             self.logger.info(
                 "Usuário '%s' autenticado (admin=%s)",
-                login_dialog.usuario_logado,
+                usuario_autenticado,
                 login_dialog.is_admin,
             )
             return 1

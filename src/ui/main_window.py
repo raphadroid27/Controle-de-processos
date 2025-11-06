@@ -15,29 +15,7 @@ from src.domain import session_service
 from src.ui.styles import aplicar_icone_padrao
 from src.ui.dialogs.dashboard_dialog import DashboardDialog
 from src.ui.widgets.processos_widget import ProcessosWidget
-
-
-def show_timed_message_box(parent, title, message, timeout_ms=10000):
-    """Mostra uma caixa de mensagem com timeout automático."""
-    msg_box = QMessageBox(
-        QMessageBox.Icon.Information,
-        title,
-        message,
-        QMessageBox.StandardButton.Ok,
-        parent,
-    )
-
-    # Timer para fechar automaticamente
-    timer = QTimer(parent)
-    timer.timeout.connect(msg_box.accept)
-    timer.setSingleShot(True)
-    timer.start(timeout_ms)
-
-    # Mostrar diálogo (modal)
-    msg_box.exec()
-
-    # Parar timer se ainda rodando
-    timer.stop()
+from src.ui.message_utils import show_timed_message_box
 
 
 def _criar_menu_com_acoes_checkaveis(  # pylint: disable=too-many-positional-arguments

@@ -22,6 +22,7 @@ __all__ = [
     "atualizar_heartbeat_sessao",
     "obter_sessoes_ativas",
     "verificar_usuario_ja_logado",
+    "verificar_sessao_admin_duplicada",
     "encerrar_sessoes_usuario",
     "remover_sessao_por_id",
     "definir_comando_sistema",
@@ -40,16 +41,19 @@ __all__ = [
 ]
 
 
-def registrar_sessao(usuario: str) -> None:
+def registrar_sessao(usuario: str, *, admin_tool: bool = False) -> None:
     """Registra a sessão atual criando seu arquivo de sessão."""
     usuario_registrado = (usuario or "").strip()
+    session_type = "admin_tool" if admin_tool else "app"
     logging.info(
-        "Registrando sessão via arquivo: ID %s para usuário %s em %s",
+        "Registrando sessão via arquivo: ID %s para usuário %s em %s (tipo: %s)",
         SESSION_ID,
         usuario_registrado,
         HOSTNAME,
+        session_type,
     )
-    manager.create_session_file(SESSION_ID, usuario_registrado, HOSTNAME)
+    manager.create_session_file(
+        SESSION_ID, usuario_registrado, HOSTNAME, session_type=session_type)
 
 
 def remover_sessao() -> None:
@@ -70,17 +74,71 @@ def obter_sessoes_ativas() -> list[dict]:
     return manager.get_active_sessions()
 
 
-def verificar_usuario_ja_logado(usuario_nome: str) -> tuple[bool, dict | None]:
-    """Verifica se o usuário já possui sessão ativa (independente do host)."""
+def verificar_usuario_ja_logado(
+    usuario_nome: str, *, ignorar_admin_tools: bool = False
+) -> tuple[bool, dict | None]:
+    """Verifica se o usuário já possui sessão ativa (independente do host).
 
+    Args:
+        usuario_nome: Nome do usuário a verificar
+        ignorar_admin_tools: Se True, ignora sessões do tipo 'admin_tool'
+    """
+    return _verificar_sessao_por_tipo(
+        usuario_nome,
+        tipo_ignorar="admin_tool" if ignorar_admin_tools else None,
+    )
+
+
+def verificar_sessao_admin_duplicada(usuario_nome: str) -> tuple[bool, dict | None]:
+    """Verifica se o usuário já possui sessão administrativa ativa.
+
+    Args:
+        usuario_nome: Nome do usuário a verificar
+
+    Returns:
+        Tupla (tem_duplicata, info_sessao) onde info_sessao contém detalhes se encontrada
+    """
+    return _verificar_sessao_por_tipo(
+        usuario_nome,
+        tipo_procurado="admin_tool",
+    )
+
+
+def _verificar_sessao_por_tipo(
+    usuario_nome: str,
+    *,
+    tipo_procurado: str | None = None,
+    tipo_ignorar: str | None = None,
+) -> tuple[bool, dict | None]:
+    """Função auxiliar para verificar sessões com filtro de tipo.
+
+    Args:
+        usuario_nome: Nome do usuário a verificar
+        tipo_procurado: Se especificado, procura apenas este tipo de sessão
+        tipo_ignorar: Se especificado, ignora este tipo de sessão
+
+    Returns:
+        Tupla (tem_sessao, info_sessao)
+    """
     sessions = manager.get_sessions_by_user(usuario_nome)
     for session in sessions:
         if session["session_id"] == SESSION_ID:
             continue
 
+        session_type = session.get("session_type", "app")
+
+        # Se tipo_procurado especificado, aceitar apenas esse tipo
+        if tipo_procurado and session_type != tipo_procurado:
+            continue
+
+        # Se tipo_ignorar especificado, pular esse tipo
+        if tipo_ignorar and session_type == tipo_ignorar:
+            continue
+
         return True, {
             "session_id": session["session_id"],
             "hostname": session.get("hostname", "Desconhecido"),
+            "session_type": session_type,
         }
     return False, None
 
