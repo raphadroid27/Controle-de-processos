@@ -1,6 +1,6 @@
 # Changelog
 
-Histórico de mudanças do aplicativo Controle de Processos
+Histórico de mudanças do aplicativo  Controle de Pedidos
 
 ## 1.1.0 (29/10/2025)
 

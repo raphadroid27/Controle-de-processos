@@ -1,4 +1,4 @@
-# Controle de Processos
+#  Controle de Pedidos
 
 Sistema de gerenciamento de processos para desenhistas com interface gráfica PySide6 e persistência baseada em SQLAlchemy, mantendo bancos SQLite portáteis.
 
@@ -169,4 +169,4 @@ O projeto utiliza:
 
 ## Autor
 
-Sistema desenvolvido para controle de processos de desenhistas.
+Sistema desenvolvido para  Controle de Pedidos de desenhistas.

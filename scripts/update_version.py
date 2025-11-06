@@ -167,18 +167,18 @@ def generate_changelog(version):
         if "# Changelog" in existing_content:
             # Verifica se já tem a descrição
             if (
-                "Histórico de mudanças do aplicativo Controle de Processos"
+                "Histórico de mudanças do aplicativo  Controle de Pedidos"
                 in existing_content
             ):
                 # Adiciona a nova versão após o cabeçalho com descrição
                 replacement = (
                     f"# Changelog\n\n"
-                    f"Histórico de mudanças do aplicativo Controle de Processos\n\n"
+                    f"Histórico de mudanças do aplicativo  Controle de Pedidos\n\n"
                     f"{new_version_content}"
                 )
                 replacement = replacement.replace("\\", r"\\")
                 updated_content = re.sub(
-                    r"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n",
+                    r"# Changelog\n\nHistórico de mudanças do aplicativo  Controle de Pedidos\n\n",
                     replacement,
                     existing_content,
                 )
@@ -186,20 +186,20 @@ def generate_changelog(version):
                 # Adiciona descrição e nova versão após o cabeçalho
                 updated_content = re.sub(
                     r"# Changelog\n\n",
-                    f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
+                    f"# Changelog\n\nHistórico de mudanças do aplicativo  Controle de Pedidos\n\n"
                     f"{new_version_content}",
                     existing_content,
                 )
         else:
             # Adiciona cabeçalho, descrição e a nova versão
             updated_content = (
-                f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
+                f"# Changelog\n\nHistórico de mudanças do aplicativo  Controle de Pedidos\n\n"
                 f"{new_version_content}{existing_content}"
             )
     else:
         # Cria um novo arquivo changelog
         updated_content = (
-            f"# Changelog\n\nHistórico de mudanças do aplicativo Controle de Processos\n\n"
+            f"# Changelog\n\nHistórico de mudanças do aplicativo  Controle de Pedidos\n\n"
             f"{new_version_content}"
         )
 
