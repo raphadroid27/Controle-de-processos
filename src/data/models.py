@@ -37,7 +37,7 @@ class UsuarioModel(SharedBase):
     )
 
     __table_args__ = (
-        Index("idx_usuario_nome_lower", func.lower(nome)),
+        # nome já tem constraint unique que cria índice automaticamente
         Index("idx_usuario_ativo", ativo),
     )
 

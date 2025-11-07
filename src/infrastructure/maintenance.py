@@ -19,8 +19,8 @@ from src.data.sessions import (
 
 logger = logging.getLogger(__name__)
 
-# Arquivo para rastrear a última otimização
-_RUNTIME_DIR = Path(".runtime")
+# Diretório para arquivos de controle de manutenção
+_RUNTIME_DIR = Path(".runtime") / "controle_processos"
 _LAST_OPTIMIZATION_FILE = _RUNTIME_DIR / "last_optimization.txt"
 
 
@@ -34,7 +34,7 @@ def _precisa_otimizacao() -> bool:
         return True
 
     try:
-        last_opt = _LAST_OPTIMIZATION_FILE.read_text().strip()
+        last_opt = _LAST_OPTIMIZATION_FILE.read_text(encoding="utf-8").strip()
         last_date = datetime.fromisoformat(last_opt)
         return datetime.now() - last_date > timedelta(days=7)  # Otimizar a cada 7 dias
     except (ValueError, OSError):
@@ -45,7 +45,9 @@ def _registrar_otimizacao() -> None:
     """Registra o momento da última otimização."""
     try:
         _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        _LAST_OPTIMIZATION_FILE.write_text(datetime.now().isoformat())
+        _LAST_OPTIMIZATION_FILE.write_text(
+            datetime.now().isoformat(), encoding="utf-8"
+        )
     except OSError as exc:
         logger.warning("Não foi possível registrar otimização: %s", exc)
 

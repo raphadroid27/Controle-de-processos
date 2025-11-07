@@ -42,7 +42,10 @@ class ControleProcessosApp:
         criar_tabela_usuario()
 
         # Executar manutenção automática em background (otimiza se necessário)
-        executar_manutencao_automatica()
+        try:
+            executar_manutencao_automatica()
+        except (OSError, RuntimeError) as exc:
+            self.logger.warning("Manutenção automática falhou: %s", exc)
         # db.limpar_bancos_orfaos()
 
     def run(self):
