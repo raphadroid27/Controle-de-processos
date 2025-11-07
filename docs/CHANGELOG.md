@@ -2,35 +2,50 @@
 
 Histórico de mudanças do aplicativo  Controle de Pedidos
 
+## 1.2.0 (07/11/2025)
+
+- Migração de terminologia de "processo(s)" para "pedido(s)" em toda aplicação
+- Padronização de nomenclaturas para "Controle de Pedidos" e "Ferramenta Administrativa"
+- Aprimoramento do sistema de gerenciamento de sessões (tipos, heartbeat, controles e comandos)
+- Implementação de timer de inatividade no login e otimização periódica automática dos bancos de dados
+- Centralização do sistema de logging e migração de subprocess para QProcess
+- Otimização de desempenho com cache de métricas do dashboard e limpeza automática de caches
+- Adição de exibição de horas processadas no dia e remoção de estimativa de itens/mês
+- Normalização automática de clientes e valores nos formulários
+- Atualização automática de datas e ajuste do tamanho mínimo da janela para 850x600
+- Adição de manual completo com ajuda contextual e atualização da documentação
+- Reorganização da arquitetura seguindo Clean Architecture
+
 ## 1.1.0 (29/10/2025)
 
-- refatora: implementa gerenciamento de IPC e reorganiza sessões do sistema
-- refatora: adiciona restauração do período selecionado no filtro de processos
-- recurso: adiciona funcionalidades de gráficos do dashboard e atualização de tabelas
-- refatora: ajusta lógica de cálculo de períodos de faturamento e atualiza interface do dashboard
-- refatora: ajusta cálculo de ano e mês nas métricas do dashboard com base no período de faturamento
-- remove: exclui script de importação de CSV para o banco do usuário
-- refatora: atualiza o título do changelog para refletir o nome correto do aplicativo
+- Implementação de sistema de IPC (comunicação entre processos) e reorganização de sessões
+- Adição de restauração automática do período selecionado nos filtros
+- Implementação de gráficos interativos no dashboard com atualização dinâmica de tabelas
+- Ajuste da lógica de cálculo de períodos de faturamento e interface do dashboard
+- Correção do cálculo de ano e mês nas métricas baseado no período de faturamento
+- Remoção de script obsoleto de importação de CSV
+- Atualização do título do changelog para "Controle de Pedidos"
 
 ## 1.0.1 (28/10/2025)
 
-- refatoração: renomeia 'os'/'OS' para 'proposta'/'propostas' em código, dashboards, dialogs, componentes CRUD e filtros
-- refatoração: atualiza placeholders e tooltips do campo de proposta para maior clareza
-- refatoração: simplifica método mostrar_login e remove quebras de linha desnecessárias para melhorar legibilidade
-- refatoração: adiciona timezone ao gerenciamento de datas
-- refatoração: melhorias gerais de legibilidade e adiciona ação de atualização no menu de administração
+- Migração de terminologia de 'OS' para 'Proposta' em toda aplicação
+- Atualização de placeholders e tooltips do campo de proposta para maior clareza
+- Simplificação do método de exibição de login e melhorias de legibilidade
+- Adição de timezone ao gerenciamento de datas do sistema
+- Melhorias gerais de código e adição de ação de atualização no menu administrativo
 
 ## 1.0.0 (25/10/2025)
 
-- Implementação inicial da aplicação "Controle de Processos" (primeiro release).
-- Estrutura principal da aplicação e modularização: separação de módulos, widgets e utilitários, reorganização do main.py e adição de __init__.py em utils.
-- Interface de usuário completa: telas de login e cadastro, janela principal, gerenciamento de usuários, painel de processos com filtros (mês/ano/cliente/processo), autocompletar, navegação por teclado e edição in-place.
-- Funcionalidades de CRUD para processos: criação, edição, exclusão, validações de datas e valores, ordenação e filtros avançados; histórico e cálculo de estimativas/estatísticas no painel de totais.
-- Gerenciamento de sessão e permissões: login/logout, verificação de admin e controle de acesso a funções administrativas.
-- Persistência e migrações: atualizações no banco de dados de processos, importação de lançamentos via CSV e remoção/limpeza de bancos órfãos; .gitignore atualizado.
-- Temas e aparência: suporte a tema escuro (manual e com qdarktheme), ícones adicionados (ICO, PNG, SVG) e aplicação de estilo via ThemeManager.
-- Utilitários e automação: scripts para atualização de versão/changelog, análise de qualidade de código e scripts de importação; configuração do pylint.
-- Melhorias de qualidade do código: ampla refatoração (legibilidade, formatação de importações, remoção de código morto, centralização de constantes), normalização de comparações e atualização de hashing para SHA‑256.
-- Ajustes de usabilidade: padronização de dimensões/margens, formatação de valores monetários, mensagens de feedback e atalhos de teclado.
-- Documentação e README atualizados com instruções de execução e mudanças relevantes.
-- Primeiro commit e conjunto inicial de recursos/refatorações prontos para sequelas e correções futuras.
+- Implementação inicial da aplicação "Controle de Processos" (primeiro release)
+- Estrutura modular com separação de módulos, widgets e utilitários
+- Interface completa com login, cadastro, gerenciamento de usuários e painel principal
+- Sistema de filtros avançados (mês/ano/cliente/processo) com autocompletar
+- Funcionalidades CRUD completas com validações, ordenação e edição in-place
+- Navegação por teclado e atalhos para maior produtividade
+- Gerenciamento de sessões com controle de permissões e acesso administrativo
+- Sistema de persistência com importação de CSV e limpeza automática de bancos órfãos
+- Suporte a tema escuro com qdarktheme e ícones personalizados
+- Scripts de automação para versionamento, análise de código e importações
+- Refatoração completa para melhor legibilidade e manutenibilidade
+- Formatação de valores monetários e mensagens de feedback ao usuário
+- Documentação completa com README e instruções de uso
