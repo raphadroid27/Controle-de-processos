@@ -39,7 +39,7 @@ _DEFAULT_SECTIONS: tuple[ManualSection, ...] = (
     ManualSection("filtros", "Filtros e Pesquisa"),
     ManualSection("totais", "Painel de Totais"),
     ManualSection("dashboard", "Dashboard"),
-    ManualSection("admin", "Ferramentas Administrativas"),
+    ManualSection("admin", "Ferramenta Administrativa"),
     ManualSection("sobre", "Sobre a Aplicação"),
 )
 
@@ -66,8 +66,10 @@ class ManualDialog(QDialog):
 
         self._section_list = QListWidget(splitter)
         self._section_list.setUniformItemSizes(True)
-        self._section_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self._section_list.currentItemChanged.connect(self._on_section_selected)
+        self._section_list.setSelectionMode(
+            QListWidget.SelectionMode.SingleSelection)
+        self._section_list.currentItemChanged.connect(
+            self._on_section_selected)
 
         self._content_browser = QTextBrowser(splitter)
         self._content_browser.setOpenExternalLinks(True)

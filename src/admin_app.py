@@ -37,7 +37,7 @@ _ADMIN_WATCHERS: list[QFileSystemWatcher] = []
 
 
 class AdminToolsDialog(QDialog):
-    """Janela principal das ferramentas administrativas com abas."""
+    """Janela principal das ferramenta administrativa com abas."""
 
     def __init__(self, usuario_admin: str, parent=None):
         """Inicializa a janela administrativa."""
@@ -46,7 +46,7 @@ class AdminToolsDialog(QDialog):
         self.usuario_logado = usuario_admin
         self.setModal(False)
         self.setFixedSize(600, 400)
-        self.setWindowTitle(f"Ferramentas Administrativas - {usuario_admin}")
+        self.setWindowTitle(f"Ferramenta Administrativa - {usuario_admin}")
 
         aplicar_icone_padrao(self)
 
@@ -143,7 +143,8 @@ def _executar_login_admin() -> Optional[str]:
                 session_service.definir_comando_encerrar_sessao(
                     info_sessao["session_id"]
                 )
-                session_service.remover_sessao_por_id(info_sessao["session_id"])
+                session_service.remover_sessao_por_id(
+                    info_sessao["session_id"])
             else:
                 return None
 
@@ -296,8 +297,10 @@ def _configurar_monitoramento_shutdown(app: QApplication, janela: QDialog) -> No
     )
     watcher.addPath(str(session_shutdown_path))
 
-    watcher.directoryChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
-    watcher.fileChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
+    watcher.directoryChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
+    watcher.fileChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
 
     _ADMIN_WATCHERS.append(watcher)
 
@@ -333,7 +336,8 @@ def _tratar_instancia_ativa(app: QApplication, logger: logging.Logger) -> bool:
     )
 
     if resposta != QMessageBox.StandardButton.Yes:
-        logger.info("Usuário optou por não encerrar a instância administrativa ativa")
+        logger.info(
+            "Usuário optou por não encerrar a instância administrativa ativa")
         return False
 
     if not _solicitar_encerramento_admin_existente(app):
@@ -363,7 +367,7 @@ def main() -> int:
     logger.info("Inicializando ferramenta administrativa")
     app = QApplication(sys.argv)
     app.setApplicationName("Controle de Pedidos")
-    app.setApplicationDisplayName("Controle de Pedidos - Administração")
+    app.setApplicationDisplayName("Controle de Pedidos")
     app.setOrganizationName("Controle de Pedidos")
     app.setOrganizationDomain("controle-de-pedidos.local")
 
@@ -385,7 +389,8 @@ def main() -> int:
 
     if not _criar_admin_lock(usuario_admin):
         session_service.remover_sessao()
-        logger.error("Não foi possível criar admin.lock para '%s'", usuario_admin)
+        logger.error(
+            "Não foi possível criar admin.lock para '%s'", usuario_admin)
         return 1
 
     janela = AdminToolsDialog(usuario_admin)
@@ -396,7 +401,8 @@ def main() -> int:
     janela.show()
 
     try:
-        logger.info("Ferramenta administrativa iniciada para '%s'", usuario_admin)
+        logger.info("Ferramenta administrativa iniciada para '%s'",
+                    usuario_admin)
         return app.exec()
     finally:
         _remover_admin_lock()

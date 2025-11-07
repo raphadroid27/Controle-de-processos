@@ -55,12 +55,15 @@ class GerenciarSessoesWidget(QWidget):
 
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
         aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 90)
-        self.btn_atualizar_sessoes.setToolTip("Atualizar a lista de sessões (F5)")
+        self.btn_atualizar_sessoes.setToolTip(
+            "Atualizar a lista de sessões (F5)")
         self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
 
-        self.btn_encerrar_sessao.clicked.connect(self.encerrar_sessao_selecionada)
+        self.btn_encerrar_sessao.clicked.connect(
+            self.encerrar_sessao_selecionada)
         aplicar_estilo_botao(self.btn_encerrar_sessao, "vermelho", 130)
-        self.btn_encerrar_sessao.setToolTip("Encerrar a sessão selecionada (Del)")
+        self.btn_encerrar_sessao.setToolTip(
+            "Encerrar a sessão selecionada (Del)")
         self.btn_encerrar_sessao.setShortcut(QKeySequence("Del"))
 
         self.btn_limpar_inativas.clicked.connect(self.limpar_sessoes_inativas)
@@ -92,7 +95,7 @@ class GerenciarSessoesWidget(QWidget):
             # Determinar nome da aplicação baseado no tipo de sessão
             session_type = sessao.get("session_type", "app")
             if session_type == "admin_tool":
-                app_name = "Ferramentas Administrativas"
+                app_name = "Ferramenta Administrativa"
             else:
                 app_name = "Controle de Pedidos"
 

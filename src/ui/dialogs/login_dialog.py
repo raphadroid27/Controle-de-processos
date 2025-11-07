@@ -172,7 +172,7 @@ Use Tab para avançar para o campo de senha."""
             # Apenas verificar duplicatas se for para registrar sessão
             # (quando registrar_sessao=False, a verificação é feita externamente)
             if self._registrar_sessao:
-                # Ignorar sessões de ferramentas administrativas ao verificar duplicatas
+                # Ignorar sessões de ferramenta administrativa ao verificar duplicatas
                 ja_logado, info_sessao = verificar_usuario_ja_logado(
                     nome_autenticado, ignorar_admin_tools=True
                 )

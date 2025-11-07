@@ -71,7 +71,7 @@ class ControleProcessosApp:
             usuario_autenticado = login_dialog.usuario_logado
 
             # Verificar se já existe sessão ativa para este usuário
-            # (ignorar sessões de ferramentas administrativas)
+            # (ignorar sessões de ferramenta administrativa)
             ja_logado, info_sessao = session_service.verificar_usuario_ja_logado(
                 usuario_autenticado, ignorar_admin_tools=True
             )
