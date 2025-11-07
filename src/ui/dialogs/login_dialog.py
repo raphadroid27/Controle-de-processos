@@ -9,6 +9,7 @@ para gerenciar a autenticação e criação de usuários.
 # A lógica de verificação de sessão duplicada é similar ao app.py
 # mas mantida no dialog para validação durante o login
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -59,7 +60,16 @@ class LoginDialog(QDialog):
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
 
+        # Timer de inatividade (5 minutos = 300.000 ms)
+        self._inactivity_timer = QTimer(self)
+        self._inactivity_timer.setInterval(300000)  # 5 minutos
+        self._inactivity_timer.timeout.connect(self._fechar_por_inatividade)
+        self._inactivity_timer.setSingleShot(True)
+
         self.init_ui()
+
+        # Iniciar timer após configurar UI
+        self._inactivity_timer.start()
 
     def init_ui(self):
         """Inicializa a interface do usuário com melhor distribuição."""
@@ -85,7 +95,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_usuario, self.entry_senha])
 
         layout.addRow("Usuário:", self.entry_usuario)
         layout.addRow("Senha:", self.entry_senha)
@@ -110,7 +121,8 @@ Use Tab para avançar para o campo de senha."""
         self.btn_login.setDefault(True)
         self.btn_login.setToolTip("Autenticar no sistema (Enter)")
 
-        self.btn_novo_usuario.setToolTip("Cadastrar um novo usuário (Ctrl+Shift+N)")
+        self.btn_novo_usuario.setToolTip(
+            "Cadastrar um novo usuário (Ctrl+Shift+N)")
         self.btn_novo_usuario.setShortcut(QKeySequence("Ctrl+Shift+N"))
 
         btn_layout.addWidget(self.btn_login)
@@ -125,8 +137,25 @@ Use Tab para avançar para o campo de senha."""
         self.btn_novo_usuario.clicked.connect(self.abrir_novo_usuario)
         self.entry_usuario.returnPressed.connect(self.entry_senha.setFocus)
 
+        # Conectar eventos de interação para resetar timer
+        self.entry_usuario.textChanged.connect(self._resetar_timer_inatividade)
+        self.entry_senha.textChanged.connect(self._resetar_timer_inatividade)
+
+    def _resetar_timer_inatividade(self):
+        """Reseta o timer de inatividade quando há interação do usuário."""
+        if self._inactivity_timer.isActive():
+            self._inactivity_timer.stop()
+        self._inactivity_timer.start()
+
+    def _fechar_por_inatividade(self):
+        """Fecha o diálogo após período de inatividade."""
+        self.reject()
+
     def fazer_login(self):
         """Realiza a autenticação do usuário."""
+        # Resetar timer ao tentar login
+        self._resetar_timer_inatividade()
+
         nome = self.entry_usuario.text().strip()
         senha = self.entry_senha.text().strip()
 
@@ -148,7 +177,8 @@ Use Tab para avançar para o campo de senha."""
                     nome_autenticado, ignorar_admin_tools=True
                 )
                 if ja_logado and info_sessao:
-                    hostname_destino = info_sessao.get("hostname", "Desconhecido")
+                    hostname_destino = info_sessao.get(
+                        "hostname", "Desconhecido")
                     if hostname_destino == HOSTNAME:
                         destino_texto = (
                             "neste mesmo computador (sessão anterior ainda aberta)."
@@ -170,15 +200,21 @@ Use Tab para avançar para o campo de senha."""
                     )
 
                     if resposta == QMessageBox.StandardButton.Yes:
-                        definir_comando_encerrar_sessao(info_sessao["session_id"])
+                        definir_comando_encerrar_sessao(
+                            info_sessao["session_id"])
                         remover_sessao_por_id(info_sessao["session_id"])
                     else:
                         return
 
-                session_service.registrar_sessao(nome_autenticado, admin_tool=False)
+                session_service.registrar_sessao(
+                    nome_autenticado, admin_tool=False)
 
             self.usuario_logado = nome_autenticado
             self.is_admin = resultado["admin"]
+
+            # Parar timer ao fazer login com sucesso
+            self._inactivity_timer.stop()
+
             self.accept()
         else:
             QMessageBox.warning(self, "Erro de Login", resultado["mensagem"])
@@ -210,6 +246,9 @@ Use Tab para avançar para o campo de senha."""
 
     def abrir_novo_usuario(self):
         """Abre o diálogo para criação de novo usuário."""
+        # Resetar timer ao abrir diálogo de novo usuário
+        self._resetar_timer_inatividade()
+
         dialog = NovoUsuarioDialog()
         if dialog.exec() == QDialog.DialogCode.Accepted:
             QMessageBox.information(
@@ -226,7 +265,8 @@ class NovoUsuarioDialog(QDialog):
         """Inicializa o diálogo de novo usuário."""
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO, ALTURA_DIALOG_NOVO_USUARIO)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                          ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         # Aplicar ícone padrão
@@ -258,7 +298,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_nome, self.entry_senha])
 
         layout.addRow("Nome:", self.entry_nome)
         layout.addRow("Senha:", self.entry_senha)
@@ -292,7 +333,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         aplicar_estilo_botao(self.btn_cancelar, "vermelho", 110)
         aplicar_estilo_botao(self.btn_salvar, "verde", 110)
 
-        self.btn_cancelar.setToolTip("Fechar o formulário sem criar usuário (Esc)")
+        self.btn_cancelar.setToolTip(
+            "Fechar o formulário sem criar usuário (Esc)")
         self.btn_cancelar.setShortcut(QKeySequence("Esc"))
 
         self.btn_salvar.setToolTip("Salvar novo usuário (Ctrl+S)")
@@ -329,7 +371,8 @@ Deve ser único e sem espaços extras nas extremidades."""
             return
 
         # Verificar se é admin
-        is_admin = hasattr(self, "check_admin") and self.check_admin.isChecked()
+        is_admin = hasattr(
+            self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario_service.inserir_usuario(nome, senha, is_admin)
 
