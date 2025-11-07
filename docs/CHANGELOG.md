@@ -41,7 +41,7 @@ Histórico de mudanças do aplicativo  Controle de Pedidos
 - Interface completa com login, cadastro, gerenciamento de usuários e painel principal
 - Sistema de filtros avançados (mês/ano/cliente/processo) com autocompletar
 - Funcionalidades CRUD completas com validações, ordenação e edição in-place
-- Navegação por teclado e atalhos para maior produtividade
+- Navegação por teclado e atalhos para agilizar o uso
 - Gerenciamento de sessões com controle de permissões e acesso administrativo
 - Sistema de persistência com importação de CSV e limpeza automática de bancos órfãos
 - Suporte a tema escuro com qdarktheme e ícones personalizados
