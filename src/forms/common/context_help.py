@@ -19,7 +19,8 @@ _DEFAULT_ENTRY: HelpEntry = (
 
 _HELP_CONTENT: Dict[str, HelpEntry] = {}
 
-_HELP_DIR = Path(__file__).with_name("help_content")
+# Caminho para os arquivos de ajuda em docs/help
+_HELP_DIR = Path(__file__).parents[3] / "docs" / "help"
 
 _SECTION_FILE_MAP = {
     "manual": "manual.html",
@@ -63,7 +64,7 @@ def _load_help_contents() -> None:
         body = text
         stripped = body.lstrip()
         if title and stripped.startswith(title):
-            body = stripped[len(title) :].lstrip()
+            body = stripped[len(title):].lstrip()
         _HELP_CONTENT[key] = (title, body)
 
 
