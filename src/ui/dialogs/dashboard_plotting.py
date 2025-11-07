@@ -22,20 +22,20 @@ if TYPE_CHECKING:
 
     from .dashboard_dialog import DashboardDialog  # noqa: F401
 
-# Rótulos fixos para períodos de faturamento, independentes do ano
-_ROTULOS_PERIODOS_FIXOS = [
-    "26/12 a 25/01",
-    "26/01 a 25/02",
-    "26/02 a 25/03",
-    "26/03 a 25/04",
-    "26/04 a 25/05",
-    "26/05 a 25/06",
-    "26/06 a 25/07",
-    "26/07 a 25/08",
-    "26/08 a 25/09",
-    "26/09 a 25/10",
-    "26/10 a 25/11",
-    "26/11 a 25/12",
+# Rótulos para períodos de faturamento nos gráficos (quebrados em 2 linhas)
+_ROTULOS_PERIODOS = [
+    "26/12 a\n25/01",
+    "26/01 a\n25/02",
+    "26/02 a\n25/03",
+    "26/03 a\n25/04",
+    "26/04 a\n25/05",
+    "26/05 a\n25/06",
+    "26/06 a\n25/07",
+    "26/07 a\n25/08",
+    "26/08 a\n25/09",
+    "26/09 a\n25/10",
+    "26/10 a\n25/11",
+    "26/11 a\n25/12",
 ]
 
 
@@ -365,7 +365,7 @@ class DashboardPlotting:
         )
 
         ax.set_xticks(base)
-        ax.set_xticklabels(rotulos_meses)
+        ax.set_xticklabels(rotulos_meses, fontsize=8)
         ax.yaxis.set_major_formatter(formatter)
         ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
         legenda = ax.legend(loc="upper left", fontsize="small")
@@ -383,8 +383,8 @@ class DashboardPlotting:
         rotulos: list[str] = []
 
         if para_graficos:
-            # Rótulos fixos para períodos, independentes do ano
-            rotulos_periodos = _ROTULOS_PERIODOS_FIXOS
+            # Rótulos curtos para gráficos (quebrados em 2 linhas)
+            rotulos_periodos = _ROTULOS_PERIODOS
         else:
             # Para tabelas, usa os períodos do ano selecionado
             rotulos_periodos = dialog.rotulos_periodos
@@ -439,6 +439,7 @@ class DashboardPlotting:
             return
 
         ax.bar(serie.index.astype(str), serie.values, color=_ACCENT_CYCLE[0])
+        ax.tick_params(axis='x', labelsize=9)
         ax.yaxis.set_major_formatter(formatter)
         ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
         DashboardPlotting._estilizar_axes(ax)
