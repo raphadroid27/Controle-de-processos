@@ -45,9 +45,7 @@ def _registrar_otimizacao() -> None:
     """Registra o momento da última otimização."""
     try:
         _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        _LAST_OPTIMIZATION_FILE.write_text(
-            datetime.now().isoformat(), encoding="utf-8"
-        )
+        _LAST_OPTIMIZATION_FILE.write_text(datetime.now().isoformat(), encoding="utf-8")
     except OSError as exc:
         logger.warning("Não foi possível registrar otimização: %s", exc)
 
@@ -88,8 +86,7 @@ def executar_manutencao_automatica() -> None:
     A otimização é executada no máximo uma vez a cada 7 dias.
     """
     if not _precisa_otimizacao():
-        logger.debug(
-            "Manutenção automática não necessária (última execução recente)")
+        logger.debug("Manutenção automática não necessária (última execução recente)")
         return
 
     logger.info("Iniciando manutenção automática dos bancos de dados")

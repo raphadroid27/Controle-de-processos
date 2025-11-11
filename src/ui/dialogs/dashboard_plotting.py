@@ -439,7 +439,7 @@ class DashboardPlotting:
             return
 
         ax.bar(serie.index.astype(str), serie.values, color=_ACCENT_CYCLE[0])
-        ax.tick_params(axis='x', labelsize=9)
+        ax.tick_params(axis="x", labelsize=9)
         ax.yaxis.set_major_formatter(formatter)
         ax.grid(True, axis="y", linestyle="--", color=_GRID_COLOR, alpha=0.4)
         DashboardPlotting._estilizar_axes(ax)
