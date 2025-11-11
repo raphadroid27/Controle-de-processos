@@ -96,8 +96,7 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(
-                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -112,8 +111,7 @@ def _ensure_usuario_schema(engine: Engine) -> None:
                 "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
             )
         if "arquivado_em" not in colunas:
-            statements.append(
-                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
 
         if statements:
             with engine.begin() as conn:
@@ -183,14 +181,35 @@ def inicializar_todas_tabelas() -> None:
 
 
 def remover_banco_usuario(usuario: str) -> bool:
-    """Remove o banco individual de um usuário (se existir)."""
+    """Remove o banco individual de um usuário (se existir).
+
+    Remove também o sessionmaker e engine do cache para garantir que não há
+    conexões abertas.
+    """
     path = user_db_path(usuario=usuario)
+
+    # Remove o sessionmaker do cache e fecha o engine associado
+    sessionmaker_removido = _user_sessionmakers.pop(path, None)
+    if sessionmaker_removido:
+        # Fecha o engine associado ao sessionmaker
+        engine = sessionmaker_removido.kw.get("bind")
+        if engine:
+            try:
+                engine.dispose()  # Fecha todas as conexões do pool
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.warning("Erro ao descartar conexões do engine: %s", e)
+
     if path.exists():
         try:
+            # Aguarda um pouco para garantir que conexões foram fechadas
+            import time  # pylint: disable=import-outside-toplevel
+
+            time.sleep(0.2)
             path.unlink()
-            _user_sessionmakers.pop(path, None)
+            logger.info("Banco de dados removido: %s", path)
             return True
-        except OSError:
+        except OSError as e:  # pylint: disable=broad-exception-caught
+            logger.error("Erro ao remover banco de dados %s: %s", path, e)
             return False
     return False
 

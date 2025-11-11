@@ -48,6 +48,14 @@ class ControleProcessosApp:
             self.logger.warning("Manutenção automática falhou: %s", exc)
         # db.limpar_bancos_orfaos()
 
+    def _handle_logout(self):
+        """Slot para tratar logout da MainWindow."""
+        self.logger.info("Logout detectado via signal")
+        self.mostrar_login()
+        # Se mostrar_login retornar 0 (cancelado), app continua rodando
+        # Se retornar 1 (login bem-sucedido), app continua rodando normalmente
+        # db.limpar_bancos_orfaos()
+
     def run(self):
         """Executa a aplicação."""
         if self.mostrar_login() == 0:
@@ -102,23 +110,34 @@ class ControleProcessosApp:
                     session_service.definir_comando_encerrar_sessao(
                         info_sessao["session_id"]
                     )
-                    session_service.remover_sessao_por_id(
-                        info_sessao["session_id"])
+                    session_service.remover_sessao_por_id(info_sessao["session_id"])
                 else:
                     return 0
 
             # Registrar nova sessão após todas as verificações
-            session_service.registrar_sessao(
-                usuario_autenticado, admin_tool=False)
+            session_service.registrar_sessao(usuario_autenticado, admin_tool=False)
 
+            # Desconectar e fechar MainWindow anterior se existir
             if self.main_window:
-                self.main_window.close()
+                try:
+                    # Desconectar do slot de logout
+                    self.main_window.logout_requested.disconnect(self._handle_logout)
+                except (RuntimeError, TypeError):
+                    # Sinal não estava conectado, o que é normal na primeira vez
+                    pass
+                # Fechar a janela anterior
+                old_window = self.main_window
+                self.main_window = None  # Liberar a referência
+                old_window.close()  # Agora pode ser destruída pelo garbage collector
+                old_window.deleteLater()  # Agendar deleção
 
+            # Criar nova janela
             self.main_window = MainWindow(
                 usuario_autenticado,
                 login_dialog.is_admin,
             )
-            self.main_window.logout_requested.connect(self.mostrar_login)
+            # Usar slot dedicado para tratar logout
+            self.main_window.logout_requested.connect(self._handle_logout)
             self.main_window.show()
             self.logger.info(
                 "Usuário '%s' autenticado (admin=%s)",

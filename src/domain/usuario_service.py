@@ -22,6 +22,7 @@ from src.data import (
     limpar_caches_consultas,
     remover_banco_usuario,
 )
+from src.data.config import desmarcar_banco_como_arquivado, marcar_banco_como_arquivado
 from src.data.sessions import executar_sessao_compartilhada
 from src.domain import session_service
 
@@ -274,7 +275,7 @@ def verificar_senha_reset(nome: str) -> bool:
 
 
 def excluir_usuario(nome: str) -> str:
-    """Exclui um usuário pelo nome."""
+    """Exclui um usuário pelo nome e remove seu banco de dados associado."""
 
     def _operacao(session) -> str:
         usuario = session.scalar(
@@ -287,20 +288,30 @@ def excluir_usuario(nome: str) -> str:
         if usuario.ativo:
             return "Erro: Arquive o usuário antes de excluir permanentemente."
 
+        nome_usuario = usuario.nome
+
         try:
+            # Remove o usuário do banco compartilhado
             session.execute(
                 delete(UsuarioModel).where(
                     func.lower(UsuarioModel.nome) == nome.lower()
                 )
             )
             session.commit()
+
+            # Remove o banco de dados individual do usuário
+            if not remover_banco_usuario(nome_usuario):
+                logger.warning(
+                    "Banco de dados do usuário %s não pôde ser removido", nome_usuario
+                )
+
+            # Limpa caches para atualizar métricas
+            limpar_caches_consultas()
+
+            return "Sucesso: Usuário excluído com sucesso."
         except SQLAlchemyError:
             session.rollback()
             raise
-
-        remover_banco_usuario(usuario.nome)
-        limpar_caches_consultas()
-        return "Sucesso: Usuário excluído com sucesso."
 
     def _on_error(exc: SQLAlchemyError) -> str:
         return f"Erro ao excluir usuário: {exc}"
@@ -309,7 +320,7 @@ def excluir_usuario(nome: str) -> str:
 
 
 def arquivar_usuario(nome: str) -> str:
-    """Arquiva um usuário mantendo seu histórico de dados."""
+    """Arquiva um usuário mantendo seu histórico de dados e marcando o banco."""
 
     def _operacao(session) -> str:
         usuario = session.scalar(
@@ -329,6 +340,9 @@ def arquivar_usuario(nome: str) -> str:
         except SQLAlchemyError:
             session.rollback()
             raise
+
+        # Marca o banco de dados como arquivado
+        marcar_banco_como_arquivado(usuario.nome)
 
         session_service.encerrar_sessoes_usuario(usuario.nome)
         limpar_caches_consultas()
@@ -359,6 +373,9 @@ def restaurar_usuario(nome: str) -> str:
         except SQLAlchemyError:
             session.rollback()
             raise
+
+        # Remove a marcação de arquivo arquivado
+        desmarcar_banco_como_arquivado(usuario.nome)
 
         ensure_user_database(usuario.nome)
         limpar_caches_consultas()

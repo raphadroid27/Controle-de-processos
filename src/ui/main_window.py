@@ -47,9 +47,11 @@ class MainWindow(QMainWindow):
     def __init__(self, usuario_logado, is_admin):
         """Inicializa a janela principal."""
         super().__init__()
+        self.logger = logging.getLogger(__name__)
         self.usuario_logado = usuario_logado
         self.is_admin = is_admin
         self._logout_voluntario = False  # Flag para indicar logout voluntário
+        self._is_closing = False  # Flag para evitar operações durante closeEvent
         self._theme_manager = ThemeManager.instance()
         self._theme_actions: dict[str, QAction] = {}
         self._theme_action_group: QActionGroup | None = None
@@ -69,8 +71,7 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -88,13 +89,11 @@ class MainWindow(QMainWindow):
         comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
-        self.command_watcher.fileChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.fileChanged.connect(self.verificar_comando_sistema)
 
         comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
-        self.command_watcher.directoryChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.directoryChanged.connect(self.verificar_comando_sistema)
 
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
@@ -162,10 +161,47 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
         """Remove a sessão ao fechar a janela."""
-        self._theme_manager.unregister_listener(self._on_tema_atualizado)
-        self._theme_manager.unregister_color_listener(
-            self._on_cor_tema_atualizada)
-        session_service.remover_sessao()
+        # Se já estamos encerrando, não fazer nada
+        if self._is_closing:
+            event.accept()
+            return
+
+        self._is_closing = True
+
+        # Parar todos os timers para evitar callbacks em objetos destruídos
+        try:
+            if hasattr(self, "heartbeat_timer") and self.heartbeat_timer.isActive():
+                self.heartbeat_timer.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.warning("Erro ao parar heartbeat_timer: %s", e)
+
+        try:
+            if hasattr(self, "command_timer") and self.command_timer.isActive():
+                self.command_timer.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.warning("Erro ao parar command_timer: %s", e)
+
+        try:
+            if hasattr(self, "command_watcher"):
+                # Simplesmente deletar o watcher sem bloquear sinais
+                self.command_watcher.deleteLater()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.warning("Erro ao deletar command_watcher: %s", e)
+
+        # Desconectar listeners de tema
+        try:
+            self._theme_manager.unregister_listener(self._on_tema_atualizado)
+            self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.warning("Erro ao desconectar listeners de tema: %s", e)
+
+        # Remover sessão apenas se foi logout voluntário ou erro
+        try:
+            if not self._logout_voluntario:
+                session_service.remover_sessao()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.warning("Erro ao remover sessão: %s", e)
+
         event.accept()
 
     def criar_menu(self):
@@ -196,8 +232,7 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Ferramenta Administrativa", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip(
-                "Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Ferramenta Administrativa (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -211,8 +246,7 @@ class MainWindow(QMainWindow):
             atualizar_action = QAction("Atualizar", self)
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip(
-                "Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 
@@ -245,9 +279,7 @@ class MainWindow(QMainWindow):
                 if admin_exe.exists():
                     # Executar o executável standalone
                     if not QProcess.startDetached(str(admin_exe), []):
-                        raise RuntimeError(
-                            f"Falha ao iniciar {admin_exe.name}."
-                        )
+                        raise RuntimeError(f"Falha ao iniciar {admin_exe.name}.")
                 else:
                     raise FileNotFoundError(
                         f"Executável '{admin_exe.name}' não encontrado em {exe_dir}"
@@ -255,8 +287,7 @@ class MainWindow(QMainWindow):
             else:
                 # Script Python: executar como módulo
                 if not QProcess.startDetached(sys.executable, ["-m", "src.admin_app"]):
-                    raise RuntimeError(
-                        "Falha ao iniciar processo administrativo.")
+                    raise RuntimeError("Falha ao iniciar processo administrativo.")
         except (OSError, RuntimeError, FileNotFoundError) as exc:
             QMessageBox.warning(
                 self,
@@ -318,7 +349,11 @@ class MainWindow(QMainWindow):
 
         if resposta == QMessageBox.StandardButton.Yes:
             self._logout_voluntario = True  # Marcar como logout voluntário
-            session_service.remover_sessao()
+            # Remover a sessão ANTES de emitir o sinal e fechar
+            try:
+                session_service.remover_sessao()
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                self.logger.error("Erro ao remover sessão em logout: %s", e)
             self.logout_requested.emit()
             self.close()
 
