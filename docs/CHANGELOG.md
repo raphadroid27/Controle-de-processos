@@ -2,6 +2,12 @@
 
 Histórico de mudanças do aplicativo  Controle de Pedidos
 
+## 1.2.1 (12/11/2025)
+
+- Melhoria na gestão de sessões e usuários, com limpeza de dados excluídos e ajustes de mensagens de feedback
+- Implementação de arquivamento e remoção de bancos de dados de usuários
+- Simplificação da formatação de código e revisão de textos de ajuda para maior clareza e consistência
+
 ## 1.2.0 (07/11/2025)
 
 - Migração de terminologia de "processo(s)" para "pedido(s)" em toda aplicação
