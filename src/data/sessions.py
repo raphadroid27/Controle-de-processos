@@ -96,29 +96,54 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(
+                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
 
 def _ensure_usuario_schema(engine: Engine) -> None:
+    """Garante que a tabela usuario tem todas as colunas necessárias."""
     try:
         inspector = inspect(engine)
+        if "usuario" not in inspector.get_table_names():
+            logger.debug(
+                "Tabela usuario não existe ainda, será criada pelo ORM")
+            return
+
         colunas = {col["name"] for col in inspector.get_columns("usuario")}
         statements: list[str] = []
+
         if "ativo" not in colunas:
             statements.append(
                 "ALTER TABLE usuario ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1"
             )
+            logger.info("Adicionando coluna ativo")
+
         if "arquivado_em" not in colunas:
-            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            logger.info("Adicionando coluna arquivado_em")
+
+        if "excluido" not in colunas:
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN excluido INTEGER NOT NULL DEFAULT 0"
+            )
+            logger.info("Adicionando coluna excluido")
 
         if statements:
+            logger.info(
+                "Executando %d alterações no schema usuario", len(statements))
             with engine.begin() as conn:
                 for stmt in statements:
                     conn.execute(text(stmt))
-    except SQLAlchemyError:
-        pass
+                    logger.debug("Statement executado: %s", stmt)
+            logger.info("Schema usuario atualizado com sucesso")
+        else:
+            logger.debug("Schema usuario já contém todas as colunas")
+    except SQLAlchemyError as e:
+        logger.error("Erro ao garantir schema usuario: %s", e, exc_info=True)
+        raise
 
 
 def _get_user_sessionmaker(slug: str) -> sessionmaker[Session]:
@@ -260,6 +285,57 @@ def limpar_bancos_orfaos() -> None:
                 logger.exception("Erro ao remover banco órfão %s: %s", path, e)
 
 
+def limpar_usuarios_excluidos() -> None:
+    """Limpa usuários marcados como excluidos.
+
+    Tenta remover os bancos de dados de usuários marcados para exclusão
+    que não puderam ser removidos imediatamente (ex: arquivo em uso).
+    """
+    if not DATABASE_DIR.exists():
+        return
+
+    import gc  # pylint: disable=import-outside-toplevel
+
+    # Obter usuários marcados como excluidos
+    with get_shared_session() as session:
+        usuarios_excluidos = session.scalars(
+            select(UsuarioModel.nome).where(UsuarioModel.excluido)
+        ).all()
+
+    logger.info("Tentando limpar %d usuário(s) marcado(s) para exclusão", len(
+        usuarios_excluidos))
+
+    # Tentar remover seus bancos
+    for nome_usuario in usuarios_excluidos:
+        slug = slugify_usuario(nome_usuario)
+
+        # Tentar remover banco normal
+        db_path = DATABASE_DIR / f"usuario_{slug}.db"
+        if db_path.exists():
+            gc.collect()  # Limpar referências circulares
+            for tentativa in range(3):
+                try:
+                    db_path.unlink()
+                    logger.info(
+                        "Banco de usuário excluido removido: %s", db_path)
+                    break
+                except OSError as e:
+                    if tentativa < 2:
+                        import time  # pylint: disable=import-outside-toplevel
+                        logger.debug(
+                            "Erro ao remover %s (tentativa %d/3): %s",
+                            db_path,
+                            tentativa + 1,
+                            e,
+                        )
+                        time.sleep(0.5)
+                    else:
+                        logger.warning(
+                            "Não foi possível remover banco excluido após 3 tentativas: %s",
+                            db_path,
+                        )
+
+
 __all__ = [
     "get_shared_engine",
     "get_shared_session",
@@ -271,4 +347,5 @@ __all__ = [
     "remover_banco_usuario",
     "executar_sessao_compartilhada",
     "limpar_bancos_orfaos",
+    "limpar_usuarios_excluidos",
 ]

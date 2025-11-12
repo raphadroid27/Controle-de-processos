@@ -31,6 +31,7 @@ from src.data.sessions import (
     inicializar_todas_tabelas,
     iter_user_databases,
     limpar_bancos_orfaos,
+    limpar_usuarios_excluidos,
     remover_banco_usuario,
 )
 
@@ -61,5 +62,6 @@ __all__ = [
     "get_sessionmaker_for_slug",
     "inicializar_todas_tabelas",
     "limpar_bancos_orfaos",
+    "limpar_usuarios_excluidos",
     "tempo_corte_para_segundos",
 ]

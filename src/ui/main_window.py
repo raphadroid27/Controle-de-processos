@@ -71,7 +71,8 @@ class MainWindow(QMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(
+            self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -89,11 +90,13 @@ class MainWindow(QMainWindow):
         comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
-        self.command_watcher.fileChanged.connect(self.verificar_comando_sistema)
+        self.command_watcher.fileChanged.connect(
+            self.verificar_comando_sistema)
 
         comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
-        self.command_watcher.directoryChanged.connect(self.verificar_comando_sistema)
+        self.command_watcher.directoryChanged.connect(
+            self.verificar_comando_sistema)
 
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
@@ -101,26 +104,30 @@ class MainWindow(QMainWindow):
         self.command_timer.start(10000)  # Verificar a cada 10 segundos
 
     def atualizar_heartbeat(self):
-        """Atualiza o heartbeat da sessão e verifica se a sessão ainda é válida."""
+        """Atualiza o heartbeat da sessão e verifica se é válida."""
         try:
-            # Verificar se a sessão ainda existe
+            # Verificar se há comando de encerramento ou sessão foi removida
+            # Em ambos os casos, mostrar mensagem genérica
+            command_exists = session_service.obter_comando_encerrar_sessao(
+                session_service.SESSION_ID
+            )
             sessoes = session_service.obter_sessoes_ativas()
             sessao_atual_existe = any(
                 s["session_id"] == session_service.SESSION_ID for s in sessoes
             )
 
-            if not sessao_atual_existe:
+            if command_exists or not sessao_atual_existe:
                 # Verificar se foi logout voluntário
                 if not self._logout_voluntario:
-                    # Sessão foi removida por outro login
+                    # Sessão foi encerrada (por admin ou outro login)
                     show_timed_message_box(
                         self,
                         "Sessão Encerrada",
-                        "Sua sessão foi encerrada por outro login.\n"
+                        "Sua sessão foi encerrada.\n"
                         "A aplicação será fechada.",
                         5000,
                     )
-                    # Agendar o fechamento da aplicação após a mensagem ser exibida
+                    # Agendar fechamento da aplicação
                     QTimer.singleShot(500, QApplication.quit)
                 return
 
@@ -133,19 +140,7 @@ class MainWindow(QMainWindow):
             QApplication.quit()
 
     def verificar_comando_sistema(self):
-        """Verifica se há comandos do sistema para executar."""
-        if session_service.obter_comando_encerrar_sessao(session_service.SESSION_ID):
-            show_timed_message_box(
-                self,
-                "Sessão Encerrada",
-                "Sua sessão foi encerrada pelo administrador.\n"
-                "A aplicação será fechada.",
-                5000,
-            )
-
-            QApplication.quit()
-            return
-
+        """Verifica se há comandos globais do sistema para executar."""
         comando_global = session_service.obter_comando_sistema()
         if comando_global == "SHUTDOWN":
             show_timed_message_box(
@@ -191,7 +186,8 @@ class MainWindow(QMainWindow):
         # Desconectar listeners de tema
         try:
             self._theme_manager.unregister_listener(self._on_tema_atualizado)
-            self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
+            self._theme_manager.unregister_color_listener(
+                self._on_cor_tema_atualizada)
         except Exception as e:  # pylint: disable=broad-exception-caught
             self.logger.warning("Erro ao desconectar listeners de tema: %s", e)
 
@@ -232,7 +228,8 @@ class MainWindow(QMainWindow):
             usuarios_action = QAction("Ferramenta Administrativa", self)
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip(
+                "Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Ferramenta Administrativa (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -246,7 +243,8 @@ class MainWindow(QMainWindow):
             atualizar_action = QAction("Atualizar", self)
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip(
+                "Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 
@@ -279,7 +277,8 @@ class MainWindow(QMainWindow):
                 if admin_exe.exists():
                     # Executar o executável standalone
                     if not QProcess.startDetached(str(admin_exe), []):
-                        raise RuntimeError(f"Falha ao iniciar {admin_exe.name}.")
+                        raise RuntimeError(
+                            f"Falha ao iniciar {admin_exe.name}.")
                 else:
                     raise FileNotFoundError(
                         f"Executável '{admin_exe.name}' não encontrado em {exe_dir}"
@@ -287,7 +286,8 @@ class MainWindow(QMainWindow):
             else:
                 # Script Python: executar como módulo
                 if not QProcess.startDetached(sys.executable, ["-m", "src.admin_app"]):
-                    raise RuntimeError("Falha ao iniciar processo administrativo.")
+                    raise RuntimeError(
+                        "Falha ao iniciar processo administrativo.")
         except (OSError, RuntimeError, FileNotFoundError) as exc:
             QMessageBox.warning(
                 self,

@@ -41,12 +41,16 @@ class ControleProcessosApp:
         ensure_ipc_dirs_exist()
         criar_tabela_usuario()
 
+        # Limpeza de operações pendentes da sessão anterior
+        self.logger.info("Limpando operações pendentes...")
+        db.limpar_usuarios_excluidos()  # Retenta remover bancos de usuários excluidos
+        db.limpar_bancos_orfaos()  # Remove bancos órfãos
+
         # Executar manutenção automática em background (otimiza se necessário)
         try:
             executar_manutencao_automatica()
         except (OSError, RuntimeError) as exc:
             self.logger.warning("Manutenção automática falhou: %s", exc)
-        # db.limpar_bancos_orfaos()
 
     def _handle_logout(self):
         """Slot para tratar logout da MainWindow."""
@@ -54,7 +58,6 @@ class ControleProcessosApp:
         self.mostrar_login()
         # Se mostrar_login retornar 0 (cancelado), app continua rodando
         # Se retornar 1 (login bem-sucedido), app continua rodando normalmente
-        # db.limpar_bancos_orfaos()
 
     def run(self):
         """Executa a aplicação."""
@@ -110,18 +113,21 @@ class ControleProcessosApp:
                     session_service.definir_comando_encerrar_sessao(
                         info_sessao["session_id"]
                     )
-                    session_service.remover_sessao_por_id(info_sessao["session_id"])
+                    session_service.remover_sessao_por_id(
+                        info_sessao["session_id"])
                 else:
                     return 0
 
             # Registrar nova sessão após todas as verificações
-            session_service.registrar_sessao(usuario_autenticado, admin_tool=False)
+            session_service.registrar_sessao(
+                usuario_autenticado, admin_tool=False)
 
             # Desconectar e fechar MainWindow anterior se existir
             if self.main_window:
                 try:
                     # Desconectar do slot de logout
-                    self.main_window.logout_requested.disconnect(self._handle_logout)
+                    self.main_window.logout_requested.disconnect(
+                        self._handle_logout)
                 except (RuntimeError, TypeError):
                     # Sinal não estava conectado, o que é normal na primeira vez
                     pass

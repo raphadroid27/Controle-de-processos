@@ -24,6 +24,7 @@ __all__ = [
     "verificar_usuario_ja_logado",
     "verificar_sessao_admin_duplicada",
     "encerrar_sessoes_usuario",
+    "encerrar_sessoes_usuario_por_admin",
     "remover_sessao_por_id",
     "definir_comando_sistema",
     "obter_comando_sistema",
@@ -145,7 +146,32 @@ def _verificar_sessao_por_tipo(
 
 
 def encerrar_sessoes_usuario(usuario_nome: str) -> int:
-    """Encerra todas as sessões associadas ao usuário."""
+    """Encerra todas as sessões associadas ao usuário (por outro login).
+
+    Remove as sessões SEM enviar comando de encerramento.
+    Usada quando outro login do mesmo usuário remove a sessão anterior.
+    """
+    return manager.remove_sessions_by_user(usuario_nome)
+
+
+def encerrar_sessoes_usuario_por_admin(usuario_nome: str) -> int:
+    """Encerra todas as sessões do usuário enviando comando (ação administrativa).
+
+    Envia o comando de encerramento para CADA sessão do usuário ANTES de removê-la,
+    garantindo que a aplicação receba a mensagem de encerramento pelo admin.
+    Usada quando o admin arquiva ou exclui um usuário.
+    """
+    sessions = manager.get_sessions_by_user(usuario_nome)
+
+    # Enviar comando de encerramento para cada sessão
+    for session in sessions:
+        session_id = session["session_id"]
+        # Enviar comando para que a app receba a mensagem correta
+        definir_comando_encerrar_sessao(session_id)
+        logging.info(
+            "Enviando comando de encerramento para sessão: %s", session_id)
+
+    # Remover as sessões após enviar comandos
     return manager.remove_sessions_by_user(usuario_nome)
 
 

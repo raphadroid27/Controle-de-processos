@@ -22,7 +22,6 @@ from src.data import (
     limpar_caches_consultas,
     remover_banco_usuario,
 )
-from src.data.config import desmarcar_banco_como_arquivado, marcar_banco_como_arquivado
 from src.data.sessions import executar_sessao_compartilhada
 from src.domain import session_service
 
@@ -102,7 +101,8 @@ def verificar_login(nome: str, senha: str) -> dict:
         senha_hash = hash_senha(senha)
         nome_limpo = nome.strip().lower()
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome_limpo)
+            select(UsuarioModel).where(
+                func.lower(UsuarioModel.nome) == nome_limpo)
         )
         if not usuario or usuario.senha != senha_hash:
             return {"sucesso": False, "mensagem": "Usuário ou senha inválidos"}
@@ -257,7 +257,8 @@ def verificar_senha_reset(nome: str) -> bool:
 
     def _operacao(session) -> bool:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario or not usuario.ativo:
             return False
@@ -275,11 +276,16 @@ def verificar_senha_reset(nome: str) -> bool:
 
 
 def excluir_usuario(nome: str) -> str:
-    """Exclui um usuário pelo nome e remove seu banco de dados associado."""
+    """Marca um usuário como excluido e tenta remover seus dados.
+
+    Ao invés de excluir imediatamente, marca como excluido e tenta remover
+    o banco. Se falhar, a operação será retentada na próxima inicialização.
+    """
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -291,6 +297,15 @@ def excluir_usuario(nome: str) -> str:
         nome_usuario = usuario.nome
 
         try:
+            # Encerra as sessões ANTES de tentar remover (com comando de admin)
+            session_service.encerrar_sessoes_usuario_por_admin(nome_usuario)
+
+            # Tenta remover o banco de dados individual
+            sucesso_remocao = remover_banco_usuario(nome_usuario)
+
+            # Marca como excluido (mesmo que a remoção tenha falhado)
+            usuario.excluido = True
+
             # Remove o usuário do banco compartilhado
             session.execute(
                 delete(UsuarioModel).where(
@@ -299,16 +314,25 @@ def excluir_usuario(nome: str) -> str:
             )
             session.commit()
 
-            # Remove o banco de dados individual do usuário
-            if not remover_banco_usuario(nome_usuario):
+            if sucesso_remocao:
+                logger.info("Usuário %s excluído e banco removido com sucesso",
+                            nome_usuario)
+                mensagem = "Sucesso: Usuário excluído com sucesso."
+            else:
                 logger.warning(
-                    "Banco de dados do usuário %s não pôde ser removido", nome_usuario
+                    "Usuário %s marcado como excluido mas banco será removido na inicialização",
+                    nome_usuario
+                )
+                mensagem = (
+                    "Sucesso: Usuário marcado para exclusão. "
+                    "O banco será removido na próxima inicialização "
+                    "se o arquivo estiver disponível."
                 )
 
             # Limpa caches para atualizar métricas
             limpar_caches_consultas()
 
-            return "Sucesso: Usuário excluído com sucesso."
+            return mensagem
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -324,7 +348,8 @@ def arquivar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -341,10 +366,9 @@ def arquivar_usuario(nome: str) -> str:
             session.rollback()
             raise
 
-        # Marca o banco de dados como arquivado
-        marcar_banco_como_arquivado(usuario.nome)
+        # Encerra as sessões (com comando de admin)
+        session_service.encerrar_sessoes_usuario_por_admin(usuario.nome)
 
-        session_service.encerrar_sessoes_usuario(usuario.nome)
         limpar_caches_consultas()
         return "Sucesso: Usuário arquivado."
 
@@ -359,7 +383,8 @@ def restaurar_usuario(nome: str) -> str:
 
     def _operacao(session) -> str:
         usuario = session.scalar(
-            select(UsuarioModel).where(func.lower(UsuarioModel.nome) == nome.lower())
+            select(UsuarioModel).where(func.lower(
+                UsuarioModel.nome) == nome.lower())
         )
         if not usuario:
             return "Erro: Usuário não encontrado."
@@ -373,9 +398,6 @@ def restaurar_usuario(nome: str) -> str:
         except SQLAlchemyError:
             session.rollback()
             raise
-
-        # Remove a marcação de arquivo arquivado
-        desmarcar_banco_como_arquivado(usuario.nome)
 
         ensure_user_database(usuario.nome)
         limpar_caches_consultas()

@@ -143,7 +143,8 @@ def _executar_login_admin() -> Optional[str]:
                 session_service.definir_comando_encerrar_sessao(
                     info_sessao["session_id"]
                 )
-                session_service.remover_sessao_por_id(info_sessao["session_id"])
+                session_service.remover_sessao_por_id(
+                    info_sessao["session_id"])
             else:
                 return None
 
@@ -273,8 +274,8 @@ def _processar_comando_shutdown(app: QApplication, janela: QDialog) -> None:
         show_timed_message_box(
             janela,
             "Sessão Encerrada",
-            "Outra instância solicitou o encerramento desta sessão administrativa.\n\n"
-            "A aplicação será encerrada.",
+            "Sua sessão foi encerrada.\n"
+            "A aplicação será fechada.",
             timeout_ms=3000,
         )
         _executar_fechamento()
@@ -296,8 +297,10 @@ def _configurar_monitoramento_shutdown(app: QApplication, janela: QDialog) -> No
     )
     watcher.addPath(str(session_shutdown_path))
 
-    watcher.directoryChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
-    watcher.fileChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
+    watcher.directoryChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
+    watcher.fileChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
 
     _ADMIN_WATCHERS.append(watcher)
 
@@ -333,7 +336,8 @@ def _tratar_instancia_ativa(app: QApplication, logger: logging.Logger) -> bool:
     )
 
     if resposta != QMessageBox.StandardButton.Yes:
-        logger.info("Usuário optou por não encerrar a instância administrativa ativa")
+        logger.info(
+            "Usuário optou por não encerrar a instância administrativa ativa")
         return False
 
     if not _solicitar_encerramento_admin_existente(app):
@@ -374,18 +378,20 @@ def main() -> int:
     theme_manager = ThemeManager.instance()
     theme_manager.initialize()
 
-    if not _tratar_instancia_ativa(app, logger):
-        return 0
-
     usuario_admin = _executar_login_admin()
     if not usuario_admin:
         session_service.remover_sessao()
         logger.info("Login administrativo cancelado")
         return 0
 
+    if not _tratar_instancia_ativa(app, logger):
+        session_service.remover_sessao()
+        return 0
+
     if not _criar_admin_lock(usuario_admin):
         session_service.remover_sessao()
-        logger.error("Não foi possível criar admin.lock para '%s'", usuario_admin)
+        logger.error(
+            "Não foi possível criar admin.lock para '%s'", usuario_admin)
         return 1
 
     janela = AdminToolsDialog(usuario_admin)
@@ -396,7 +402,8 @@ def main() -> int:
     janela.show()
 
     try:
-        logger.info("Ferramenta administrativa iniciada para '%s'", usuario_admin)
+        logger.info("Ferramenta administrativa iniciada para '%s'",
+                    usuario_admin)
         return app.exec()
     finally:
         _remover_admin_lock()
