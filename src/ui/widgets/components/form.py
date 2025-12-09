@@ -51,7 +51,7 @@ def criar_formulario(
     frame = QGroupBox("Novo registro", parent)
 
     entry_cliente = NavigableLineEdit(frame)
-    entry_cliente.setPlaceholderText("Informe o cliente responsável")
+    entry_cliente.setPlaceholderText("Informe o cliente")
     entry_cliente.setToolTip(
         "Nome do cliente. Use Tab para avançar e Ctrl+Enter para adicionar rapidamente."
     )
@@ -72,7 +72,8 @@ def criar_formulario(
     entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
     entry_data_entrada.setMaximumDate(obter_data_atual_utc())
-    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
+    entry_data_entrada.setToolTip(
+        "Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
