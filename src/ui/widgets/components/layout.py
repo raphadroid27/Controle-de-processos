@@ -35,7 +35,10 @@ def criar_layout_botao_padrao(botao: QPushButton) -> QVBoxLayout:
     layout.setSpacing(3)
     layout.setContentsMargins(0, 0, 0, 0)
 
-    spacer = QLabel("")
+    spacer = QLabel(" ")
+    spacer.setObjectName("label_titulo")
+    spacer.setAlignment(Qt.AlignmentFlag.AlignLeft |
+                        Qt.AlignmentFlag.AlignBottom)
     spacer.setMinimumHeight(16)
     spacer.setMaximumHeight(18)
     layout.addWidget(spacer)
