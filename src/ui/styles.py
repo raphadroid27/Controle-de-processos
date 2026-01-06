@@ -41,13 +41,12 @@ def _get_asset_icon(name: str) -> str | None:
 TAMANHO_FONTE_PADRAO = 10
 TAMANHO_FONTE_BOTAO = 12
 RAIO_BORDA_BOTAO = 4
-PADDING_BOTAO = "2px 4px"
+PADDING = "2px 4px"
 ESPACAMENTO_PADRAO = 10
 
 # Constantes gerais de layout e estilo
-ALTURA_PADRAO_COMPONENTE = 20
+ALTURA_PADRAO_COMPONENTE = 25
 LARGURA_MINIMA_COMPONENTE = 70
-PADDING_INTERNO_COMPONENTE = "2px 4px"
 ALTURA_PADRAO_BOTAO = 25
 LARGURA_MINIMA_BOTAO = 100
 ALTURA_PADRAO_MENU = 18
@@ -161,7 +160,7 @@ def obter_estilo_botao(cor):
             background-color: {colors['normal']};
             color: {colors['text']};
             border: none;
-            padding: {PADDING_BOTAO};
+            padding: {PADDING};
             border-radius: {RAIO_BORDA_BOTAO}px;
             font-weight: bold;
             font-size: {TAMANHO_FONTE_BOTAO}px;
@@ -338,8 +337,8 @@ def obter_estilo_combo_box(theme: str = "light", arrow_file: str | None = None) 
         min-width: {LARGURA_MINIMA_COMPONENTE}px;
         min-height: {ALTURA_PADRAO_COMPONENTE}px;
         max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: {PADDING_INTERNO_COMPONENTE};
-        font-size: 9pt;
+        padding: {PADDING};
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
         font-weight: bold;
         border: 1px solid {border_color};
         border-radius: none;
@@ -400,8 +399,8 @@ def obter_estilo_date_edit(theme: str = "light", arrow_file: str | None = None) 
         min-width: {LARGURA_MINIMA_COMPONENTE}px;
         min-height: {ALTURA_PADRAO_COMPONENTE}px;
         max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: {PADDING_INTERNO_COMPONENTE};
-        font-size: 9pt;
+        padding: {PADDING};
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
         font-weight: bold;
         border: 1px solid {border_color};
         border-radius: none;
@@ -437,7 +436,7 @@ def obter_estilo_line_edit(theme: str = "light") -> str:
         min-width: {LARGURA_MINIMA_COMPONENTE}px;
         min-height: {ALTURA_PADRAO_COMPONENTE}px;
         max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: {PADDING_INTERNO_COMPONENTE};
+        padding: {PADDING};
         font-size: {TAMANHO_FONTE_PADRAO}pt;
         font-weight: bold;
         border: 1px solid {border_color};
@@ -465,7 +464,7 @@ def obter_estilo_label() -> str:
         min-width: {LARGURA_MINIMA_COMPONENTE}px;
         min-height: {ALTURA_PADRAO_COMPONENTE}px;
         max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: {PADDING_INTERNO_COMPONENTE};
+        padding: {PADDING};
         font-weight: bold;
     }}
 
