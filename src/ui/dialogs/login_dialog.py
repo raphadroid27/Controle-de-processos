@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QInputDialog,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -99,8 +100,13 @@ Use Tab para avançar para o campo de senha."""
         configurar_widgets_entrada_uniformes(
             [self.entry_usuario, self.entry_senha])
 
-        layout.addRow("Usuário:", self.entry_usuario)
-        layout.addRow("Senha:", self.entry_senha)
+        label_usuario = QLabel("Usuário:")
+        label_usuario.setObjectName("label_titulo_negrito")
+        layout.addRow(label_usuario, self.entry_usuario)
+
+        label_senha = QLabel("Senha:")
+        label_senha.setObjectName("label_titulo_negrito")
+        layout.addRow(label_senha, self.entry_senha)
 
         # Espaçador para empurrar botões para o final
         spacer = QSpacerItem(
@@ -308,8 +314,13 @@ Deve ser único e sem espaços extras nas extremidades."""
         configurar_widgets_entrada_uniformes(
             [self.entry_nome, self.entry_senha])
 
-        layout.addRow("Nome:", self.entry_nome)
-        layout.addRow("Senha:", self.entry_senha)
+        label_nome = QLabel("Nome:")
+        label_nome.setObjectName("label_titulo_negrito")
+        layout.addRow(label_nome, self.entry_nome)
+
+        label_senha = QLabel("Senha:")
+        label_senha.setObjectName("label_titulo_negrito")
+        layout.addRow(label_senha, self.entry_senha)
 
         # Só mostra opção admin se não existir um
         if not usuario_service.verificar_admin_existente():
@@ -323,11 +334,13 @@ Deve ser único e sem espaços extras nas extremidades."""
             container_admin = QWidget()
             layout_admin = QHBoxLayout(container_admin)
             layout_admin.setContentsMargins(
-                0, 8, 0, 0)  # Pequeno ajuste vertical
+                0, 2, 0, 0)  # Pequeno ajuste vertical
             layout_admin.addWidget(self.check_admin)
             layout_admin.addStretch()
 
-            layout.addRow("Admin:", container_admin)
+            label_admin = QLabel("Admin:")
+            label_admin.setObjectName("label_titulo_negrito")
+            layout.addRow(label_admin, container_admin)
             self.setFixedSize(
                 LARGURA_DIALOG_NOVO_USUARIO, (ALTURA_DIALOG_NOVO_USUARIO + 20)
             )
