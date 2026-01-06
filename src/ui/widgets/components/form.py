@@ -135,7 +135,7 @@ def criar_formulario(
 
     btn_adicionar = QPushButton("Adicionar", frame)
     btn_adicionar.setToolTip("Adicionar novo pedido (Atalho: Enter)")
-    aplicar_estilo_botao(btn_adicionar, "verde", largura_minima=90)
+    aplicar_estilo_botao(btn_adicionar, "verde")
     btn_adicionar.clicked.connect(on_submit)
     btn_layout = criar_layout_botao_padrao(btn_adicionar)
     campos_layout.addLayout(btn_layout, 1)

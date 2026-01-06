@@ -49,7 +49,7 @@ ALTURA_PADRAO_COMPONENTE = 20
 LARGURA_MINIMA_COMPONENTE = 70
 PADDING_INTERNO_COMPONENTE = "2px 4px"
 ALTURA_PADRAO_BOTAO = 25
-LARGURA_MINIMA_BOTAO = 20
+LARGURA_MINIMA_BOTAO = 100
 ALTURA_PADRAO_MENU = 18
 
 COR_FUNDO_BRANCO = "#f0f0f0"
@@ -140,7 +140,7 @@ def aplicar_estilo_botao_desabilitado():
     """
 
 
-def obter_estilo_botao(cor, _largura=None):
+def obter_estilo_botao(cor):
     """
     Retorna o estilo CSS para botões com a cor especificada.
 
@@ -202,7 +202,7 @@ def configurar_botao_padrao(botao, largura_minima=None):
     botao.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
-def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
+def aplicar_estilo_botao(botao, cor: str):
     """
     Aplica estilo completo de botão de forma conveniente.
 
@@ -210,13 +210,12 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
         botao: O botão QPushButton a ser estilizado
         cor: Cor do botão ('verde', 'laranja', 'vermelho',
             'azul', 'cinza', 'amarelo')
-        largura_minima: Largura mínima do botão (opcional)
     """
     if not hasattr(botao, "setStyleSheet"):
         return
 
     # Aplicar configuração padrão de tamanho
-    configurar_botao_padrao(botao, largura_minima)
+    configurar_botao_padrao(botao)
 
     # Aplicar estilo de cor
     botao.setStyleSheet(obter_estilo_botao(cor))
@@ -257,21 +256,6 @@ def aplicar_estilo_table_widget(table_widget):
 
     if hasattr(table_widget, "setStyleSheet"):
         table_widget.setStyleSheet(obter_estilo_table_widget())
-
-
-def obter_estilo_botao_adicionar():
-    """Retorna o estilo específico para botão Adicionar (verde)."""
-    return obter_estilo_botao("verde")
-
-
-def obter_estilo_botao_limpar():
-    """Retorna o estilo específico para botão Limpar Filtros (laranja)."""
-    return obter_estilo_botao("laranja")
-
-
-def obter_estilo_botao_excluir():
-    """Retorna o estilo específico para botão Excluir (vermelho)."""
-    return obter_estilo_botao("vermelho")
 
 
 def obter_estilo_progress_bar():
@@ -511,7 +495,7 @@ def _get_label_style() -> str:
 
     return f"""
     QLabel {{
-        background-color: palette(window);
+        background-color: transparent;
         color: palette(window-text);
         font-size: {TAMANHO_FONTE_PADRAO}pt;
         min-width: {LARGURA_MINIMA_COMPONENTE}px;
@@ -522,7 +506,7 @@ def _get_label_style() -> str:
     }}
 
     QLabel#label_titulo {{
-        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        font-size: {TAMANHO_FONTE_PADRAO-1}pt;
         color: palette(window-text);
         background-color: transparent;
         padding: 0px 0px;

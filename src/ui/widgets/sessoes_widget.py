@@ -54,23 +54,26 @@ class GerenciarSessoesWidget(QWidget):
         botoes_layout.addStretch()
 
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
-        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul", 90)
-        self.btn_atualizar_sessoes.setToolTip("Atualizar a lista de sessões (F5)")
+        aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul")
+        self.btn_atualizar_sessoes.setToolTip(
+            "Atualizar a lista de sessões (F5)")
         self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
 
-        self.btn_encerrar_sessao.clicked.connect(self.encerrar_sessao_selecionada)
-        aplicar_estilo_botao(self.btn_encerrar_sessao, "vermelho", 130)
-        self.btn_encerrar_sessao.setToolTip("Encerrar a sessão selecionada (Del)")
+        self.btn_encerrar_sessao.clicked.connect(
+            self.encerrar_sessao_selecionada)
+        aplicar_estilo_botao(self.btn_encerrar_sessao, "vermelho")
+        self.btn_encerrar_sessao.setToolTip(
+            "Encerrar a sessão selecionada (Del)")
         self.btn_encerrar_sessao.setShortcut(QKeySequence("Del"))
 
         self.btn_limpar_inativas.clicked.connect(self.limpar_sessoes_inativas)
-        aplicar_estilo_botao(self.btn_limpar_inativas, "laranja", 120)
+        aplicar_estilo_botao(self.btn_limpar_inativas, "laranja")
         self.btn_limpar_inativas.setToolTip(
             "Remover sessões inativas (sem heartbeat há mais de 2 minutos)"
         )
 
         self.btn_shutdown_sistema.clicked.connect(self.shutdown_sistema)
-        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo", 140)
+        aplicar_estilo_botao(self.btn_shutdown_sistema, "roxo")
         self.btn_shutdown_sistema.setToolTip(
             "Enviar comando de desligamento para todas as instâncias (Ctrl+Shift+Q)"
         )
