@@ -7,7 +7,9 @@ from typing import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QFrame, QLabel
+
+from src.ui.flow_layout import FlowLayout
 
 
 @dataclass
@@ -29,8 +31,10 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     frame = QFrame(parent)
     frame.setFrameStyle(QFrame.Shape.StyledPanel)
 
-    layout = QHBoxLayout()
-    layout.setSpacing(espacamento)
+    layout = FlowLayout(
+        h_spacing=espacamento,
+        v_spacing=espacamento,
+    )
 
     font = QFont()
     font.setBold(True)
@@ -61,7 +65,6 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     layout.addWidget(label_media_itens_por_dia)
     layout.addWidget(label_estimativa_itens)
     layout.addWidget(label_tempo_corte_dia)
-    layout.addStretch()
 
     frame.setLayout(layout)
 
@@ -92,7 +95,8 @@ def atualizar_totais(
     """Atualiza os rótulos de totais com os valores fornecidos."""
     controles.label_pedidos.setText(f"Total Pedidos: {total_pedidos}")
     controles.label_itens.setText(f"Total Itens: {total_itens}")
-    controles.label_valor.setText(f"Total Valor: {formatar_valor(total_valor)}")
+    controles.label_valor.setText(
+        f"Total Valor: {formatar_valor(total_valor)}")
 
     if media_dias_processo is None:
         controles.label_media_dias.setTextFormat(Qt.TextFormat.PlainText)
@@ -120,7 +124,8 @@ def atualizar_totais(
         )
 
     if tempo_corte_dia:
-        controles.label_tempo_corte_dia.setText(f"Tempo corte hoje: {tempo_corte_dia}")
+        controles.label_tempo_corte_dia.setText(
+            f"Tempo corte hoje: {tempo_corte_dia}")
     else:
         controles.label_tempo_corte_dia.setText("Tempo corte hoje: --")
 
