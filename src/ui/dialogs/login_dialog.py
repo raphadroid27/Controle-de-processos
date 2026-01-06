@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QWidget,
 )
 
 from src.domain import session_service, usuario_service
@@ -317,7 +318,16 @@ Deve ser único e sem espaços extras nas extremidades."""
                 "Tornar este usuário administrador (recurso disponível somente até o "
                 "primeiro admin existir)."
             )
-            layout.addRow("Admin:", self.check_admin)
+
+            # Container para alinhar checkbox
+            container_admin = QWidget()
+            layout_admin = QHBoxLayout(container_admin)
+            layout_admin.setContentsMargins(
+                0, 8, 0, 0)  # Pequeno ajuste vertical
+            layout_admin.addWidget(self.check_admin)
+            layout_admin.addStretch()
+
+            layout.addRow("Admin:", container_admin)
             self.setFixedSize(
                 LARGURA_DIALOG_NOVO_USUARIO, (ALTURA_DIALOG_NOVO_USUARIO + 20)
             )
