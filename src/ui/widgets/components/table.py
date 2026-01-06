@@ -19,7 +19,11 @@ from PySide6.QtWidgets import (
 
 from src.core.formatters import formatar_data_para_exibicao, formatar_valor_monetario
 from src.ui.delegates import DateEditDelegate
-from src.ui.styles import aplicar_estilo_botao, aplicar_estilo_botao_desabilitado
+from src.ui.styles import (
+    aplicar_estilo_botao,
+    aplicar_estilo_botao_desabilitado,
+    obter_estilo_table_widget,
+)
 
 __all__ = ["TabelaControls", "criar_tabela", "preencher_tabela"]
 
@@ -72,6 +76,7 @@ def criar_tabela(
     layout.setSpacing(10)
 
     tabela = QTableWidget(frame)
+    tabela.setStyleSheet(obter_estilo_table_widget())
     colunas = _definir_colunas(tabela, is_admin)
 
     tabela.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
