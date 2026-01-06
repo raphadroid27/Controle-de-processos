@@ -165,6 +165,9 @@ def obter_estilo_botao(cor):
             border-radius: {RAIO_BORDA_BOTAO}px;
             font-weight: bold;
             font-size: {TAMANHO_FONTE_BOTAO}px;
+            min-width: {LARGURA_MINIMA_BOTAO}px;
+            min-height: {ALTURA_PADRAO_BOTAO}px;
+            max-height: {ALTURA_PADRAO_BOTAO}px;
         }}
         QPushButton:hover {{
             background-color: {colors['hover']};
@@ -176,30 +179,14 @@ def obter_estilo_botao(cor):
 
 
 def configurar_widgets_entrada_uniformes(widgets_list):
-    """Configura widgets de entrada para ter tamanho e comportamento uniformes.
+    """Configura widgets de entrada para ter comportamento uniforme.
 
     Args:
         widgets_list: Lista de widgets para configurar
     """
     for widget in widgets_list:
-        widget.setMinimumHeight(ALTURA_PADRAO_COMPONENTE)
-        widget.setMaximumHeight(ALTURA_PADRAO_COMPONENTE)
-        widget.setMinimumWidth(LARGURA_MINIMA_COMPONENTE)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding,
                              QSizePolicy.Policy.Fixed)
-
-
-def configurar_botao_padrao(botao, largura_minima=None):
-    """Configure button with uniform height and width standards.
-
-    Args:
-        botao: O botão QPushButton a ser configurado
-        largura_minima: Largura mínima opcional (usa LARGURA_BOTAO se não especificado)
-    """
-    botao.setMinimumHeight(ALTURA_PADRAO_BOTAO)
-    botao.setMaximumHeight(ALTURA_PADRAO_BOTAO)
-    botao.setMinimumWidth(largura_minima or LARGURA_MINIMA_BOTAO)
-    botao.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
 def aplicar_estilo_botao(botao, cor: str):
@@ -214,21 +201,10 @@ def aplicar_estilo_botao(botao, cor: str):
     if not hasattr(botao, "setStyleSheet"):
         return
 
-    # Aplicar configuração padrão de tamanho
-    configurar_botao_padrao(botao)
+    botao.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     # Aplicar estilo de cor
     botao.setStyleSheet(obter_estilo_botao(cor))
-
-
-def aplicar_estilo_checkbox(checkbox, altura: int = None):
-    """Aplica estilo padronizado para checkboxes."""
-
-    if not hasattr(checkbox, "setFixedHeight"):
-        return
-
-    altura_final = altura if altura is not None else ALTURA_PADRAO_COMPONENTE
-    checkbox.setFixedHeight(altura_final)
 
 
 def obter_estilo_table_widget():
@@ -238,7 +214,6 @@ def obter_estilo_table_widget():
         QTableWidget {{
             color: palette(text);
             font-size: {TAMANHO_FONTE_PADRAO}pt;
-            gridline-color: palette(mid);
         }}
         QTableWidget::item {{
             padding: 0px;
@@ -251,17 +226,27 @@ def obter_estilo_table_widget():
     """
 
 
-def aplicar_estilo_table_widget(table_widget):
-    """Aplica estilo com grade visual ao QTableWidget."""
-
-    if hasattr(table_widget, "setStyleSheet"):
-        table_widget.setStyleSheet(obter_estilo_table_widget())
-
-
-def obter_estilo_progress_bar():
+def obter_estilo_progress_bar(theme: str = "light") -> str:
     """Retorna o estilo CSS para a barra de progresso."""
 
-    return _get_progress_bar_style("light")
+    border_color = "#B6B6B6" if theme == "light" else "#242424"
+
+    return f"""
+        QProgressBar {{
+            border: 1px solid {border_color};
+            border-radius: 5px;
+            text-align: center;
+            height: {ALTURA_PADRAO_BOTAO}px;
+            background-color: palette(base);
+            color: palette(text);
+            font-size: {TAMANHO_FONTE_PADRAO}pt;
+        }}
+
+        QProgressBar::chunk {{
+            background-color: palette(highlight);
+            border-radius: 4px;
+        }}
+    """
 
 
 def aplicar_icone_padrao(widget: QWidget) -> None:
@@ -324,6 +309,8 @@ def configurar_tabela_padrao(tabela):
     tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     tabela.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     tabela.setAlternatingRowColors(True)
+    if hasattr(tabela, "setStyleSheet"):
+        tabela.setStyleSheet(obter_estilo_table_widget())
 
 
 # ---------------------------------------------------------------------------
@@ -331,30 +318,7 @@ def configurar_tabela_padrao(tabela):
 # ---------------------------------------------------------------------------
 
 
-def _get_progress_bar_style(theme: str = "light") -> str:
-    """Retorna o estilo CSS para a barra de progresso."""
-
-    border_color = "#B6B6B6" if theme == "light" else "#242424"
-
-    return f"""
-        QProgressBar {{
-            border: 1px solid {border_color};
-            border-radius: 5px;
-            text-align: center;
-            height: {ALTURA_PADRAO_BOTAO}px;
-            background-color: palette(base);
-            color: palette(text);
-            font-size: {TAMANHO_FONTE_PADRAO}pt;
-        }}
-
-        QProgressBar::chunk {{
-            background-color: palette(highlight);
-            border-radius: 4px;
-        }}
-    """
-
-
-def _get_combo_box_style(theme: str = "light", arrow_file: str | None = None) -> str:
+def obter_estilo_combo_box(theme: str = "light", arrow_file: str | None = None) -> str:
     """Retorna CSS para QComboBox."""
 
     border_color = "#B6B6B6" if theme == "light" else "#242424"
@@ -415,7 +379,7 @@ def _get_combo_box_style(theme: str = "light", arrow_file: str | None = None) ->
     """
 
 
-def _get_date_edit_style(theme: str = "light", arrow_file: str | None = None) -> str:
+def obter_estilo_date_edit(theme: str = "light", arrow_file: str | None = None) -> str:
     """Retorna CSS para QDateEdit com visual alinhado ao QComboBox."""
 
     border_color = "#B6B6B6" if theme == "light" else "#242424"
@@ -461,7 +425,7 @@ def _get_date_edit_style(theme: str = "light", arrow_file: str | None = None) ->
     """
 
 
-def _get_line_edit_style(theme: str = "light") -> str:
+def obter_estilo_line_edit(theme: str = "light") -> str:
     """Retorna CSS para QLineEdit."""
 
     border_color = "#B6B6B6" if theme == "light" else "#242424"
@@ -490,7 +454,7 @@ def _get_line_edit_style(theme: str = "light") -> str:
     """
 
 
-def _get_label_style() -> str:
+def obter_estilo_label() -> str:
     """Retorna CSS para QLabel e variações."""
 
     return f"""
@@ -531,21 +495,10 @@ def _get_label_style() -> str:
         font-weight: normal;
     }}
 
-    QLabel#label_titulo_h4 {{
-        font-weight: bold;
-        font-size: 16pt;
-        color: palette(window-text);
-        background-color: transparent;
-        min-width: auto;
-        min-height: auto;
-        margin-top: 0px;
-        margin-bottom: 10px;
-        padding: 0px 0px;
-    }}
     """
 
 
-def _get_group_box_style() -> str:
+def obter_estilo_group_box() -> str:
     """Retorna CSS para QGroupBox."""
 
     return """
@@ -570,7 +523,7 @@ def _get_group_box_style() -> str:
     """
 
 
-def _get_tooltip_style() -> str:
+def obter_estilo_tooltip() -> str:
     """Retorna CSS para QToolTip."""
 
     return f"""
@@ -583,7 +536,7 @@ def _get_tooltip_style() -> str:
     """
 
 
-def _get_menu_bar_style() -> str:
+def obter_estilo_menu_bar() -> str:
     """Retorna CSS para QMenuBar."""
 
     return f"""
@@ -605,15 +558,13 @@ def _get_menu_bar_style() -> str:
     """
 
 
-def _get_menu_style(check_icon: str | None) -> str:
+def obter_estilo_menu(check_icon: str | None) -> str:
     """Retorna CSS para QMenu e seus indicadores."""
 
     checked_bg = ""
     if check_icon:
         checked_bg = f"""
-        background-image: url("{check_icon}");
-        background-repeat: no-repeat;
-        background-position: center;
+        image: url("{check_icon}");
 """
 
     return f"""
@@ -636,39 +587,34 @@ def _get_menu_style(check_icon: str | None) -> str:
         margin: 2px 0px;
     }}
 
-    QMenu::indicator:non-exclusive {{
+    QMenu::indicator {{
         width: 12px;
         height: 12px;
         margin-left: 6px;
         border-radius: 3px;
     }}
 
-    QMenu::indicator:non-exclusive:unchecked {{
+    QMenu::indicator:unchecked {{
         border: 1px solid #595959;
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                     stop:0 palette(button),
                                     stop:1 palette(base));
     }}
 
-    QMenu::indicator:non-exclusive:hover {{
-        border: 1px solid palette(highlight);
-    }}
-
-    QMenu::indicator:non-exclusive:checked {{
+    QMenu::indicator:checked {{
         border: 1px solid #595959;
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                     stop:0 palette(button),
                                     stop:1 palette(base));
 {checked_bg}    }}
 
-    QMenu::indicator:non-exclusive:hover {{
+    QMenu::indicator:hover {{
         border: 1px solid palette(highlight);
-        background-color: palette(midlight);
     }}
     """
 
 
-def _get_checkbox_style(check_icon: str | None) -> str:
+def obter_estilo_checkbox(check_icon: str | None) -> str:
     """Retorna CSS para QCheckBox e seus indicadores."""
 
     icon_block = ""
@@ -720,7 +666,7 @@ def _get_checkbox_style(check_icon: str | None) -> str:
     """
 
 
-def _get_message_box_style() -> str:
+def obter_estilo_message_box() -> str:
     """Retorna CSS para QMessageBox."""
 
     return f"""
@@ -740,7 +686,7 @@ def _get_message_box_style() -> str:
     """
 
 
-def _get_list_widget_style() -> str:
+def obter_estilo_list_widget() -> str:
     """Retorna CSS para QListWidget (lista_categoria)."""
 
     return f"""
@@ -772,7 +718,7 @@ def _get_list_widget_style() -> str:
     """
 
 
-def _get_container_manual_style() -> str:
+def obter_estilo_container_manual() -> str:
     """Retorna CSS para QWidget (container_manual)."""
 
     return """
@@ -785,7 +731,7 @@ def _get_container_manual_style() -> str:
     """
 
 
-def _get_text_browser_style() -> str:
+def obter_estilo_text_browser() -> str:
     """Retorna CSS para QTextBrowser."""
 
     return f"""
@@ -806,20 +752,20 @@ def get_widgets_styles(theme: str = "light") -> str:
     arrow_icon = _get_asset_icon(
         "arrow_down_white.svg") if tema_normalizado == "dark" else _get_asset_icon("arrow_down.svg")
 
-    combo = _get_combo_box_style(tema_normalizado, arrow_icon)
-    dateedit = _get_date_edit_style(tema_normalizado, arrow_icon)
-    lineedit = _get_line_edit_style(tema_normalizado)
-    label = _get_label_style()
-    groupbox = _get_group_box_style()
-    tooltip = _get_tooltip_style()
-    menubar = _get_menu_bar_style()
-    menu = _get_menu_style(check_icon)
-    checkbox = _get_checkbox_style(check_icon)
-    messagebox = _get_message_box_style()
-    listwidget = _get_list_widget_style()
-    container = _get_container_manual_style()
-    textbrowser = _get_text_browser_style()
-    progress = _get_progress_bar_style(tema_normalizado)
+    combo = obter_estilo_combo_box(tema_normalizado, arrow_icon)
+    dateedit = obter_estilo_date_edit(tema_normalizado, arrow_icon)
+    lineedit = obter_estilo_line_edit(tema_normalizado)
+    label = obter_estilo_label()
+    groupbox = obter_estilo_group_box()
+    tooltip = obter_estilo_tooltip()
+    menubar = obter_estilo_menu_bar()
+    menu = obter_estilo_menu(check_icon)
+    checkbox = obter_estilo_checkbox(check_icon)
+    messagebox = obter_estilo_message_box()
+    listwidget = obter_estilo_list_widget()
+    container = obter_estilo_container_manual()
+    textbrowser = obter_estilo_text_browser()
+    progress = obter_estilo_progress_bar(tema_normalizado)
 
     return f"""
     {combo}
