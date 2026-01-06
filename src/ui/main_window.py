@@ -62,8 +62,8 @@ class MainWindow(ThemedMainWindow):
         self._color_action_group: QActionGroup | None = None
 
         self.setWindowTitle("Controle de Pedidos")
-        self.setMinimumSize(800, 600)
-        self.resize(980, 600)
+        self.setMinimumSize(800, 500)
+        self.resize(1100, 600)
 
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
