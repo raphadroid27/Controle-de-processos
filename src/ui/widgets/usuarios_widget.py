@@ -154,6 +154,11 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
         aplicar_estilo_botao(self.btn_alterar_senha, "azul")
+        # Ajustar fonte especificamente para este botão
+        current_style = self.btn_alterar_senha.styleSheet()
+        self.btn_alterar_senha.setStyleSheet(
+            current_style + "\nQPushButton { font-size: 10px; }"
+        )
         self.btn_alterar_senha.setToolTip(
             "Alterar a senha do usuário logado (Ctrl+Alt+S)"
         )
