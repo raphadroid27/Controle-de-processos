@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QFileSystemWatcher, QProcess, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
 
 from src.domain import session_service
 from src.ui.dialogs.dashboard_dialog import DashboardDialog
@@ -15,6 +15,7 @@ from src.ui.dialogs.sobre_dialog import main as mostrar_sobre
 from src.ui.message_utils import show_timed_message_box
 from src.ui.styles import aplicar_icone_padrao
 from src.ui.theme_manager import ThemeManager
+from src.ui.themed_widgets import ThemedMainWindow
 from src.ui.widgets.processos_widget import ProcessosWidget
 
 
@@ -39,7 +40,7 @@ def _criar_menu_com_acoes_checkaveis(  # pylint: disable=too-many-positional-arg
         actions_dict[valor] = action
 
 
-class MainWindow(QMainWindow):
+class MainWindow(ThemedMainWindow):
     """Janela principal do aplicativo."""
 
     logout_requested = Signal()
@@ -188,6 +189,8 @@ class MainWindow(QMainWindow):
             self._theme_manager.unregister_listener(self._on_tema_atualizado)
             self._theme_manager.unregister_color_listener(
                 self._on_cor_tema_atualizada)
+            self._theme_manager.unregister_actions()
+            self._theme_manager.unregister_color_actions()
         except Exception as e:  # pylint: disable=broad-exception-caught
             self.logger.warning("Erro ao desconectar listeners de tema: %s", e)
 
@@ -382,31 +385,7 @@ class MainWindow(QMainWindow):
             parent=self,
         )
 
-        tema_menu.addSeparator()
-        estilo_menu = tema_menu.addMenu("Estilo")
-        self._style_action_group = QActionGroup(self)
-        self._style_action_group.setExclusive(True)
-        self._style_actions.clear()
-
-        estilos_opcoes = [
-            ("Fusion", "Fusion"),
-            ("Windows", "Windows"),
-        ]
-
-        _criar_menu_com_acoes_checkaveis(
-            menu=estilo_menu,
-            opcoes=estilos_opcoes,
-            action_group=self._style_action_group,
-            actions_dict=self._style_actions,
-            callback=self._on_estilo_selecionado,
-            status_prefix="Aplicar estilo",
-            parent=self,
-        )
-
-        # Marcar o estilo atual
-        current_style = self._theme_manager.current_style
-        if current_style in self._style_actions:
-            self._style_actions[current_style].setChecked(True)
+        # Estilo fixo (Fusion), menu removido
 
         tema_menu.addSeparator()
         cores_menu = tema_menu.addMenu("Cor de destaque")
@@ -431,6 +410,12 @@ class MainWindow(QMainWindow):
 
         self._marcar_tema(self._theme_manager.current_mode)
         self._marcar_cor(self._theme_manager.current_color)
+        try:
+            self._theme_manager.register_actions(self._theme_actions)
+            self._theme_manager.register_color_actions(self._color_actions)
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.logger.debug(
+                "Não foi possível registrar actions no theme manager", exc_info=True)
 
     def _on_tema_selecionado(self) -> None:
         action = self.sender()

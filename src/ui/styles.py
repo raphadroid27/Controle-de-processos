@@ -12,6 +12,7 @@ Funcionalidades:
 - Funções utilitárias para aplicação de estilos
 """
 
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,24 +20,41 @@ from PySide6.QtCore import QDate
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QHeaderView, QSizePolicy, QTableWidget, QWidget
 
+logger = logging.getLogger(__name__)
+
+ASSETS_DIR = Path(__file__).parent.parent.parent / "assets"
+
+
+def _get_asset_icon(name: str) -> str | None:
+    """Retorna caminho POSIX do ícone em assets, se existir."""
+
+    try:
+        candidate = ASSETS_DIR / name
+        if candidate.exists():
+            return candidate.as_posix()
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.debug("Falha ao resolver ícone %s", name, exc_info=True)
+    return None
+
+
 # Constantes para padronização de componentes
-ALTURA_BOTAO = 32
-ALTURA_MINIMA_BOTAO = 28
-LARGURA_BOTAO = 80
-TAMANHO_FONTE_BOTAO = 11
+TAMANHO_FONTE_PADRAO = 10
+TAMANHO_FONTE_BOTAO = 12
 RAIO_BORDA_BOTAO = 4
 PADDING_BOTAO = "2px 4px"
 ESPACAMENTO_PADRAO = 10
 
-# Constantes para widgets de entrada (LineEdit, ComboBox, DateEdit, etc.)
-ALTURA_WIDGET_ENTRADA = 32
-ALTURA_MINIMA_WIDGET_ENTRADA = 28
-LARGURA_MINIMA_WIDGET_ENTRADA = 80
-
-# Constantes para outros componentes
+# Constantes gerais de layout e estilo
 ALTURA_PADRAO_COMPONENTE = 20
-LARGURA_MINIMA_COMPONENTE = 60
+LARGURA_MINIMA_COMPONENTE = 70
 PADDING_INTERNO_COMPONENTE = "2px 4px"
+ALTURA_PADRAO_BOTAO = 25
+LARGURA_MINIMA_BOTAO = 20
+ALTURA_PADRAO_MENU = 18
+
+COR_FUNDO_BRANCO = "#f0f0f0"
+COR_FUNDO_ESCURO = "#161719"
+COR_FUNDO_CLARO = "#f8f9fa"
 
 # Constantes para diálogos de login
 ALTURA_DIALOG_LOGIN = 140
@@ -47,23 +65,11 @@ MARGEM_DIALOG = 10
 
 
 # Configurações de cores para botões
-CORES_BOTOES = {
-    "verde": {
-        "normal": "#4CAF50",
-        "hover": "#45a049",
-        "pressed": "#3d8b40",
-        "text": "white",
-    },
-    "laranja": {
-        "normal": "#FF9800",
-        "hover": "#F57C00",
-        "pressed": "#E65100",
-        "text": "white",
-    },
-    "vermelho": {
-        "normal": "#f44336",
-        "hover": "#da190b",
-        "pressed": "#b71c1c",
+BUTTON_COLORS = {
+    "cinza": {
+        "normal": "#9e9e9e",
+        "hover": "#757575",
+        "pressed": "#616161",
         "text": "white",
     },
     "azul": {
@@ -72,17 +78,54 @@ CORES_BOTOES = {
         "pressed": "#1565c0",
         "text": "white",
     },
-    "cinza": {
-        "normal": "#9e9e9e",
-        "hover": "#757575",
-        "pressed": "#616161",
-        "text": "white",
-    },
     "amarelo": {
         "normal": "#ffd93d",
         "hover": "#ffcc02",
         "pressed": "#e6b800",
         "text": "#333",
+    },
+    "vermelho": {
+        "normal": "#f44336",
+        "hover": "#da190b",
+        "pressed": "#b71c1c",
+        "text": "white",
+    },
+    "verde": {
+        "normal": "#4caf50",
+        "hover": "#45a049",
+        "pressed": "#3d8b40",
+        "text": "white",
+    },
+    "laranja": {
+        "normal": "#ff9800",
+        "hover": "#fb8c00",
+        "pressed": "#f57c00",
+        "text": "white",
+    },
+    # Cores extras para compatibilidade com o app atual
+    "roxo": {
+        "normal": "#9C27B0",
+        "hover": "#8E24AA",
+        "pressed": "#7B1FA2",
+        "text": "white",
+    },
+    "teal": {
+        "normal": "#009688",
+        "hover": "#00897B",
+        "pressed": "#00796B",
+        "text": "white",
+    },
+    "rosa": {
+        "normal": "#EC407A",
+        "hover": "#D81B60",
+        "pressed": "#C2185B",
+        "text": "white",
+    },
+    "ciano": {
+        "normal": "#00BCD4",
+        "hover": "#00ACC1",
+        "pressed": "#0097A7",
+        "text": "white",
     },
 }
 
@@ -103,15 +146,16 @@ def obter_estilo_botao(cor, _largura=None):
 
     Args:
         cor: Uma das cores disponíveis: 'verde', 'laranja',
-            'vermelho', 'azul', 'cinza', 'amarelo'
+            'vermelho', 'azul', 'cinza', 'amarelo', 'roxo',
+            'teal', 'rosa', 'ciano'
 
     Returns:
         String CSS para aplicar ao botão
     """
-    if cor not in CORES_BOTOES:
+    if cor not in BUTTON_COLORS:
         cor = "cinza"  # fallback para cor padrão
 
-    colors = CORES_BOTOES[cor]
+    colors = BUTTON_COLORS[cor]
     return f"""
         QPushButton {{
             background-color: {colors['normal']};
@@ -138,10 +182,11 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widgets_list: Lista de widgets para configurar
     """
     for widget in widgets_list:
-        widget.setMinimumHeight(ALTURA_MINIMA_WIDGET_ENTRADA)
-        widget.setMaximumHeight(ALTURA_WIDGET_ENTRADA)
-        widget.setMinimumWidth(LARGURA_MINIMA_WIDGET_ENTRADA)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        widget.setMinimumHeight(ALTURA_PADRAO_COMPONENTE)
+        widget.setMaximumHeight(ALTURA_PADRAO_COMPONENTE)
+        widget.setMinimumWidth(LARGURA_MINIMA_COMPONENTE)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                             QSizePolicy.Policy.Fixed)
 
 
 def configurar_botao_padrao(botao, largura_minima=None):
@@ -151,9 +196,9 @@ def configurar_botao_padrao(botao, largura_minima=None):
         botao: O botão QPushButton a ser configurado
         largura_minima: Largura mínima opcional (usa LARGURA_BOTAO se não especificado)
     """
-    botao.setMinimumHeight(ALTURA_MINIMA_BOTAO)
-    botao.setMaximumHeight(ALTURA_BOTAO)
-    botao.setMinimumWidth(largura_minima or LARGURA_BOTAO)
+    botao.setMinimumHeight(ALTURA_PADRAO_BOTAO)
+    botao.setMaximumHeight(ALTURA_PADRAO_BOTAO)
+    botao.setMinimumWidth(largura_minima or LARGURA_MINIMA_BOTAO)
     botao.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
 
@@ -177,6 +222,43 @@ def aplicar_estilo_botao(botao, cor: str, largura_minima=None):
     botao.setStyleSheet(obter_estilo_botao(cor))
 
 
+def aplicar_estilo_checkbox(checkbox, altura: int = None):
+    """Aplica estilo padronizado para checkboxes."""
+
+    if not hasattr(checkbox, "setFixedHeight"):
+        return
+
+    altura_final = altura if altura is not None else ALTURA_PADRAO_COMPONENTE
+    checkbox.setFixedHeight(altura_final)
+
+
+def obter_estilo_table_widget():
+    """Retorna CSS para QTableWidget com aparência de grade visual."""
+
+    return f"""
+        QTableWidget {{
+            color: palette(text);
+            font-size: {TAMANHO_FONTE_PADRAO}pt;
+            gridline-color: palette(mid);
+        }}
+        QTableWidget::item {{
+            padding: 0px;
+        }}
+        QHeaderView::section {{
+            padding: 0px;
+            color: palette(button-text);
+            background-color: palette(alternate-base);
+        }}
+    """
+
+
+def aplicar_estilo_table_widget(table_widget):
+    """Aplica estilo com grade visual ao QTableWidget."""
+
+    if hasattr(table_widget, "setStyleSheet"):
+        table_widget.setStyleSheet(obter_estilo_table_widget())
+
+
 def obter_estilo_botao_adicionar():
     """Retorna o estilo específico para botão Adicionar (verde)."""
     return obter_estilo_botao("verde")
@@ -192,129 +274,10 @@ def obter_estilo_botao_excluir():
     return obter_estilo_botao("vermelho")
 
 
-def obter_css_correcao_widgets():
-    """
-    Retorna CSS para corrigir tamanhos desproporcionais dos widgets.
-
-    Returns:
-        str: CSS para correção de tamanhos
-    """
-    return f"""
-    QComboBox {{
-        min-height: 1em;
-        max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: 2px 4px;
-        font-size: 10pt;
-    }}
-    QLineEdit {{
-        min-height: 1em;
-        max-height: {ALTURA_PADRAO_COMPONENTE}px;
-        padding: 2px 4px;
-        font-size: 10pt;
-    }}
-    QLabel {{
-        min-height: 1em;
-        padding: 2px;
-        font-size: 10pt;
-    }}
-    QGroupBox::title {{
-        font-size: 10pt;
-        padding: 2px;
-    }}
-    """
-
-
-def obter_css_widgets_auto_ajustaveis():
-    """
-    Retorna CSS para widgets com largura auto-ajustável.
-
-    Returns:
-        dict: CSS para cada tipo de widget com largura flexível
-    """
-    return {
-        "combobox": f"""
-            QComboBox {{
-                min-width: {LARGURA_MINIMA_COMPONENTE}px;
-                min-height: 1em;
-                max-height: {ALTURA_PADRAO_COMPONENTE}px;
-                padding: {PADDING_INTERNO_COMPONENTE};
-                font-size: 10pt;
-            }}
-        """,
-        "lineedit": f"""
-            QLineEdit {{
-                min-width: {LARGURA_MINIMA_COMPONENTE}px;
-                min-height: 1em;
-                max-height: {ALTURA_PADRAO_COMPONENTE}px;
-                padding: {PADDING_INTERNO_COMPONENTE};
-                font-size: 10pt;
-            }}
-        """,
-    }
-
-
-def aplicar_estilo_widget_auto_ajustavel(widget, tipo_widget):
-    """
-    Aplica estilo auto-ajustável aos widgets.
-
-    Args:
-        widget: Widget a receber o estilo
-        tipo_widget: Tipo do widget ('combobox', 'lineedit')
-    """
-    estilos = obter_css_widgets_auto_ajustaveis()
-    if tipo_widget in estilos:
-        widget.setStyleSheet(estilos[tipo_widget])
-
-
-def obter_configuracao_layout_flexivel():
-    """
-    Retorna configurações de layout para widgets auto-ajustáveis.
-
-    Returns:
-        dict: Configurações de layout flexível
-    """
-    return {
-        "altura_padrao": ALTURA_PADRAO_COMPONENTE,
-        "largura_minima": LARGURA_MINIMA_COMPONENTE,
-        "horizontal_spacing": ESPACAMENTO_PADRAO,
-        "vertical_spacing": 3,
-    }
-
-
-def configurar_layout_flexivel(layout):
-    """
-    Configura um layout para ter widgets auto-ajustáveis.
-
-    Args:
-        layout: Layout a ser configurado
-    """
-    config = obter_configuracao_layout_flexivel()
-
-    if hasattr(layout, "setColumnStretch"):
-        for col in range(4):
-            layout.setColumnStretch(col, 1)
-
-    if hasattr(layout, "setHorizontalSpacing"):
-        layout.setHorizontalSpacing(config["horizontal_spacing"])
-
-    if hasattr(layout, "setVerticalSpacing"):
-        layout.setVerticalSpacing(config["vertical_spacing"])
-
-
 def obter_estilo_progress_bar():
     """Retorna o estilo CSS para a barra de progresso."""
-    return """
-        QProgressBar {
-            border: 1px solid #555;
-            border-radius: 5px;
-            text-align: center;
-            height: 10px;
-        }
-        QProgressBar::chunk {
-            background-color: #007acc;
-            border-radius: 4px;
-        }
-    """
+
+    return _get_progress_bar_style("light")
 
 
 def aplicar_icone_padrao(widget: QWidget) -> None:
@@ -377,3 +340,516 @@ def configurar_tabela_padrao(tabela):
     tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     tabela.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     tabela.setAlternatingRowColors(True)
+
+
+# ---------------------------------------------------------------------------
+# Estilos detalhados para widgets (baseado em estilos.py de referência)
+# ---------------------------------------------------------------------------
+
+
+def _get_progress_bar_style(theme: str = "light") -> str:
+    """Retorna o estilo CSS para a barra de progresso."""
+
+    border_color = "#B6B6B6" if theme == "light" else "#242424"
+
+    return f"""
+        QProgressBar {{
+            border: 1px solid {border_color};
+            border-radius: 5px;
+            text-align: center;
+            height: {ALTURA_PADRAO_BOTAO}px;
+            background-color: palette(base);
+            color: palette(text);
+            font-size: {TAMANHO_FONTE_PADRAO}pt;
+        }}
+
+        QProgressBar::chunk {{
+            background-color: palette(highlight);
+            border-radius: 4px;
+        }}
+    """
+
+
+def _get_combo_box_style(theme: str = "light", arrow_file: str | None = None) -> str:
+    """Retorna CSS para QComboBox."""
+
+    border_color = "#B6B6B6" if theme == "light" else "#242424"
+    arrow_block = ""
+    if arrow_file:
+        arrow_block = f"""
+
+    QComboBox::down-arrow {{
+        image: url("{arrow_file}");
+        width: 10px;
+        height: 10px;
+    }}
+"""
+
+    return f"""
+    QComboBox {{
+        min-width: {LARGURA_MINIMA_COMPONENTE}px;
+        min-height: {ALTURA_PADRAO_COMPONENTE}px;
+        max-height: {ALTURA_PADRAO_COMPONENTE}px;
+        padding: {PADDING_INTERNO_COMPONENTE};
+        font-size: 9pt;
+        font-weight: bold;
+        border: 1px solid {border_color};
+        border-radius: none;
+        background-color: palette(base);
+        color: palette(text);
+    }}
+
+    QComboBox::drop-down {{
+        border: none;
+        background-color: transparent;
+    }}
+{arrow_block}
+    QComboBox QAbstractItemView {{
+        background-color: palette(base);
+        color: palette(text);
+        border: none;
+        selection-background-color: palette(highlight);
+        selection-color: palette(highlighted-text);
+    }}
+
+    QComboBox::item {{
+        min-height: {ALTURA_PADRAO_MENU}px;
+        max-height: {ALTURA_PADRAO_MENU}px;
+        padding: 5px 10px 5px -20px;
+    }}
+
+    QComboBox::item:selected {{
+        background-color: palette(highlight);
+        color: palette(highlighted-text);
+        border-radius: 5px;
+        margin: 2px 0px;
+    }}
+
+    QComboBox:hover {{
+        border: 1px solid palette(highlight);
+    }}
+    """
+
+
+def _get_date_edit_style(theme: str = "light", arrow_file: str | None = None) -> str:
+    """Retorna CSS para QDateEdit com visual alinhado ao QComboBox."""
+
+    border_color = "#B6B6B6" if theme == "light" else "#242424"
+    arrow_block = ""
+    if arrow_file:
+        arrow_block = f"""
+
+    QDateEdit::down-arrow {{
+        image: url(\"{arrow_file}\");
+        width: 10px;
+        height: 10px;
+        margin-right: 4px;
+    }}
+"""
+
+    return f"""
+    QDateEdit {{
+        min-width: {LARGURA_MINIMA_COMPONENTE}px;
+        min-height: {ALTURA_PADRAO_COMPONENTE}px;
+        max-height: {ALTURA_PADRAO_COMPONENTE}px;
+        padding: {PADDING_INTERNO_COMPONENTE};
+        font-size: 9pt;
+        font-weight: bold;
+        border: 1px solid {border_color};
+        border-radius: none;
+        background-color: palette(base);
+        color: palette(text);
+    }}
+
+    QDateEdit::drop-down {{
+        width: 18px;
+        border: none;
+        background-color: transparent;
+    }}
+{arrow_block}
+    QDateEdit:hover {{
+        border: 1px solid palette(highlight);
+    }}
+
+    QDateEdit:focus {{
+        border: 1px solid palette(highlight);
+    }}
+    """
+
+
+def _get_line_edit_style(theme: str = "light") -> str:
+    """Retorna CSS para QLineEdit."""
+
+    border_color = "#B6B6B6" if theme == "light" else "#242424"
+
+    return f"""
+    QLineEdit {{
+        background-color: palette(base);
+        color: palette(text);
+        min-width: {LARGURA_MINIMA_COMPONENTE}px;
+        min-height: {ALTURA_PADRAO_COMPONENTE}px;
+        max-height: {ALTURA_PADRAO_COMPONENTE}px;
+        padding: {PADDING_INTERNO_COMPONENTE};
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        font-weight: bold;
+        border: 1px solid {border_color};
+        border-radius: none;
+    }}
+
+    QLineEdit:hover {{
+        border: 1px solid palette(highlight);
+    }}
+
+    QLineEdit:focus {{
+        border: 1px solid palette(highlight);
+    }}
+    """
+
+
+def _get_label_style() -> str:
+    """Retorna CSS para QLabel e variações."""
+
+    return f"""
+    QLabel {{
+        background-color: palette(window);
+        color: palette(window-text);
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        min-width: {LARGURA_MINIMA_COMPONENTE}px;
+        min-height: {ALTURA_PADRAO_COMPONENTE}px;
+        max-height: {ALTURA_PADRAO_COMPONENTE}px;
+        padding: {PADDING_INTERNO_COMPONENTE};
+        font-weight: bold;
+    }}
+
+    QLabel#label_titulo {{
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        color: palette(window-text);
+        background-color: transparent;
+        padding: 0px 0px;
+        min-width: auto;
+        font-weight: normal;
+    }}
+
+    QLabel#label_titulo_negrito {{
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        color: palette(window-text);
+        padding: 0px 0px;
+        min-width: auto;
+        font-weight: bold;
+    }}
+
+    QLabel#label_texto {{
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        color: palette(window-text);
+        padding: 0px 0px;
+        min-height: auto;
+        max-height: auto;
+        font-weight: normal;
+    }}
+
+    QLabel#label_titulo_h4 {{
+        font-weight: bold;
+        font-size: 16pt;
+        color: palette(window-text);
+        background-color: transparent;
+        min-width: auto;
+        min-height: auto;
+        margin-top: 0px;
+        margin-bottom: 10px;
+        padding: 0px 0px;
+    }}
+    """
+
+
+def _get_group_box_style() -> str:
+    """Retorna CSS para QGroupBox."""
+
+    return """
+    QGroupBox {
+        color: palette(window-text);
+        margin-top: 10px; /* espaço para o título */
+        font-weight: bold;
+    }
+
+    QGroupBox#sem_borda {
+        color: palette(window-text);
+        border: none;
+    }
+
+    QGroupBox::title {
+        subcontrol-origin: margin;
+        left: 7px;
+        padding: 0 3px 0 3px;
+        color: palette(window-text);
+        background: palette(window);
+    }
+    """
+
+
+def _get_tooltip_style() -> str:
+    """Retorna CSS para QToolTip."""
+
+    return f"""
+    QToolTip {{
+        background-color: palette(base);
+        color: palette(text);
+        border: 1px solid palette(dark);
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+    }}
+    """
+
+
+def _get_menu_bar_style() -> str:
+    """Retorna CSS para QMenuBar."""
+
+    return f"""
+    QMenuBar {{
+        background-color: palette(window);
+        color: palette(window-text);
+        padding: 5px 0px;
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        spacing: 1px;
+        min-height: {ALTURA_PADRAO_MENU}px;
+        max-height: {ALTURA_PADRAO_MENU}px;
+    }}
+
+    QMenuBar::item:selected {{
+        background-color: palette(highlight);
+        color: palette(highlighted-text);
+        border-radius: 5px;
+    }}
+    """
+
+
+def _get_menu_style(check_icon: str | None) -> str:
+    """Retorna CSS para QMenu e seus indicadores."""
+
+    checked_bg = ""
+    if check_icon:
+        checked_bg = f"""
+        background-image: url("{check_icon}");
+        background-repeat: no-repeat;
+        background-position: center;
+"""
+
+    return f"""
+    QMenu {{
+        background-color: palette(base);
+        border: none;
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+    }}
+
+    QMenu::item {{
+        min-height: {ALTURA_PADRAO_MENU}px;
+        max-height: {ALTURA_PADRAO_MENU}px;
+        padding: 5px 10px;
+    }}
+
+    QMenu::item:selected {{
+        background-color: palette(highlight);
+        color: palette(highlighted-text);
+        border-radius: 5px;
+        margin: 2px 0px;
+    }}
+
+    QMenu::indicator:non-exclusive {{
+        width: 12px;
+        height: 12px;
+        margin-left: 6px;
+        border-radius: 3px;
+    }}
+
+    QMenu::indicator:non-exclusive:unchecked {{
+        border: 1px solid #595959;
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 palette(button),
+                                    stop:1 palette(base));
+    }}
+
+    QMenu::indicator:non-exclusive:hover {{
+        border: 1px solid palette(highlight);
+    }}
+
+    QMenu::indicator:non-exclusive:checked {{
+        border: 1px solid #595959;
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 palette(button),
+                                    stop:1 palette(base));
+{checked_bg}    }}
+
+    QMenu::indicator:non-exclusive:hover {{
+        border: 1px solid palette(highlight);
+        background-color: palette(midlight);
+    }}
+    """
+
+
+def _get_checkbox_style(check_icon: str | None) -> str:
+    """Retorna CSS para QCheckBox e seus indicadores."""
+
+    icon_block = ""
+    if check_icon:
+        icon_block = f"""
+        background-image: url("{check_icon}");
+        background-repeat: no-repeat;
+        background-position: center;
+"""
+
+    return f"""
+    QCheckBox {{
+        spacing: 8px;
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        font-weight: normal;
+    }}
+
+    QCheckBox::indicator {{
+        width: 12px;
+        height: 12px;
+        margin-left: 6px;
+        border-radius: 3px;
+    }}
+
+    QCheckBox::indicator:unchecked {{
+        border: 1px solid #595959;
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 palette(button),
+                                    stop:1 palette(base));
+    }}
+
+    QCheckBox::indicator:unchecked:hover,
+    QCheckBox::indicator:checked:hover {{
+        border: 1px solid palette(highlight);
+    }}
+
+    QCheckBox::indicator:checked {{
+        border: 1px solid #595959;
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 palette(button),
+                                    stop:1 palette(base));
+{icon_block}    }}
+
+    QCheckBox::indicator:checked:disabled,
+    QCheckBox::indicator:unchecked:disabled {{
+        border: 1px solid #595959;
+        background-color: palette(midlight);
+    }}
+    """
+
+
+def _get_message_box_style() -> str:
+    """Retorna CSS para QMessageBox."""
+
+    return f"""
+    QMessageBox {{
+        background-color: palette(window);
+        color: palette(window-text);
+    }}
+
+    QMessageBox QLabel {{
+        max-height: 99999px;
+        min-width: 0;
+        padding: 0;
+        min-height: 0;
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        font-weight: normal;
+    }}
+    """
+
+
+def _get_list_widget_style() -> str:
+    """Retorna CSS para QListWidget (lista_categoria)."""
+
+    return f"""
+    QListWidget#lista_categoria {{
+        border: none;
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        background-color: palette(window);
+    }}
+
+    QListWidget#lista_categoria::item {{
+        color: palette(text);
+        border-radius: 5px;
+        padding: 4px 8px;
+        margin: 3px 0;
+    }}
+
+    QListWidget#lista_categoria::item:hover {{
+        background-color: palette(base);
+        color: palette(text);
+    }}
+
+    QListWidget#lista_categoria::item:selected {{
+        background-color: palette(highlight);
+        color: palette(highlighted-text);
+        padding-left: 5px;
+        padding-right: 5px;
+        border-radius: 6px;
+    }}
+    """
+
+
+def _get_container_manual_style() -> str:
+    """Retorna CSS para QWidget (container_manual)."""
+
+    return """
+    QWidget#container_manual {
+        border: none;
+        border-radius: 5px;
+        background-color: palette(base);
+        margin-top: 0px;
+    }
+    """
+
+
+def _get_text_browser_style() -> str:
+    """Retorna CSS para QTextBrowser."""
+
+    return f"""
+    QTextBrowser {{
+        font-size: {TAMANHO_FONTE_PADRAO}pt;
+    }}
+    """
+
+# pylint: disable=too-many-locals
+
+
+def get_widgets_styles(theme: str = "light") -> str:
+    """Retorna todos os estilos CSS combinados para a aplicação."""
+
+    tema_normalizado = (theme or "light").lower()
+    check_icon = _get_asset_icon(
+        "check_white.svg") if tema_normalizado == "dark" else _get_asset_icon("check.svg")
+    arrow_icon = _get_asset_icon(
+        "arrow_down_white.svg") if tema_normalizado == "dark" else _get_asset_icon("arrow_down.svg")
+
+    combo = _get_combo_box_style(tema_normalizado, arrow_icon)
+    dateedit = _get_date_edit_style(tema_normalizado, arrow_icon)
+    lineedit = _get_line_edit_style(tema_normalizado)
+    label = _get_label_style()
+    groupbox = _get_group_box_style()
+    tooltip = _get_tooltip_style()
+    menubar = _get_menu_bar_style()
+    menu = _get_menu_style(check_icon)
+    checkbox = _get_checkbox_style(check_icon)
+    messagebox = _get_message_box_style()
+    listwidget = _get_list_widget_style()
+    container = _get_container_manual_style()
+    textbrowser = _get_text_browser_style()
+    progress = _get_progress_bar_style(tema_normalizado)
+
+    return f"""
+    {combo}
+    {dateedit}
+    {lineedit}
+    {label}
+    {groupbox}
+    {tooltip}
+    {menubar}
+    {menu}
+    {checkbox}
+    {messagebox}
+    {listwidget}
+    {container}
+    {textbrowser}
+    {progress}
+    """

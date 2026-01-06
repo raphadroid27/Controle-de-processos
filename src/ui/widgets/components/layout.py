@@ -17,12 +17,15 @@ def criar_coluna_rotulo(label_texto: str, widget, peso: int) -> Tuple[QVBoxLayou
     layout.setContentsMargins(0, 0, 0, 0)
 
     label = QLabel(label_texto)
-    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
+    label.setObjectName("label_titulo")
+    label.setAlignment(Qt.AlignmentFlag.AlignLeft |
+                       Qt.AlignmentFlag.AlignBottom)
     label.setMinimumHeight(16)
     label.setMaximumHeight(18)
 
     layout.addWidget(label)
     layout.addWidget(widget)
+
     return layout, peso
 
 

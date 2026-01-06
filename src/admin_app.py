@@ -29,6 +29,7 @@ from src.ui.dialogs.login_dialog import LoginDialog
 from src.ui.message_utils import show_timed_message_box
 from src.ui.styles import aplicar_icone_padrao
 from src.ui.theme_manager import ThemeManager
+from src.ui.themed_widgets import ThemedDialog
 from src.ui.widgets.sessoes_widget import GerenciarSessoesWidget
 from src.ui.widgets.usuarios_widget import GerenciarUsuariosWidget
 
@@ -36,7 +37,7 @@ ADMIN_LOCK_PATH = Path(COMMAND_DIR) / "admin.lock"
 _ADMIN_WATCHERS: list[QFileSystemWatcher] = []
 
 
-class AdminToolsDialog(QDialog):
+class AdminToolsDialog(ThemedDialog):
     """Janela principal das ferramenta administrativa com abas."""
 
     def __init__(self, usuario_admin: str, parent=None):
