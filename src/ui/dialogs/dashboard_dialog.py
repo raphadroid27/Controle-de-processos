@@ -150,7 +150,8 @@ class DashboardDialog(QDialog):
         )
         # Alterado para usar o mês de faturamento em vez do mês calendário
         self.df_registros["mes"] = self.df_registros["data"].apply(
-            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
+            lambda d: int(calcular_periodo_faturamento_para_data(
+                d.to_pydatetime())[0])
         )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
@@ -219,7 +220,10 @@ class DashboardDialog(QDialog):
 
     def _montar_controles_resumo(self) -> QHBoxLayout:
         controles_layout = QHBoxLayout()
-        controles_layout.addWidget(QLabel("Ano:"))
+
+        label_ano = QLabel("Ano:")
+        label_ano.setObjectName("label_titulo_negrito")
+        controles_layout.addWidget(label_ano)
 
         self.combo_ano = QComboBox()
         for ano in self.anos:
@@ -230,7 +234,11 @@ class DashboardDialog(QDialog):
         controles_layout.addWidget(self.combo_ano)
 
         controles_layout.addSpacing(16)
-        controles_layout.addWidget(QLabel("Métrica:"))
+
+        label_metrica = QLabel("Métrica:")
+        label_metrica.setObjectName("label_titulo_negrito")
+        controles_layout.addWidget(label_metrica)
+
         self.combo_metrica = QComboBox()
         for titulo in METRIC_MAP:
             self.combo_metrica.addItem(titulo)
@@ -287,7 +295,10 @@ class DashboardDialog(QDialog):
         layout.addLayout(horas_header_layout)
 
         horas_controles_layout = QHBoxLayout()
-        horas_controles_layout.addWidget(QLabel("Intervalo:"))
+        label_intervalo = QLabel("Intervalo:")
+        label_intervalo.setObjectName("label_titulo_negrito")
+        horas_controles_layout.addWidget(label_intervalo)
+
         self.combo_intervalo = QComboBox()
         for dias, titulo in self._INTERVALOS:
             self.combo_intervalo.addItem(titulo, dias)
