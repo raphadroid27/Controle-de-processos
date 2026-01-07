@@ -105,7 +105,7 @@ class DashboardDialog(QDialog):
 
     def _configurar_janela(self) -> None:
         self.setWindowTitle("Dashboard Administrativo")
-        self.resize(1100, 700)
+        self.resize(1200, 700)
         self.setWindowFlag(Qt.WindowType.Window, True)
         self.setWindowFlag(Qt.WindowType.WindowSystemMenuHint, True)
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, True)
