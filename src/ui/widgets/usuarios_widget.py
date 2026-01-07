@@ -159,7 +159,7 @@ Use as teclas de seta para navegar pelos resultados."""
         )
         self.btn_excluir.setShortcut(QKeySequence("Ctrl+Shift+Del"))
 
-        self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
+        self.btn_alterar_senha = QPushButton("Alt. Minha Senha")
         self.btn_alterar_senha.setIcon(qta.icon("fa5s.key"))
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
         aplicar_estilo_botao(self.btn_alterar_senha, "azul")
