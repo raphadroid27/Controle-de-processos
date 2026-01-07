@@ -733,6 +733,7 @@ class ProcessosWidget(QWidget):
         filtros = filtros or {}
         estatisticas = data.obter_estatisticas_totais(filtros)
 
+        # pylint: disable=unexpected-keyword-arg,no-member
         totais.atualizar_totais(
             self.controles_totais,
             total_pedidos=estatisticas.total_pedidos,
@@ -742,8 +743,11 @@ class ProcessosWidget(QWidget):
             media_dias_processo=estatisticas.media_dias_processo,
             media_itens_por_dia=estatisticas.media_itens_por_dia,
             estimativa_itens_mes=estatisticas.estimativa_itens_mes,
+            tempo_corte_total=estatisticas.tempo_corte_total,
+            media_tempo_corte_dia=estatisticas.media_tempo_corte_dia,
             tempo_corte_dia=estatisticas.tempo_corte_dia,
         )
+        # pylint: enable=unexpected-keyword-arg,no-member
 
     # pylint: disable=R0914
 

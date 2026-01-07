@@ -36,6 +36,8 @@ class EstatisticasTotais:
     media_dias_processo: float | None
     media_itens_por_dia: float | None
     estimativa_itens_mes: int | None
+    tempo_corte_total: str | None
+    media_tempo_corte_dia: str | None
     tempo_corte_dia: str | None
 
 
@@ -310,6 +312,44 @@ def _formatar_segundos_para_horas(total_segundos: int) -> str | None:
     return f"{horas:02d}h"
 
 
+def _calcular_metricas_tempo_dashboard(
+    registros: Sequence[Sequence[Any]],
+) -> tuple[int, int]:
+    """Calcula total de segundos e dias únicos com apontamento (lógica dashboard)."""
+    total_segundos = 0
+    dias_com_apontamento: set[str] = set()
+
+    for registro in registros:
+        # Indices baseados em buscar_lancamentos_filtros_completos
+        data_entrada = registro[5]
+        data_processo = registro[6]
+        tempo_corte = registro[7]
+
+        if not tempo_corte:
+            continue
+
+        partes = tempo_corte.split(":")
+        if len(partes) != 3:
+            continue
+        try:
+            horas, minutos, segundos = (int(p) for p in partes)
+        except ValueError:
+            continue
+
+        segundos_reg = horas * 3600 + minutos * 60 + segundos
+
+        # Só conta para a média se houver tempo apontado
+        if segundos_reg > 0:
+            total_segundos += segundos_reg
+
+            # Determina o dia do apontamento (Processo ou Entrada)
+            data_base = data_processo or data_entrada
+            if data_base:
+                dias_com_apontamento.add(str(data_base))
+
+    return total_segundos, len(dias_com_apontamento)
+
+
 def obter_estatisticas_totais(
     filtros: Optional[Dict[str, Any]] = None,
 ) -> EstatisticasTotais:
@@ -341,7 +381,7 @@ def obter_estatisticas_totais(
         ValueError,
     ) as exc:
         logger.exception("Erro ao buscar estatísticas: %s", exc)
-        return EstatisticasTotais(0, 0, 0.0, None, None, None, None)
+        return EstatisticasTotais(0, 0, 0.0, None, None, None, None, None, None)
 
     periodo_inicio, periodo_fim = _obter_limites_periodo(filtros, registros)
 
@@ -363,6 +403,15 @@ def obter_estatisticas_totais(
     )
     tempo_corte_dia = _formatar_segundos_para_horas(total_segundos_dia)
 
+    total_segundos_total, dias_com_horas = _calcular_metricas_tempo_dashboard(
+        registros)
+    tempo_corte_total = _formatar_segundos_para_horas(total_segundos_total)
+
+    media_tempo_corte_dia = None
+    if dias_com_horas > 0 and total_segundos_total > 0:
+        media_segundos = int(total_segundos_total / dias_com_horas)
+        media_tempo_corte_dia = _formatar_segundos_para_horas(media_segundos)
+
     # Estimativa baseada na média do período filtrado
     # multiplicada pelos dias úteis do período filtrado
     estimativa = _calcular_estimativa_itens_mes(
@@ -377,5 +426,7 @@ def obter_estatisticas_totais(
         media_dias_processo=media_dias,
         media_itens_por_dia=media_por_dia,
         estimativa_itens_mes=estimativa,
+        tempo_corte_total=tempo_corte_total,
+        media_tempo_corte_dia=media_tempo_corte_dia,
         tempo_corte_dia=tempo_corte_dia,
     )
