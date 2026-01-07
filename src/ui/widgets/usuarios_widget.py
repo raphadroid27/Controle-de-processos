@@ -93,7 +93,9 @@ class GerenciarUsuariosWidget(QWidget):
         self.frame_busca = QGroupBox("Filtrar Usuários")
         busca_layout = QGridLayout()
 
-        busca_layout.addWidget(QLabel("Nome:"), 0, 0)
+        label_nome = QLabel("Nome:")
+        label_nome.setObjectName("label_titulo_negrito")
+        busca_layout.addWidget(label_nome, 0, 0)
 
         self.entry_busca = QLineEdit()
         self.entry_busca.setPlaceholderText("Digite parte do nome ou status")

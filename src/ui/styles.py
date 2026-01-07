@@ -45,9 +45,9 @@ PADDING = "2px 4px"
 ESPACAMENTO_PADRAO = 10
 
 # Constantes gerais de layout e estilo
-ALTURA_PADRAO_COMPONENTE = 25
+ALTURA_PADRAO_COMPONENTE = 22
 LARGURA_MINIMA_COMPONENTE = 70
-ALTURA_PADRAO_BOTAO = 25
+ALTURA_PADRAO_BOTAO = 22
 LARGURA_MINIMA_BOTAO = 100
 ALTURA_PADRAO_MENU = 18
 
@@ -517,7 +517,7 @@ def obter_estilo_group_box() -> str:
         left: 7px;
         padding: 0 3px 0 3px;
         color: palette(window-text);
-        background: palette(window);
+        background: transparent;
     }
     """
 
