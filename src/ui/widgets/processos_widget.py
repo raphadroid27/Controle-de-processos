@@ -103,7 +103,8 @@ class ProcessosWidget(QWidget):
         self.shortcut_enter = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.shortcut_enter.activated.connect(self.atalho_adicionar_pedido)
 
-        self.shortcut_enter_num = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
+        self.shortcut_enter_num = QShortcut(
+            QKeySequence(Qt.Key.Key_Enter), self)
         self.shortcut_enter_num.activated.connect(self.atalho_adicionar_pedido)
 
         self.shortcut_delete = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
@@ -115,8 +116,10 @@ class ProcessosWidget(QWidget):
             return
 
         try:
-            data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
-            fallback_ano = str(data_inicio_atual.year)
+            # Usamos a data fim para determinar o ano de referência,
+            # pois períodos como Dez/25 a Jan/26 pertencem a 2026 na visualização
+            _, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+            fallback_ano = str(data_fim_atual.year)
         except (RuntimeError, AttributeError, TypeError, ValueError):
             fallback_ano = None
 
@@ -394,10 +397,13 @@ class ProcessosWidget(QWidget):
                 calcular_periodo_faturamento_atual_datas()
             )
         except (RuntimeError, AttributeError, TypeError, ValueError) as e:
-            logger.exception("Erro ao aplicar filtro do período corrente: %s", e)
+            logger.exception(
+                "Erro ao aplicar filtro do período corrente: %s", e)
             return
 
-        ano_atual = str(data_inicio_atual.year)
+        # Ajuste: Usar o ano da data final para definir o ano corrente
+        # Ex: Periodo Dez/25 a Jan/26 deve ser visualizado como 2026
+        ano_atual = str(data_fim_atual.year)
         periodo_display = (
             f"{data_inicio_atual.strftime('%d/%m')} a "
             f"{data_fim_atual.strftime('%d/%m')}"
@@ -441,14 +447,16 @@ class ProcessosWidget(QWidget):
                 self.aplicar_filtro(rolar_para_ultimo=False)
                 return
 
-            registro_id = table_edit.obter_registro_id(self.tabela, row, self.is_admin)
+            registro_id = table_edit.obter_registro_id(
+                self.tabela, row, self.is_admin)
             if not registro_id:
                 return
 
             col_editada = col - col_offset
             valor_editado = item.text().strip()
 
-            ok, erro_msg = table_edit.validar_edicao_celula(col_editada, valor_editado)
+            ok, erro_msg = table_edit.validar_edicao_celula(
+                col_editada, valor_editado)
             if not ok:
                 if erro_msg:
                     QMessageBox.warning(self, "Erro", erro_msg)
@@ -487,9 +495,11 @@ class ProcessosWidget(QWidget):
                         dados_linha.data_processo or dados_linha.data_entrada
                     )
                     if data_registro_str:
-                        data_registro = datetime.strptime(data_registro_str, "%Y-%m-%d")
+                        data_registro = datetime.strptime(
+                            data_registro_str, "%Y-%m-%d")
                         periodo_inicio, periodo_fim = (
-                            calcular_periodo_faturamento_para_data_datas(data_registro)
+                            calcular_periodo_faturamento_para_data_datas(
+                                data_registro)
                         )
 
                         # Verificar se o filtro já está no período do registro
@@ -521,7 +531,8 @@ class ProcessosWidget(QWidget):
 
         except (ValueError, AttributeError, TypeError) as e:
             self.aplicar_filtro(rolar_para_ultimo=False)
-            QMessageBox.warning(self, "Erro", f"Erro ao atualizar registro: {str(e)}")
+            QMessageBox.warning(
+                self, "Erro", f"Erro ao atualizar registro: {str(e)}")
         finally:
             self.tabela.blockSignals(False)
 
@@ -596,7 +607,8 @@ class ProcessosWidget(QWidget):
             # Destacar o item
             QTimer.singleShot(
                 100,
-                lambda: self.selecionar_registro_recente(cliente, pedido, data_entrada),
+                lambda: self.selecionar_registro_recente(
+                    cliente, pedido, data_entrada),
             )
 
     def _calcular_usuario_filtro(self):
@@ -817,7 +829,8 @@ class ProcessosWidget(QWidget):
                 else (None, None)
             )
             filtro_no_periodo_registro = (
-                periodo_selecionado_inicio == periodo_inicio.strftime("%Y-%m-%d")
+                periodo_selecionado_inicio == periodo_inicio.strftime(
+                    "%Y-%m-%d")
                 and periodo_selecionado_fim == periodo_fim.strftime("%Y-%m-%d")
             )
 

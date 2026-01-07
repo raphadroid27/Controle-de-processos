@@ -44,12 +44,14 @@ class DashboardTableUpdates:
         DashboardTableUpdates._configurar_estrutura_tabela(dialog)
 
         # Preencher dados
-        DashboardTableUpdates._preencher_dados_tabela(dialog, dados_ano, chave_metrica)
+        DashboardTableUpdates._preencher_dados_tabela(
+            dialog, dados_ano, chave_metrica)
 
     @staticmethod
     def _configurar_periodos(dialog: "DashboardDialog", ano: int) -> None:
-        """Configura os períodos para o ano selecionado."""
-        periodos = db.buscar_periodos_faturamento_por_ano(str(ano))
+        """Configura os períodos para o ano selecionado (grade completa)."""
+        # Usa a grade completa de períodos (inclusive vazios) para estética do Dashboard
+        periodos = db.gerar_grade_periodos_completa(str(ano))
         periodos.sort(key=lambda p: p["inicio"])
         dialog.periodos_atuais = periodos
         dialog.rotulos_periodos = [p["display"] for p in periodos]
@@ -72,14 +74,16 @@ class DashboardTableUpdates:
         """Preenche os dados na tabela mensal."""
         # Preencher dados por usuário
         for row, usuario in enumerate(dialog.usuarios):
-            dialog.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
+            dialog.tabela_mensal.setVerticalHeaderItem(
+                row, QTableWidgetItem(usuario))
             DashboardTableUpdates._preencher_linha_usuario(
                 dialog, dados_ano, chave_metrica, row, usuario
             )
 
         # Linha de totais
         total_row = len(dialog.usuarios)
-        dialog.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
+        dialog.tabela_mensal.setVerticalHeaderItem(
+            total_row, QTableWidgetItem("Total"))
         DashboardTableUpdates._preencher_linha_totais(
             dialog, dados_ano, chave_metrica, total_row
         )
@@ -107,7 +111,8 @@ class DashboardTableUpdates:
                 row,
                 col,
                 DashboardTableUpdates._criar_item_tabela(
-                    DashboardTableUpdates._formatar_valor_metrica(chave_metrica, valor)
+                    DashboardTableUpdates._formatar_valor_metrica(
+                        chave_metrica, valor)
                 ),
             )
 
@@ -147,7 +152,8 @@ class DashboardTableUpdates:
             )
 
         total_geral = sum(
-            dados_ano.get(usuario, {}).get(periodo["numero"], {}).get(chave_metrica, 0)
+            dados_ano.get(usuario, {}).get(
+                periodo["numero"], {}).get(chave_metrica, 0)
             for usuario in dialog.usuarios
             for periodo in dialog.periodos_atuais
         )
@@ -257,7 +263,8 @@ class DashboardTableUpdates:
             valores_total = [
                 "Todos",
                 formatar_numero_decimal(media_geral.get("itens_por_dia", 0.0)),
-                formatar_numero_decimal(media_geral.get("proposta_por_dia", 0.0)),
+                formatar_numero_decimal(
+                    media_geral.get("proposta_por_dia", 0.0)),
                 formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 

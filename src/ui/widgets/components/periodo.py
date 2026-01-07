@@ -27,11 +27,20 @@ class PeriodoFiltroController:
         try:
             ano_selecionado = self.combo_ano.currentText()
 
+            # Garantir que o ano de fallback esteja na lista
+            anos_disponiveis = list(self.listar_anos(usuario_filtro))
+            # Converter para lista de strings para manipulação
+            anos_str = [str(a) for a in anos_disponiveis]
+
+            if fallback_ano and fallback_ano not in anos_str:
+                anos_str.append(fallback_ano)
+                anos_str.sort(reverse=True)
+
             self.combo_ano.clear()
             self.combo_ano.addItem("Todos os anos")
 
-            for ano in self.listar_anos(usuario_filtro):
-                self.combo_ano.addItem(str(ano))
+            for ano in anos_str:
+                self.combo_ano.addItem(ano)
 
             self._restaurar_ano(ano_selecionado, fallback_ano)
             self.atualizar_periodos()
@@ -123,11 +132,26 @@ class PeriodoFiltroController:
 
     def _restaurar_ano(self, selecionado: str, fallback: str | None) -> None:
         """Restaura o ano previamente selecionado ou usa o fallback informado."""
+
+        # Se 'selecionado' for o padrão 'Todos os anos', tenta usar o fallback primeiro.
+        # Isso garante que ao iniciar o app (onde o padrão é 'Todos os anos'),
+        # ele selecione o ano corrente em vez de ficar no genérico.
+        usar_fallback_prioritario = (
+            selecionado == "Todos os anos" and fallback is not None)
+
+        if usar_fallback_prioritario:
+            index_fallback = self.combo_ano.findText(fallback)
+            if index_fallback >= 0:
+                self.combo_ano.setCurrentIndex(index_fallback)
+                return
+
+        # Comportamento padrão: tenta restaurar o que estava selecionado
         index_atual = self.combo_ano.findText(selecionado)
         if index_atual >= 0:
             self.combo_ano.setCurrentIndex(index_atual)
             return
 
+        # Se não conseguiu restaurar, tenta o fallback
         if fallback:
             index_fallback = self.combo_ano.findText(fallback)
             if index_fallback >= 0:

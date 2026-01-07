@@ -21,6 +21,7 @@ from src.data.repositories.queries import (
     buscar_periodos_faturamento_unicos,
     buscar_usuarios_unicos,
     garantir_periodo_atual,
+    gerar_grade_periodos_completa,
     limpar_caches_consultas,
 )
 from src.data.sessions import (

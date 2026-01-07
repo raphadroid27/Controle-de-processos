@@ -571,76 +571,45 @@ def _gerar_periodos_faturamento_por_ano(
 ) -> List[dict[str, Any]]:
     ano_int = int(ano)
 
-    # Verificar se é o ano atual
-    data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
-    ano_atual = str(data_inicio_atual.year)
+    # Buscar dados do ano anterior e do ano atual para cobrir todos os períodos do ano
+    datas = _listar_datas_pedido_filtradas(
+        usuario=usuario,
+        ano=ano_int - 1,
+        incluir_ano_seguinte=True,
+    )
 
-    if ano == ano_atual:
-        # Para o ano atual, mostrar apenas períodos que existem (com dados)
-        datas = _listar_datas_pedido_filtradas(
-            usuario=usuario,
-            ano=ano_int,
-            incluir_ano_seguinte=True,
-        )
+    periodos = []
+    vistos = set()
+    for data in datas:
+        intervalo = _periodo_faturamento_datas(data)
+        if intervalo:
+            inicio, fim = intervalo
+            ano_inicio = int(inicio[:4])
+            mes_inicio = int(inicio[5:7])
 
-        periodos = []
-        vistos = set()
-        for data in datas:
-            intervalo = _periodo_faturamento_datas(data)
-            if intervalo:
-                inicio, fim = intervalo
-                ano_inicio = int(inicio[:4])
-                mes_inicio = int(inicio[5:7])
+            # O período pertence ao ano se:
+            # 1. Começa no ano anterior em Dezembro (Periodo 1)
+            # 2. Começa neste ano, mas NÃO em Dezembro (Periodos 2-12)
+            eh_periodo_ano = (ano_inicio == ano_int - 1 and mes_inicio == 12) or \
+                             (ano_inicio == ano_int and mes_inicio != 12)
 
-                # O período pertence ao ano se:
-                # 1. Começa no ano anterior em Dezembro (Periodo 1)
-                # 2. Começa neste ano, mas NÃO em Dezembro (Periodos 2-12)
-                eh_periodo_ano = (ano_inicio == ano_int - 1 and mes_inicio == 12) or \
-                                 (ano_inicio == ano_int and mes_inicio != 12)
-
-                if eh_periodo_ano:
-                    display = _formatar_periodo_exibicao(
-                        inicio, fim, com_ano=False)
-                    if display:
-                        month = int(inicio[5:7])
-                        numero = 1 if month == 12 else month + 1
-                        chave = (inicio, fim)
-                        if chave not in vistos:
-                            vistos.add(chave)
-                            periodos.append(
-                                {
-                                    "display": display,
-                                    "inicio": inicio,
-                                    "fim": fim,
-                                    "numero": numero,
-                                }
-                            )
-    else:
-        # Para anos anteriores, gerar todos os 12 períodos do ano
-        periodos = []
-        for mes in range(1, 13):
-            if mes == 1:
-                # Janeiro: 26/12/(ano-1) a 25/01/ano
-                inicio_date = date(ano_int - 1, 12, 26)
-                fim_date = date(ano_int, 1, 25)
-            else:
-                # Outros meses: 26/(mes-1) a 25/mes
-                inicio_date = date(ano_int, mes - 1, 26)
-                fim_date = date(ano_int, mes, 25)
-
-            inicio = inicio_date.isoformat()
-            fim = fim_date.isoformat()
-
-            display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
-            if display:
-                periodos.append(
-                    {
-                        "display": display,
-                        "inicio": inicio,
-                        "fim": fim,
-                        "numero": mes,
-                    }
-                )
+            if eh_periodo_ano:
+                display = _formatar_periodo_exibicao(
+                    inicio, fim, com_ano=False)
+                if display:
+                    month = int(inicio[5:7])
+                    numero = 1 if month == 12 else month + 1
+                    chave = (inicio, fim)
+                    if chave not in vistos:
+                        vistos.add(chave)
+                        periodos.append(
+                            {
+                                "display": display,
+                                "inicio": inicio,
+                                "fim": fim,
+                                "numero": numero,
+                            }
+                        )
 
     # type: ignore[arg-type, return-value]
     periodos.sort(key=lambda p: p["inicio"], reverse=True)
@@ -662,6 +631,39 @@ def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None)
     periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
         ano, usuario)
     return [_descongelar_dict(periodo) for periodo in periodos_congelados]
+
+
+def gerar_grade_periodos_completa(ano: str) -> List[dict[str, Any]]:
+    """Gera a grade completa de 12 períodos para o ano informado (uso em Dashboard)."""
+    ano_int = int(ano)
+    periodos = []
+
+    for mes in range(1, 13):
+        if mes == 1:
+            # Janeiro: 26/12/(ano-1) a 25/01/ano
+            inicio_date = date(ano_int - 1, 12, 26)
+            fim_date = date(ano_int, 1, 25)
+        else:
+            # Outros meses: 26/(mes-1) a 25/mes
+            inicio_date = date(ano_int, mes - 1, 26)
+            fim_date = date(ano_int, mes, 25)
+
+        inicio = inicio_date.isoformat()
+        fim = fim_date.isoformat()
+
+        display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
+        if display:
+            periodos.append(
+                {
+                    "display": display,
+                    "inicio": inicio,
+                    "fim": fim,
+                    "numero": mes,
+                }
+            )
+
+    periodos.sort(key=lambda p: p["inicio"])
+    return periodos
 
 
 def _gerar_periodos_faturamento_unicos(
