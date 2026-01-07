@@ -400,7 +400,7 @@ def obter_estilo_date_edit(theme: str = "light", arrow_file: str | None = None) 
         min-height: {ALTURA_PADRAO_COMPONENTE}px;
         max-height: {ALTURA_PADRAO_COMPONENTE}px;
         padding: {PADDING};
-        font-size: {TAMANHO_FONTE_PADRAO}pt;
+        font-size: {TAMANHO_FONTE_PADRAO-1}pt;
         font-weight: bold;
         border: 1px solid {border_color};
         border-radius: none;

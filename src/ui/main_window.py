@@ -63,7 +63,7 @@ class MainWindow(ThemedMainWindow):
 
         self.setWindowTitle("Controle de Pedidos")
         self.setMinimumSize(800, 500)
-        self.resize(1100, 600)
+        self.resize(1000, 600)
 
         # Aplicar ícone padrão
         aplicar_icone_padrao(self)
