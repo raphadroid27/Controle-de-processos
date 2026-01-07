@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QLabel
 
 from src.ui.flow_layout import FlowLayout
@@ -36,9 +35,6 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
         v_spacing=espacamento,
     )
 
-    font = QFont()
-    font.setBold(True)
-
     label_pedidos = QLabel("Total Pedidos: 0")
     label_itens = QLabel("Total Itens: 0")
     label_valor = QLabel("Total Valor: R$ 0,00")
@@ -56,7 +52,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
         label_estimativa_itens,
         label_tempo_corte_dia,
     ):
-        label.setFont(font)
+        label.setObjectName("label_titulo_negrito")
 
     layout.addWidget(label_pedidos)
     layout.addWidget(label_itens)
