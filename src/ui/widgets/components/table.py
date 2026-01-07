@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable, List, Sequence
-
+import qtawesome as qta
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -183,6 +183,7 @@ def criar_tabela(
     layout.addWidget(tabela)
 
     btn_excluir = QPushButton("Excluir", frame)
+    btn_excluir.setIcon(qta.icon("fa5s.trash"))
     btn_excluir.setToolTip(
         "Excluir pedido selecionado na tabela (Atalho: Delete)")
     btn_excluir.clicked.connect(on_excluir)

@@ -1,5 +1,6 @@
 """Componentes de gerenciamento de sessões ativas."""
 
+import qtawesome as qta
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QDialog,
@@ -27,9 +28,13 @@ class GerenciarSessoesWidget(QWidget):
 
         self.tree_sessoes = QTreeWidget()
         self.btn_atualizar_sessoes = QPushButton("Atualizar")
+        self.btn_atualizar_sessoes.setIcon(qta.icon("fa5s.sync"))
         self.btn_encerrar_sessao = QPushButton("Encerrar Sessão")
+        self.btn_encerrar_sessao.setIcon(qta.icon("fa5s.times-circle"))
         self.btn_limpar_inativas = QPushButton("Limpar Inativas")
+        self.btn_limpar_inativas.setIcon(qta.icon("fa5s.broom"))
         self.btn_shutdown_sistema = QPushButton("Shutdown Sistema")
+        self.btn_shutdown_sistema.setIcon(qta.icon("fa5s.power-off"))
 
         self._init_ui()
         self.carregar_sessoes()

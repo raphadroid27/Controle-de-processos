@@ -8,6 +8,7 @@ usuários e alteração de senhas próprias.
 
 from datetime import datetime, timezone
 
+import qtawesome as qta
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
@@ -108,6 +109,7 @@ Use as teclas de seta para navegar pelos resultados."""
         busca_layout.addWidget(self.entry_busca, 0, 1)
 
         btn_limpar = QPushButton("Limpar")
+        btn_limpar.setIcon(qta.icon("fa5s.eraser"))
         btn_limpar.clicked.connect(self.limpar_busca)
         btn_limpar.setToolTip(
             "Limpa o campo de busca e exibe novamente todos os usuários."
@@ -123,6 +125,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.botoes_layout = QHBoxLayout()
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
+        self.btn_resetar_senha.setIcon(qta.icon("fa5s.unlock-alt"))
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
         aplicar_estilo_botao(self.btn_resetar_senha, "laranja")
         self.btn_resetar_senha.setToolTip(
@@ -131,6 +134,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_resetar_senha.setShortcut(QKeySequence("Ctrl+Shift+R"))
 
         self.btn_arquivar = QPushButton("Arquivar")
+        self.btn_arquivar.setIcon(qta.icon("fa5s.archive"))
         self.btn_arquivar.clicked.connect(self.arquivar_usuario)
         aplicar_estilo_botao(self.btn_arquivar, "roxo")
         self.btn_arquivar.setToolTip(
@@ -139,6 +143,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_arquivar.setShortcut(QKeySequence("Ctrl+Shift+A"))
 
         self.btn_restaurar = QPushButton("Restaurar")
+        self.btn_restaurar.setIcon(qta.icon("fa5s.box-open"))
         self.btn_restaurar.clicked.connect(self.restaurar_usuario)
         aplicar_estilo_botao(self.btn_restaurar, "verde")
         self.btn_restaurar.setToolTip(
@@ -146,6 +151,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_restaurar.setShortcut(QKeySequence("Ctrl+Shift+T"))
 
         self.btn_excluir = QPushButton("Excluir Usuário")
+        self.btn_excluir.setIcon(qta.icon("fa5s.trash-alt"))
         self.btn_excluir.clicked.connect(self.excluir_usuario)
         aplicar_estilo_botao(self.btn_excluir, "vermelho")
         self.btn_excluir.setToolTip(
@@ -154,6 +160,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_excluir.setShortcut(QKeySequence("Ctrl+Shift+Del"))
 
         self.btn_alterar_senha = QPushButton("Alterar Minha Senha")
+        self.btn_alterar_senha.setIcon(qta.icon("fa5s.key"))
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
         aplicar_estilo_botao(self.btn_alterar_senha, "azul")
         # Ajustar fonte especificamente para este botão

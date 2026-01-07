@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable, Optional
-
+import qtawesome as qta
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLineEdit, QPushButton
 
@@ -119,6 +119,7 @@ O filtro é aplicado automaticamente."""
     layout.addLayout(coluna_periodo, peso_periodo)
 
     btn_limpar = QPushButton("Limpar Filtros", frame)
+    btn_limpar.setIcon(qta.icon("fa5s.eraser"))
     btn_limpar.setToolTip(
         "Limpar filtros, mantendo o período corrente")
     aplicar_estilo_botao(btn_limpar, "laranja")

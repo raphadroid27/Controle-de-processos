@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import qtawesome as qta
 from PySide6.QtCore import QFileSystemWatcher, QTimer
 from PySide6.QtWidgets import (
     QApplication,
@@ -57,8 +58,10 @@ class AdminToolsDialog(ThemedDialog):
         self.usuarios_widget = GerenciarUsuariosWidget(self)
         self.sessoes_widget = GerenciarSessoesWidget(self)
 
-        self.tabs.addTab(self.usuarios_widget, "Usuários")
-        self.tabs.addTab(self.sessoes_widget, "Sessões")
+        self.tabs.addTab(self.usuarios_widget,
+                         qta.icon("fa5s.users"), "Usuários")
+        self.tabs.addTab(self.sessoes_widget,
+                         qta.icon("fa5s.desktop"), "Sessões")
         self.tabs.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(self.tabs)

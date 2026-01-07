@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
+import qtawesome as qta
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
 from src.ui.styles import (
@@ -134,6 +135,7 @@ def criar_formulario(
         campos_layout.addLayout(coluna, peso_col)
 
     btn_adicionar = QPushButton("Adicionar", frame)
+    btn_adicionar.setIcon(qta.icon("fa5s.plus"))
     btn_adicionar.setToolTip("Adicionar novo pedido (Atalho: Enter)")
     aplicar_estilo_botao(btn_adicionar, "verde")
     btn_adicionar.clicked.connect(on_submit)

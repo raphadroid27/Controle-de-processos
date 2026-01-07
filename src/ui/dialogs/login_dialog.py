@@ -9,6 +9,7 @@ para gerenciar a autenticação e criação de usuários.
 # A lógica de verificação de sessão duplicada é similar ao app.py
 # mas mantida no dialog para validação durante o login
 
+import qtawesome as qta
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
@@ -119,7 +120,9 @@ Use Tab para avançar para o campo de senha."""
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
         self.btn_login = QPushButton("Login")
+        self.btn_login.setIcon(qta.icon("fa5s.sign-in-alt"))
         self.btn_novo_usuario = QPushButton("Novo Usuário")
+        self.btn_novo_usuario.setIcon(qta.icon("fa5s.user-plus"))
 
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_login, "azul")
@@ -356,7 +359,9 @@ Deve ser único e sem espaços extras nas extremidades."""
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
         self.btn_cancelar = QPushButton("Cancelar")
+        self.btn_cancelar.setIcon(qta.icon("fa5s.times"))
         self.btn_salvar = QPushButton("Salvar")
+        self.btn_salvar.setIcon(qta.icon("fa5s.save"))
 
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_cancelar, "vermelho")

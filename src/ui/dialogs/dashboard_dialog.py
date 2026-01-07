@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
-
+import qtawesome as qta
 try:  # pragma: no cover - fallback executado apenas sem pandas instalado
     import pandas as pd  # type: ignore[assignment]
 except ImportError:  # pragma: no cover
@@ -180,7 +180,8 @@ class DashboardDialog(QDialog):
 
     def _criar_abas(self) -> None:
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._criar_tab_resumo(), "Resumo")
+        self.tabs.addTab(self._criar_tab_resumo(),
+                         qta.icon("fa5s.table"), "Resumo")
         if not self.df_registros.empty:
             self._criar_tab_graficos()
 
@@ -360,4 +361,5 @@ class DashboardDialog(QDialog):
         )
         layout.addWidget(self.canvas)
 
-        self.tabs.addTab(self.tab_graficos, "Gráficos")
+        self.tabs.addTab(self.tab_graficos, qta.icon(
+            "fa5s.chart-bar"), "Gráficos")

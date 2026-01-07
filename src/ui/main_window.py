@@ -4,6 +4,7 @@ import logging
 import sys
 from pathlib import Path
 
+import qtawesome as qta
 from PySide6.QtCore import QFileSystemWatcher, QProcess, QSignalBlocker, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
@@ -210,6 +211,7 @@ class MainWindow(ThemedMainWindow):
         arquivo_menu = menubar.addMenu("Arquivo")
 
         logout_action = QAction("Logout", self)
+        logout_action.setIcon(qta.icon("fa5s.sign-out-alt"))
         logout_action.triggered.connect(self.fazer_logout)
         logout_action.setShortcut(QKeySequence("Ctrl+Shift+L"))
         logout_action.setStatusTip("Encerrar sessão atual e retornar ao login")
@@ -219,6 +221,7 @@ class MainWindow(ThemedMainWindow):
         arquivo_menu.addSeparator()
 
         sair_action = QAction("Sair", self)
+        sair_action.setIcon(qta.icon("fa5s.times-circle"))
         sair_action.triggered.connect(self.close)
         sair_action.setShortcut(QKeySequence("Ctrl+Q"))
         sair_action.setStatusTip("Fechar a aplicação")
@@ -229,6 +232,7 @@ class MainWindow(ThemedMainWindow):
             admin_menu = menubar.addMenu("Admin")
 
             usuarios_action = QAction("Ferramenta Administrativa", self)
+            usuarios_action.setIcon(qta.icon("fa5s.users-cog"))
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
             usuarios_action.setStatusTip(
@@ -237,6 +241,7 @@ class MainWindow(ThemedMainWindow):
             admin_menu.addAction(usuarios_action)
 
             dashboard_action = QAction("Dashboard", self)
+            dashboard_action.setIcon(qta.icon("fa5s.chart-line"))
             dashboard_action.triggered.connect(self.abrir_dashboard)
             dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
             dashboard_action.setStatusTip("Visualizar indicadores gerenciais")
@@ -244,6 +249,7 @@ class MainWindow(ThemedMainWindow):
             admin_menu.addAction(dashboard_action)
 
             atualizar_action = QAction("Atualizar", self)
+            atualizar_action.setIcon(qta.icon("fa5s.sync"))
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
             atualizar_action.setStatusTip(
@@ -256,6 +262,7 @@ class MainWindow(ThemedMainWindow):
         ajuda_menu = menubar.addMenu("Ajuda")
 
         manual_action = QAction("Manual do Sistema", self)
+        manual_action.setIcon(qta.icon("fa5s.book"))
         manual_action.triggered.connect(self.abrir_manual)
         manual_action.setShortcut(QKeySequence("F1"))
         manual_action.setStatusTip("Consultar o manual do sistema")
@@ -263,6 +270,7 @@ class MainWindow(ThemedMainWindow):
         ajuda_menu.addAction(manual_action)
 
         sobre_action = QAction("Sobre", self)
+        sobre_action.setIcon(qta.icon("fa5s.info-circle"))
         sobre_action.triggered.connect(self.abrir_sobre)
         sobre_action.setStatusTip("Informações sobre a aplicação")
         sobre_action.setToolTip("Sobre")
