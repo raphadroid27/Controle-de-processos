@@ -87,7 +87,7 @@ O filtro é aplicado automaticamente."""
     entry_pedido = NavigableLineEdit(frame)
     entry_pedido.setPlaceholderText("Digite o número do pedido")
     entry_pedido.setToolTip(
-        "Filtrar por pedido. Clique em Limpar para remover.")
+        "Filtrar por número do pedido, proposta ou OS.")
     coluna_pedido, peso_pedido = criar_coluna_rotulo(
         "Pedido:", entry_pedido, 3)
     layout.addLayout(coluna_pedido, peso_pedido)
@@ -120,7 +120,7 @@ O filtro é aplicado automaticamente."""
 
     btn_limpar = QPushButton("Limpar Filtros", frame)
     btn_limpar.setToolTip(
-        "Limpar filtros de cliente e pedido, mantendo o mês corrente")
+        "Limpar filtros, mantendo o período corrente")
     aplicar_estilo_botao(btn_limpar, "laranja")
     btn_limpar.clicked.connect(on_limpar)
     estilo_atual = btn_limpar.styleSheet()

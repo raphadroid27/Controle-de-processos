@@ -57,15 +57,15 @@ def criar_formulario(
     )
 
     entry_pedido = NavigableLineEdit(frame)
-    entry_pedido.setPlaceholderText("Identificador do pedido")
+    entry_pedido.setPlaceholderText("Informe o pedido")
     entry_pedido.setToolTip(
-        "Identificador do pedido ou atividade. Campos obrigatórios são marcados."
+        "Número do pedido, proposta ou OS."
     )
 
     entry_qtde_itens = NavigableLineEdit(frame)
     entry_qtde_itens.setPlaceholderText("0")
     entry_qtde_itens.setToolTip(
-        "Quantidade de itens do pedido. Apenas números positivos."
+        "Quantidade de itens do pedido. Apenas números positivos e inteiros."
     )
 
     entry_data_entrada = NavigableDateEdit(frame)
@@ -81,20 +81,20 @@ def criar_formulario(
     entry_data_processo.setMaximumDate(obter_data_atual_utc())
     entry_data_processo.setDate(obter_data_atual_utc())
     entry_data_processo.setToolTip(
-        "Data de processamento. Mantenha em 'Não processado' se ainda pendente."
+        "Data de processamento. Normalmente data do dia vigente."
     )
 
     entry_tempo_corte = NavigableLineEdit(frame)
     entry_tempo_corte.setPlaceholderText("HH:MM:SS")
     entry_tempo_corte.textEdited.connect(on_tempo_editado)
     entry_tempo_corte.setToolTip(
-        "Tempo de corte no formato HH:MM:SS. O sistema valida automaticamente."
+        "Tempo de corte no formato HH:MM:SS. O formato é obrigatório."
     )
 
     entry_valor_pedido = NavigableLineEdit(frame)
     entry_valor_pedido.setPlaceholderText("0,00")
     entry_valor_pedido.setToolTip(
-        "Valor total em reais. Utilize vírgula ou ponto como separador decimal."
+        "Valor total do pedido em reais. Não é necessário digitar vírgula ou ponto."
     )
     if on_valor_editado is not None:
         entry_valor_pedido.textEdited.connect(on_valor_editado)
