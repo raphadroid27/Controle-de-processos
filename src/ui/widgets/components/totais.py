@@ -44,7 +44,7 @@ def criar_totais(*, parent, espacamento: int) -> TotaisControls:
     label_estimativa_itens = QLabel("Estimativa itens período: --")
     label_media_dias = QLabel("Média dias processo: --")
     label_valor = QLabel("Valor total: R$ 0,00")
-    label_tempo_corte_total = QLabel("Tempo corte total: --")
+    label_tempo_corte_total = QLabel("Tempo corte período: --")
     label_media_tempo_corte_dia = QLabel("Média tempo corte/dia: --")
     label_tempo_corte_dia = QLabel("Tempo corte hoje: --")
 
@@ -156,10 +156,10 @@ def atualizar_totais(
 
     if tempo_corte_total:
         controles.label_tempo_corte_total.setText(
-            _fmt("Tempo corte total", tempo_corte_total))
+            _fmt("Tempo corte período", tempo_corte_total))
     else:
         controles.label_tempo_corte_total.setText(
-            _fmt("Tempo corte total", "--"))
+            _fmt("Tempo corte período", "--"))
 
     if media_tempo_corte_dia:
         controles.label_media_tempo_corte_dia.setText(

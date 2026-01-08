@@ -230,41 +230,19 @@ class ProcessosWidget(QWidget):
         self._atualizar_limite_e_valor_data(
             self.entry_data_entrada,
             nova_data,
-            preservar_nulos=False,
         )
         self._atualizar_limite_e_valor_data(
             self.entry_data_processo,
             nova_data,
-            preservar_nulos=True,
         )
 
     @staticmethod
     def _atualizar_limite_e_valor_data(
         campo,
         nova_data,
-        *,
-        preservar_nulos: bool,
     ) -> None:
         if campo is None or nova_data is None:
             return
-
-        campo.blockSignals(True)
-        try:
-            data_antiga = campo.maximumDate()
-            campo.setMaximumDate(nova_data)
-
-            valor_atual = campo.date()
-            if (
-                preservar_nulos
-                and hasattr(valor_atual, "isNull")
-                and valor_atual.isNull()
-            ):
-                return
-
-            if valor_atual == data_antiga:
-                campo.setDate(nova_data)
-        finally:
-            campo.blockSignals(False)
 
     def atalho_adicionar_pedido(self):
         """Adiciona pedido via atalho se campos obrigatórios estiverem ok."""

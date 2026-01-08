@@ -27,9 +27,6 @@ class DateEditDelegate(QStyledItemDelegate):
         editor.setCalendarPopup(True)
         editor.setDisplayFormat("dd/MM/yyyy")
 
-        # Definir data máxima como hoje
-        editor.setMaximumDate(obter_data_atual_utc())
-
         # Verificar se é uma coluna de data processo (pode estar vazia)
         data_texto = index.data()
         if data_texto == "Não processado" or not data_texto:
@@ -43,7 +40,8 @@ class DateEditDelegate(QStyledItemDelegate):
                 else:
                     # Formato AAAA-MM-DD do banco
                     data_obj = datetime.strptime(data_texto, "%Y-%m-%d")
-                editor.setDate(QDate(data_obj.year, data_obj.month, data_obj.day))
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
             except (ValueError, AttributeError):
                 editor.setDate(obter_data_atual_utc())
 
@@ -60,7 +58,8 @@ class DateEditDelegate(QStyledItemDelegate):
                     data_obj = datetime.strptime(value, "%d/%m/%Y")
                 else:
                     data_obj = datetime.strptime(value, "%Y-%m-%d")
-                editor.setDate(QDate(data_obj.year, data_obj.month, data_obj.day))
+                editor.setDate(
+                    QDate(data_obj.year, data_obj.month, data_obj.day))
             except (ValueError, AttributeError):
                 editor.setDate(obter_data_atual_utc())
 
