@@ -204,6 +204,8 @@ class MainWindow(ThemedMainWindow):
 
         event.accept()
 
+   # pylint: disable=too-many-statements
+
     def criar_menu(self):
         """Cria os menus (Arquivo/Admin)."""
         menubar = self.menuBar()

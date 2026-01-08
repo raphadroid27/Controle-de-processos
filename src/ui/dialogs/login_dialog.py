@@ -290,6 +290,8 @@ class NovoUsuarioDialog(QDialog):
 
         self.init_ui()
 
+    # pylint: disable=too-many-statements
+
     def init_ui(self):
         """Inicializa a interface do usuário."""
         layout = QFormLayout()
