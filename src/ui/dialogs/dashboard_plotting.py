@@ -7,15 +7,8 @@ import pandas as pd  # pylint: disable=E0401
 from matplotlib.ticker import FuncFormatter
 
 from src.core.formatters import segundos_para_horas
-from src.ui.styles import (
-    _ACCENT_CYCLE,
-    _AXES_EDGE,
-    _AXES_FACE,
-    _GRID_COLOR,
-    _LEGEND_FACE,
-    _TEXT_COLOR,
-    METRIC_MAP,
-)
+from src.ui.styles import (_ACCENT_CYCLE, _AXES_EDGE, _AXES_FACE, _GRID_COLOR,
+                           _LEGEND_FACE, _TEXT_COLOR, METRIC_MAP)
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series  # noqa: F401

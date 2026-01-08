@@ -11,7 +11,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src import data as db
 from src.core.formatters import normalizar_nome_cliente
-from src.core.periodo_faturamento import calcular_periodo_faturamento_atual_datas
+from src.core.periodo_faturamento import \
+    calcular_periodo_faturamento_atual_datas
 
 __all__ = [
     "carregar_clientes_upper",
@@ -403,8 +404,7 @@ def obter_estatisticas_totais(
     )
     tempo_corte_dia = _formatar_segundos_para_horas(total_segundos_dia)
 
-    total_segundos_total, dias_com_horas = _calcular_metricas_tempo_dashboard(
-        registros)
+    total_segundos_total, dias_com_horas = _calcular_metricas_tempo_dashboard(registros)
     tempo_corte_total = _formatar_segundos_para_horas(total_segundos_total)
 
     media_tempo_corte_dia = None

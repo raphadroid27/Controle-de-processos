@@ -44,8 +44,7 @@ def user_db_path(*, usuario: Optional[str] = None, slug: Optional[str] = None) -
     """Resolve o caminho para o banco individual do usuário informado."""
     if slug is None:
         if usuario is None:
-            raise ValueError(
-                "Informe 'usuario' ou 'slug' para localizar o banco.")
+            raise ValueError("Informe 'usuario' ou 'slug' para localizar o banco.")
         slug = slugify_usuario(usuario)
     return DATABASE_DIR / f"usuario_{slug}.db"
 

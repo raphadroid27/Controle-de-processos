@@ -113,21 +113,18 @@ class ControleProcessosApp:
                     session_service.definir_comando_encerrar_sessao(
                         info_sessao["session_id"]
                     )
-                    session_service.remover_sessao_por_id(
-                        info_sessao["session_id"])
+                    session_service.remover_sessao_por_id(info_sessao["session_id"])
                 else:
                     return 0
 
             # Registrar nova sessão após todas as verificações
-            session_service.registrar_sessao(
-                usuario_autenticado, admin_tool=False)
+            session_service.registrar_sessao(usuario_autenticado, admin_tool=False)
 
             # Desconectar e fechar MainWindow anterior se existir
             if self.main_window:
                 try:
                     # Desconectar do slot de logout
-                    self.main_window.logout_requested.disconnect(
-                        self._handle_logout)
+                    self.main_window.logout_requested.disconnect(self._handle_logout)
                 except (RuntimeError, TypeError):
                     # Sinal não estava conectado, o que é normal na primeira vez
                     pass

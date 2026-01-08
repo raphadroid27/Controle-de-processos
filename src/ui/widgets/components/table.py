@@ -4,26 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable, List, Sequence
+
 import qtawesome as qta
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QFrame,
-    QHBoxLayout,
-    QHeaderView,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-)
+from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout,
+                               QHeaderView, QPushButton, QTableWidget,
+                               QTableWidgetItem, QVBoxLayout)
 
-from src.core.formatters import formatar_data_para_exibicao, formatar_valor_monetario
+from src.core.formatters import (formatar_data_para_exibicao,
+                                 formatar_valor_monetario)
 from src.ui.delegates import DateEditDelegate
-from src.ui.styles import (
-    aplicar_estilo_botao,
-    aplicar_estilo_botao_desabilitado,
-    obter_estilo_table_widget,
-)
+from src.ui.styles import (aplicar_estilo_botao,
+                           aplicar_estilo_botao_desabilitado,
+                           obter_estilo_table_widget)
 
 __all__ = ["TabelaControls", "criar_tabela", "preencher_tabela"]
 
@@ -108,8 +101,7 @@ def criar_tabela(
     def aplicar_larguras() -> None:
         for indice, largura in enumerate(calcular_larguras_colunas()):
             if indice < tabela.columnCount():
-                header.setSectionResizeMode(
-                    indice, QHeaderView.ResizeMode.Fixed)
+                header.setSectionResizeMode(indice, QHeaderView.ResizeMode.Fixed)
                 tabela.setColumnWidth(indice, largura)
 
     aplicar_larguras()
@@ -135,24 +127,21 @@ def criar_tabela(
     data_entrada_header_item.setTextAlignment(
         Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
     )
-    tabela.setHorizontalHeaderItem(
-        data_entrada_col_index, data_entrada_header_item)
+    tabela.setHorizontalHeaderItem(data_entrada_col_index, data_entrada_header_item)
 
     data_processo_col_index = 4 + offset
     data_processo_header_item = QTableWidgetItem("Data Processo")
     data_processo_header_item.setTextAlignment(
         Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
     )
-    tabela.setHorizontalHeaderItem(
-        data_processo_col_index, data_processo_header_item)
+    tabela.setHorizontalHeaderItem(data_processo_col_index, data_processo_header_item)
 
     tempo_corte_col_index = 5 + offset
     tempo_corte_header_item = QTableWidgetItem("Tempo Corte")
     tempo_corte_header_item.setTextAlignment(
         Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
     )
-    tabela.setHorizontalHeaderItem(
-        tempo_corte_col_index, tempo_corte_header_item)
+    tabela.setHorizontalHeaderItem(tempo_corte_col_index, tempo_corte_header_item)
 
     valor_col_index = len(colunas) - 1
     valor_header_item = QTableWidgetItem("Valor (R$)")
@@ -184,8 +173,7 @@ def criar_tabela(
 
     btn_excluir = QPushButton("Excluir", frame)
     btn_excluir.setIcon(qta.icon("fa5s.trash"))
-    btn_excluir.setToolTip(
-        "Excluir pedido selecionado na tabela (Atalho: Delete)")
+    btn_excluir.setToolTip("Excluir pedido selecionado na tabela (Atalho: Delete)")
     btn_excluir.clicked.connect(on_excluir)
     aplicar_estilo_botao(btn_excluir, "vermelho")
     estilo_completo = btn_excluir.styleSheet() + aplicar_estilo_botao_desabilitado()
@@ -242,8 +230,7 @@ def preencher_tabela(
             )
             tabela.setItem(row, offset + 2, item_qtde)
 
-            data_entrada_formatada = str(
-                formatar_data_para_exibicao(str(registro[5])))
+            data_entrada_formatada = str(formatar_data_para_exibicao(str(registro[5])))
             item_data_entrada = QTableWidgetItem(data_entrada_formatada)
             item_data_entrada.setTextAlignment(
                 Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
@@ -277,10 +264,8 @@ def preencher_tabela(
 
             valor_registro = registro[9]
             # type: ignore[arg-type]
-            valor_float = float(
-                valor_registro) if valor_registro is not None else 0.0
-            item_valor = QTableWidgetItem(
-                formatar_valor_monetario(valor_float))
+            valor_float = float(valor_registro) if valor_registro is not None else 0.0
+            item_valor = QTableWidgetItem(formatar_valor_monetario(valor_float))
             item_valor.setTextAlignment(
                 Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
             )

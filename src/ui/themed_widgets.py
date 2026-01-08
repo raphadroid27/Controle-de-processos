@@ -9,7 +9,6 @@ from PySide6.QtWidgets import QDialog, QMainWindow, QMessageBox, QWidget
 
 from src.ui.theme_manager import ThemeManager
 
-
 THEME_MANAGER = ThemeManager.instance()
 
 

@@ -124,8 +124,7 @@ def atualizar_totais(
 
     controles.label_pedidos.setText(_fmt("Pedidos período", total_pedidos))
     controles.label_itens.setText(_fmt("Itens período", total_itens))
-    controles.label_valor.setText(
-        _fmt("Valor total", formatar_valor(total_valor)))
+    controles.label_valor.setText(_fmt("Valor total", formatar_valor(total_valor)))
 
     if media_dias_processo is None:
         controles.label_media_dias.setTextFormat(Qt.TextFormat.RichText)
@@ -139,16 +138,14 @@ def atualizar_totais(
         )
 
     if media_itens_por_dia is None:
-        controles.label_media_itens_por_dia.setText(
-            _fmt("Média itens/dia", "--"))
+        controles.label_media_itens_por_dia.setText(_fmt("Média itens/dia", "--"))
     else:
         controles.label_media_itens_por_dia.setText(
             _fmt("Média itens/dia", f"{media_itens_por_dia:.1f}")
         )
 
     if estimativa_itens_mes is None:
-        controles.label_estimativa_itens.setText(
-            _fmt("Estimativa itens período", "--"))
+        controles.label_estimativa_itens.setText(_fmt("Estimativa itens período", "--"))
     else:
         controles.label_estimativa_itens.setText(
             _fmt("Estimativa itens período", estimativa_itens_mes)
@@ -156,24 +153,26 @@ def atualizar_totais(
 
     if tempo_corte_total:
         controles.label_tempo_corte_total.setText(
-            _fmt("Tempo corte período", tempo_corte_total))
+            _fmt("Tempo corte período", tempo_corte_total)
+        )
     else:
-        controles.label_tempo_corte_total.setText(
-            _fmt("Tempo corte período", "--"))
+        controles.label_tempo_corte_total.setText(_fmt("Tempo corte período", "--"))
 
     if media_tempo_corte_dia:
         controles.label_media_tempo_corte_dia.setText(
-            _fmt("Média tempo corte/dia", media_tempo_corte_dia))
+            _fmt("Média tempo corte/dia", media_tempo_corte_dia)
+        )
     else:
         controles.label_media_tempo_corte_dia.setText(
-            _fmt("Média tempo corte/dia", "--"))
+            _fmt("Média tempo corte/dia", "--")
+        )
 
     if tempo_corte_dia:
         controles.label_tempo_corte_dia.setText(
-            _fmt("Tempo corte hoje", tempo_corte_dia))
+            _fmt("Tempo corte hoje", tempo_corte_dia)
+        )
     else:
-        controles.label_tempo_corte_dia.setText(
-            _fmt("Tempo corte hoje", "--"))
+        controles.label_tempo_corte_dia.setText(_fmt("Tempo corte hoje", "--"))
 
 
 def _obter_cor_media_dias(valor: float) -> str:

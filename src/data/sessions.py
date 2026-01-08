@@ -12,7 +12,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.data.config import DATABASE_DIR, SHARED_DB_PATH, slugify_usuario, user_db_path
+from src.data.config import (DATABASE_DIR, SHARED_DB_PATH, slugify_usuario,
+                             user_db_path)
 from src.data.models import SharedBase, UserBase, UsuarioModel
 
 logger = logging.getLogger(__name__)
@@ -96,8 +97,7 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(
-                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -107,8 +107,7 @@ def _ensure_usuario_schema(engine: Engine) -> None:
     try:
         inspector = inspect(engine)
         if "usuario" not in inspector.get_table_names():
-            logger.debug(
-                "Tabela usuario não existe ainda, será criada pelo ORM")
+            logger.debug("Tabela usuario não existe ainda, será criada pelo ORM")
             return
 
         colunas = {col["name"] for col in inspector.get_columns("usuario")}
@@ -121,8 +120,7 @@ def _ensure_usuario_schema(engine: Engine) -> None:
             logger.info("Adicionando coluna ativo")
 
         if "arquivado_em" not in colunas:
-            statements.append(
-                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
             logger.info("Adicionando coluna arquivado_em")
 
         if "excluido" not in colunas:
@@ -132,8 +130,7 @@ def _ensure_usuario_schema(engine: Engine) -> None:
             logger.info("Adicionando coluna excluido")
 
         if statements:
-            logger.info(
-                "Executando %d alterações no schema usuario", len(statements))
+            logger.info("Executando %d alterações no schema usuario", len(statements))
             with engine.begin() as conn:
                 for stmt in statements:
                     conn.execute(text(stmt))
@@ -302,8 +299,10 @@ def limpar_usuarios_excluidos() -> None:
             select(UsuarioModel.nome).where(UsuarioModel.excluido)
         ).all()
 
-    logger.info("Tentando limpar %d usuário(s) marcado(s) para exclusão", len(
-        usuarios_excluidos))
+    logger.info(
+        "Tentando limpar %d usuário(s) marcado(s) para exclusão",
+        len(usuarios_excluidos),
+    )
 
     # Tentar remover seus bancos
     for nome_usuario in usuarios_excluidos:
@@ -316,12 +315,12 @@ def limpar_usuarios_excluidos() -> None:
             for tentativa in range(3):
                 try:
                     db_path.unlink()
-                    logger.info(
-                        "Banco de usuário excluido removido: %s", db_path)
+                    logger.info("Banco de usuário excluido removido: %s", db_path)
                     break
                 except OSError as e:
                     if tentativa < 2:
                         import time  # pylint: disable=import-outside-toplevel
+
                         logger.debug(
                             "Erro ao remover %s (tentativa %d/3): %s",
                             db_path,

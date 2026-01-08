@@ -18,8 +18,7 @@ def criar_coluna_rotulo(label_texto: str, widget, peso: int) -> Tuple[QVBoxLayou
 
     label = QLabel(label_texto)
     label.setObjectName("label_titulo")
-    label.setAlignment(Qt.AlignmentFlag.AlignLeft |
-                       Qt.AlignmentFlag.AlignBottom)
+    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
     label.setMinimumHeight(16)
     label.setMaximumHeight(18)
 
@@ -37,8 +36,7 @@ def criar_layout_botao_padrao(botao: QPushButton) -> QVBoxLayout:
 
     spacer = QLabel(" ")
     spacer.setObjectName("label_titulo")
-    spacer.setAlignment(Qt.AlignmentFlag.AlignLeft |
-                        Qt.AlignmentFlag.AlignBottom)
+    spacer.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
     spacer.setMinimumHeight(16)
     spacer.setMaximumHeight(18)
     layout.addWidget(spacer)

@@ -8,16 +8,13 @@ from typing import Callable, Sequence
 import qtawesome as qta
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
-from src.ui.styles import (
-    aplicar_estilo_botao,
-    configurar_widgets_entrada_uniformes,
-    obter_data_atual_utc,
-)
-from src.ui.widgets.components.layout import (
-    criar_coluna_rotulo,
-    criar_layout_botao_padrao,
-)
-from src.ui.widgets.navigable_widgets import NavigableDateEdit, NavigableLineEdit
+from src.ui.styles import (aplicar_estilo_botao,
+                           configurar_widgets_entrada_uniformes,
+                           obter_data_atual_utc)
+from src.ui.widgets.components.layout import (criar_coluna_rotulo,
+                                              criar_layout_botao_padrao)
+from src.ui.widgets.navigable_widgets import (NavigableDateEdit,
+                                              NavigableLineEdit)
 
 __all__ = ["PedidoFormControls", "criar_formulario"]
 
@@ -59,9 +56,7 @@ def criar_formulario(
 
     entry_pedido = NavigableLineEdit(frame)
     entry_pedido.setPlaceholderText("Informe o pedido")
-    entry_pedido.setToolTip(
-        "Número do pedido, proposta ou OS."
-    )
+    entry_pedido.setToolTip("Número do pedido, proposta ou OS.")
 
     entry_qtde_itens = NavigableLineEdit(frame)
     entry_qtde_itens.setPlaceholderText("0")
@@ -72,8 +67,7 @@ def criar_formulario(
     entry_data_entrada = NavigableDateEdit(frame)
     entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
-    entry_data_entrada.setToolTip(
-        "Data de entrada do pedido. Não pode ser futura.")
+    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)

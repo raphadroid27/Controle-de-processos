@@ -168,8 +168,7 @@ def encerrar_sessoes_usuario_por_admin(usuario_nome: str) -> int:
         session_id = session["session_id"]
         # Enviar comando para que a app receba a mensagem correta
         definir_comando_encerrar_sessao(session_id)
-        logging.info(
-            "Enviando comando de encerramento para sessão: %s", session_id)
+        logging.info("Enviando comando de encerramento para sessão: %s", session_id)
 
     # Remover as sessões após enviar comandos
     return manager.remove_sessions_by_user(usuario_nome)

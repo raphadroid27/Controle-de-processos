@@ -184,8 +184,7 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widgets_list: Lista de widgets para configurar
     """
     for widget in widgets_list:
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
-                             QSizePolicy.Policy.Fixed)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
 
 def aplicar_estilo_botao(botao, cor: str):
@@ -739,6 +738,7 @@ def obter_estilo_text_browser() -> str:
     }}
     """
 
+
 # pylint: disable=too-many-locals
 
 
@@ -746,10 +746,16 @@ def get_widgets_styles(theme: str = "light") -> str:
     """Retorna todos os estilos CSS combinados para a aplicação."""
 
     tema_normalizado = (theme or "light").lower()
-    check_icon = _get_asset_icon(
-        "check_white.svg") if tema_normalizado == "dark" else _get_asset_icon("check.svg")
-    arrow_icon = _get_asset_icon(
-        "arrow_down_white.svg") if tema_normalizado == "dark" else _get_asset_icon("arrow_down.svg")
+    check_icon = (
+        _get_asset_icon("check_white.svg")
+        if tema_normalizado == "dark"
+        else _get_asset_icon("check.svg")
+    )
+    arrow_icon = (
+        _get_asset_icon("arrow_down_white.svg")
+        if tema_normalizado == "dark"
+        else _get_asset_icon("arrow_down.svg")
+    )
 
     combo = obter_estilo_combo_box(tema_normalizado, arrow_icon)
     dateedit = obter_estilo_date_edit(tema_normalizado, arrow_icon)

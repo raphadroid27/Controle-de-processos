@@ -7,17 +7,12 @@ from typing import Optional
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.data.config import decode_registro_id
-from src.data.helpers import (
-    preparar_lancamento_para_insert,
-    preparar_lancamento_para_update,
-)
+from src.data.helpers import (preparar_lancamento_para_insert,
+                              preparar_lancamento_para_update)
 from src.data.models import Lancamento, RegistroModel
 from src.data.repositories.queries import limpar_caches_consultas
-from src.data.sessions import (
-    ensure_user_database,
-    get_sessionmaker_for_slug,
-    get_user_session,
-)
+from src.data.sessions import (ensure_user_database, get_sessionmaker_for_slug,
+                               get_user_session)
 
 
 def adicionar_lancamento(

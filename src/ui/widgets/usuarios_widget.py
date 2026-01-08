@@ -11,21 +11,10 @@ from datetime import datetime, timezone
 import qtawesome as qta
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import (
-    QDialog,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QInputDialog,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
+                               QInputDialog, QLabel, QLineEdit, QMessageBox,
+                               QPushButton, QTreeWidget, QTreeWidgetItem,
+                               QVBoxLayout, QWidget)
 
 from src.domain import usuario_service
 from src.ui.styles import aplicar_estilo_botao, aplicar_icone_padrao
@@ -81,8 +70,7 @@ class GerenciarUsuariosWidget(QWidget):
             "Selecione um usuário para gerenciar ações disponíveis."
         )
         tab_layout.addWidget(self.tree_usuarios)
-        self.tree_usuarios.currentItemChanged.connect(
-            self.atualizar_estado_botoes)
+        self.tree_usuarios.currentItemChanged.connect(self.atualizar_estado_botoes)
 
         self.criar_botoes_acao()
         tab_layout.addLayout(self.botoes_layout)
@@ -146,8 +134,7 @@ Use as teclas de seta para navegar pelos resultados."""
         self.btn_restaurar.setIcon(qta.icon("fa5s.box-open"))
         self.btn_restaurar.clicked.connect(self.restaurar_usuario)
         aplicar_estilo_botao(self.btn_restaurar, "verde")
-        self.btn_restaurar.setToolTip(
-            "Restaurar usuário arquivado (Ctrl+Shift+T)")
+        self.btn_restaurar.setToolTip("Restaurar usuário arquivado (Ctrl+Shift+T)")
         self.btn_restaurar.setShortcut(QKeySequence("Ctrl+Shift+T"))
 
         self.btn_excluir = QPushButton("Excluir Usuário")
@@ -199,8 +186,7 @@ Use as teclas de seta para navegar pelos resultados."""
                 if isinstance(arquivado_em, datetime):
                     # Garantir conversão correta para local
                     if arquivado_em.tzinfo is None:
-                        arquivado_em = arquivado_em.replace(
-                            tzinfo=timezone.utc)
+                        arquivado_em = arquivado_em.replace(tzinfo=timezone.utc)
                     arquivado_em_local = arquivado_em.astimezone()
                     status = (
                         f"Arquivado em {arquivado_em_local.strftime('%d/%m/%Y %H:%M')}"
@@ -220,8 +206,7 @@ Use as teclas de seta para navegar pelos resultados."""
             self.tree_usuarios.addTopLevelItem(item)
 
         if self.tree_usuarios.topLevelItemCount() > 0:
-            self.tree_usuarios.setCurrentItem(
-                self.tree_usuarios.topLevelItem(0))
+            self.tree_usuarios.setCurrentItem(self.tree_usuarios.topLevelItem(0))
         else:
             self.atualizar_estado_botoes(None, None)
 
@@ -238,13 +223,11 @@ Use as teclas de seta para navegar pelos resultados."""
         if self.btn_resetar_senha is not None:
             self.btn_resetar_senha.setEnabled(possui_usuario and ativo)
         if self.btn_arquivar is not None:
-            self.btn_arquivar.setEnabled(
-                possui_usuario and ativo and not admin)
+            self.btn_arquivar.setEnabled(possui_usuario and ativo and not admin)
         if self.btn_restaurar is not None:
             self.btn_restaurar.setEnabled(possui_usuario and not ativo)
         if self.btn_excluir is not None:
-            self.btn_excluir.setEnabled(
-                possui_usuario and not admin and not ativo)
+            self.btn_excluir.setEnabled(possui_usuario and not admin and not ativo)
 
     def filtrar_usuarios(self):
         """Filtra os usuários baseado no texto de busca."""
@@ -273,8 +256,7 @@ Use as teclas de seta para navegar pelos resultados."""
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(
-                self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if not dados_usuario.get("ativo", False):
@@ -306,14 +288,12 @@ Use as teclas de seta para navegar pelos resultados."""
         """Exclui o usuário selecionado."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(
-                self, "Erro", "Selecione um usuário para excluir.")
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para excluir.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(
-                self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         nome_usuario = dados_usuario["nome"]
@@ -339,14 +319,12 @@ Use as teclas de seta para navegar pelos resultados."""
         """Arquiva o usuário selecionado, mantendo seus dados."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(
-                self, "Erro", "Selecione um usuário para arquivar.")
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para arquivar.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(
-                self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if dados_usuario.get("admin"):
@@ -390,14 +368,12 @@ Use as teclas de seta para navegar pelos resultados."""
         """Restaura um usuário previamente arquivado."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(
-                self, "Erro", "Selecione um usuário para restaurar.")
+            QMessageBox.warning(self, "Erro", "Selecione um usuário para restaurar.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(
-                self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if dados_usuario.get("ativo", False):
@@ -481,8 +457,7 @@ Use as teclas de seta para navegar pelos resultados."""
         )
 
         if "Sucesso" in resultado:
-            QMessageBox.information(
-                self, "Sucesso", "Senha alterada com sucesso!")
+            QMessageBox.information(self, "Sucesso", "Senha alterada com sucesso!")
         else:
             QMessageBox.warning(self, "Erro", resultado)
 

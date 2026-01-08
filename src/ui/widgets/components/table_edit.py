@@ -9,7 +9,8 @@ from typing import Tuple
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
-from src.core.formatters import converter_data_para_banco, normalizar_nome_cliente
+from src.core.formatters import (converter_data_para_banco,
+                                 normalizar_nome_cliente)
 
 __all__ = [
     "LinhaPedidoEdicao",

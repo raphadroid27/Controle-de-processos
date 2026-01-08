@@ -28,16 +28,13 @@ from typing import Any, Iterable, List, Optional, Tuple
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
-from src.core.periodo_faturamento import calcular_periodo_faturamento_atual_datas
+from src.core.periodo_faturamento import \
+    calcular_periodo_faturamento_atual_datas
 from src.data.config import encode_registro_id, slugify_usuario
 from src.data.helpers import format_datetime, parse_iso_date
 from src.data.models import RegistroModel, UsuarioModel
-from src.data.sessions import (
-    get_sessionmaker_for_slug,
-    get_shared_session,
-    get_user_session,
-    iter_user_databases,
-)
+from src.data.sessions import (get_sessionmaker_for_slug, get_shared_session,
+                               get_user_session, iter_user_databases)
 
 
 @dataclass
@@ -104,12 +101,10 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(
-            RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if pedido:
-        condicoes.append(func.upper(
-            RegistroModel.pedido).like(f"{pedido.upper()}%"))
+        condicoes.append(func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%"))
 
     if data_inicio and data_fim:
         data_inicio_parsed = parse_iso_date(data_inicio)
@@ -330,8 +325,7 @@ def buscar_estatisticas(usuario: Optional[str] = None):
         Resultados são cacheados. Use limpar_caches_consultas() após inserções.
     """
 
-    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(
-        usuario)
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(usuario)
     return {
         "total_pedidos": total_pedidos,
         "total_itens": total_itens,
@@ -395,14 +389,12 @@ def _buscar_valores_unicos(
     if usuario:
         with closing(get_user_session(usuario)) as session:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,)
-                           in session.execute(stmt) if value)
+            valores.update(value for (value,) in session.execute(stmt) if value)
     else:
         for slug, _ in iter_user_databases():
             with closing(get_sessionmaker_for_slug(slug)()) as session:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,)
-                               in session.execute(stmt) if value)
+                valores.update(value for (value,) in session.execute(stmt) if value)
 
     return sorted(valores)
 
@@ -590,12 +582,12 @@ def _gerar_periodos_faturamento_por_ano(
             # O período pertence ao ano se:
             # 1. Começa no ano anterior em Dezembro (Periodo 1)
             # 2. Começa neste ano, mas NÃO em Dezembro (Periodos 2-12)
-            eh_periodo_ano = (ano_inicio == ano_int - 1 and mes_inicio == 12) or \
-                             (ano_inicio == ano_int and mes_inicio != 12)
+            eh_periodo_ano = (ano_inicio == ano_int - 1 and mes_inicio == 12) or (
+                ano_inicio == ano_int and mes_inicio != 12
+            )
 
             if eh_periodo_ano:
-                display = _formatar_periodo_exibicao(
-                    inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
                 if display:
                     month = int(inicio[5:7])
                     numero = 1 if month == 12 else month + 1
@@ -628,8 +620,7 @@ def _buscar_periodos_faturamento_por_ano_cache(
 def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
     """Produz os períodos de faturamento (26/25) de um ano específico."""
 
-    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
-        ano, usuario)
+    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(ano, usuario)
     return [_descongelar_dict(periodo) for periodo in periodos_congelados]
 
 
@@ -721,7 +712,8 @@ def limpar_caches_consultas() -> None:
     try:
         # Import adiado para evitar ciclos entre consultas e métricas de dashboard.
         # pylint: disable=import-outside-toplevel, cyclic-import
-        from src.domain.dashboard_service import limpar_cache_metricas_dashboard
+        from src.domain.dashboard_service import \
+            limpar_cache_metricas_dashboard
     except ImportError:
         return
     limpar_cache_metricas_dashboard()

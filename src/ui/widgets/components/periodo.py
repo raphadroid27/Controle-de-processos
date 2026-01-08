@@ -137,7 +137,8 @@ class PeriodoFiltroController:
         # Isso garante que ao iniciar o app (onde o padrão é 'Todos os anos'),
         # ele selecione o ano corrente em vez de ficar no genérico.
         usar_fallback_prioritario = (
-            selecionado == "Todos os anos" and fallback is not None)
+            selecionado == "Todos os anos" and fallback is not None
+        )
 
         if usar_fallback_prioritario:
             index_fallback = self.combo_ano.findText(fallback)

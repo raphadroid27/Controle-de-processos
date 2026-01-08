@@ -7,21 +7,11 @@ from typing import Iterable, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QDesktopServices
-from PySide6.QtWidgets import (
-    QDialog,
-    QListWidget,
-    QListWidgetItem,
-    QSplitter,
-    QTextBrowser,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QDialog, QListWidget, QListWidgetItem,
+                               QSplitter, QTextBrowser, QVBoxLayout, QWidget)
 
-from src.ui.resources.help_loader import (
-    get_help_entry,
-    iter_help_entries,
-    register_manual_launcher,
-)
+from src.ui.resources.help_loader import (get_help_entry, iter_help_entries,
+                                          register_manual_launcher)
 
 
 @dataclass(frozen=True)

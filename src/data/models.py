@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, Index, Integer, String, func
+from sqlalchemy import (Boolean, Date, DateTime, Float, Index, Integer, String,
+                        func)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -33,8 +34,7 @@ class UsuarioModel(SharedBase):
     excluido: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, server_default="0"
     )
-    arquivado_em: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True)
+    arquivado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.datetime("now"), nullable=False
     )
@@ -52,16 +52,13 @@ class RegistroModel(UserBase):
     __tablename__ = "registro"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    usuario: Mapped[str] = mapped_column(
-        String(255), nullable=False, index=True)
-    cliente: Mapped[str] = mapped_column(
-        String(255), nullable=False, index=True)
+    usuario: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    cliente: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     pedido: Mapped[str] = mapped_column(
         "pedido", String(255), nullable=False, index=True
     )
     qtde_itens: Mapped[int] = mapped_column(Integer, nullable=False)
-    data_entrada: Mapped[date] = mapped_column(
-        Date, nullable=False, index=True)
+    data_entrada: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     data_processo: Mapped[Optional[date]] = mapped_column(Date, index=True)
     tempo_corte: Mapped[Optional[str]] = mapped_column(String(16))
     observacoes: Mapped[Optional[str]] = mapped_column(String(500))
@@ -74,11 +71,9 @@ class RegistroModel(UserBase):
         # Índices compostos para filtros comuns
         Index("idx_registro_cliente_upper", func.upper(cliente)),
         Index("idx_registro_pedido_upper", func.upper(pedido)),
-        Index("idx_registro_data_processo_entrada",
-              data_processo, data_entrada),
+        Index("idx_registro_data_processo_entrada", data_processo, data_entrada),
         Index("idx_registro_usuario_cliente", usuario, cliente),
-        Index("idx_registro_usuario_data", usuario,
-              data_processo, data_entrada),
+        Index("idx_registro_usuario_data", usuario, data_processo, data_entrada),
         # Índice para ordenação por data_lancamento
         Index("idx_registro_data_lancamento", data_lancamento),
     )

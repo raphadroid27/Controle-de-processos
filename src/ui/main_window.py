@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 
 import qtawesome as qta
-from PySide6.QtCore import QFileSystemWatcher, QProcess, QSignalBlocker, QTimer, Signal
+from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
+                            QTimer, Signal)
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
 
@@ -73,8 +74,7 @@ class MainWindow(ThemedMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(
-            self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -92,13 +92,11 @@ class MainWindow(ThemedMainWindow):
         comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
-        self.command_watcher.fileChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.fileChanged.connect(self.verificar_comando_sistema)
 
         comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
-        self.command_watcher.directoryChanged.connect(
-            self.verificar_comando_sistema)
+        self.command_watcher.directoryChanged.connect(self.verificar_comando_sistema)
 
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
@@ -125,8 +123,7 @@ class MainWindow(ThemedMainWindow):
                     show_timed_message_box(
                         self,
                         "Sessão Encerrada",
-                        "Sua sessão foi encerrada.\n"
-                        "A aplicação será fechada.",
+                        "Sua sessão foi encerrada.\n" "A aplicação será fechada.",
                         5000,
                     )
                     # Agendar fechamento da aplicação
@@ -188,8 +185,7 @@ class MainWindow(ThemedMainWindow):
         # Desconectar listeners de tema
         try:
             self._theme_manager.unregister_listener(self._on_tema_atualizado)
-            self._theme_manager.unregister_color_listener(
-                self._on_cor_tema_atualizada)
+            self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
             self._theme_manager.unregister_actions()
             self._theme_manager.unregister_color_actions()
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -204,7 +200,7 @@ class MainWindow(ThemedMainWindow):
 
         event.accept()
 
-   # pylint: disable=too-many-statements
+    # pylint: disable=too-many-statements
 
     def criar_menu(self):
         """Cria os menus (Arquivo/Admin)."""
@@ -237,8 +233,7 @@ class MainWindow(ThemedMainWindow):
             usuarios_action.setIcon(qta.icon("fa5s.users-cog"))
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip(
-                "Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Ferramenta Administrativa (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
@@ -254,8 +249,7 @@ class MainWindow(ThemedMainWindow):
             atualizar_action.setIcon(qta.icon("fa5s.sync"))
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip(
-                "Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 
@@ -290,8 +284,7 @@ class MainWindow(ThemedMainWindow):
                 if admin_exe.exists():
                     # Executar o executável standalone
                     if not QProcess.startDetached(str(admin_exe), []):
-                        raise RuntimeError(
-                            f"Falha ao iniciar {admin_exe.name}.")
+                        raise RuntimeError(f"Falha ao iniciar {admin_exe.name}.")
                 else:
                     raise FileNotFoundError(
                         f"Executável '{admin_exe.name}' não encontrado em {exe_dir}"
@@ -299,8 +292,7 @@ class MainWindow(ThemedMainWindow):
             else:
                 # Script Python: executar como módulo
                 if not QProcess.startDetached(sys.executable, ["-m", "src.admin_app"]):
-                    raise RuntimeError(
-                        "Falha ao iniciar processo administrativo.")
+                    raise RuntimeError("Falha ao iniciar processo administrativo.")
         except (OSError, RuntimeError, FileNotFoundError) as exc:
             QMessageBox.warning(
                 self,
@@ -425,7 +417,8 @@ class MainWindow(ThemedMainWindow):
             self._theme_manager.register_color_actions(self._color_actions)
         except Exception:  # pylint: disable=broad-exception-caught
             self.logger.debug(
-                "Não foi possível registrar actions no theme manager", exc_info=True)
+                "Não foi possível registrar actions no theme manager", exc_info=True
+            )
 
     def _on_tema_selecionado(self) -> None:
         action = self.sender()

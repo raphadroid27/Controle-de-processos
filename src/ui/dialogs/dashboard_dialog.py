@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
 import qtawesome as qta
+
 try:  # pragma: no cover - fallback executado apenas sem pandas instalado
     import pandas as pd  # type: ignore[assignment]
 except ImportError:  # pragma: no cover
@@ -18,24 +19,17 @@ else:
     pass
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QTableWidget,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
+                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
+                               QWidget)
 
 from src.core.formatters import segundos_para_horas
 from src.core.periodo_faturamento import calcular_periodo_faturamento_para_data
 from src.domain.dashboard_service import obter_metricas_dashboard
 from src.ui.dialogs.dashboard_plotting import DashboardPlotting
 from src.ui.dialogs.dashboard_tables import DashboardTableUpdates
-from src.ui.styles import METRIC_MAP, aplicar_icone_padrao, configurar_tabela_padrao
+from src.ui.styles import (METRIC_MAP, aplicar_icone_padrao,
+                           configurar_tabela_padrao)
 from src.ui.widgets.components.matplotlib_canvas import MatplotlibCanvas
 
 
@@ -150,8 +144,7 @@ class DashboardDialog(QDialog):
         )
         # Alterado para usar o mês de faturamento em vez do mês calendário
         self.df_registros["mes"] = self.df_registros["data"].apply(
-            lambda d: int(calcular_periodo_faturamento_para_data(
-                d.to_pydatetime())[0])
+            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
         )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
@@ -180,8 +173,7 @@ class DashboardDialog(QDialog):
 
     def _criar_abas(self) -> None:
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._criar_tab_resumo(),
-                         qta.icon("fa5s.table"), "Resumo")
+        self.tabs.addTab(self._criar_tab_resumo(), qta.icon("fa5s.table"), "Resumo")
         if not self.df_registros.empty:
             self._criar_tab_graficos()
 
@@ -361,5 +353,4 @@ class DashboardDialog(QDialog):
         )
         layout.addWidget(self.canvas)
 
-        self.tabs.addTab(self.tab_graficos, qta.icon(
-            "fa5s.chart-bar"), "Gráficos")
+        self.tabs.addTab(self.tab_graficos, qta.icon("fa5s.chart-bar"), "Gráficos")

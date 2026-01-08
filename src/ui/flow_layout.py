@@ -7,7 +7,9 @@ from PySide6.QtWidgets import QLayout
 class FlowLayout(QLayout):
     """Layout que organiza itens em fluxo, quebrando para a próxima linha se o espaço acabar."""
 
-    def __init__(self, parent=None, margin: int = 0, h_spacing: int = 10, v_spacing: int = 10):
+    def __init__(
+        self, parent=None, margin: int = 0, h_spacing: int = 10, v_spacing: int = 10
+    ):
         """
         Inicializa o FlowLayout.
 
@@ -84,8 +86,9 @@ class FlowLayout(QLayout):
             size = size.expandedTo(item.minimumSize())
 
         margins = self.contentsMargins()
-        size += QSize(margins.left() + margins.right(),
-                      margins.top() + margins.bottom())
+        size += QSize(
+            margins.left() + margins.right(), margins.top() + margins.bottom()
+        )
         return size
 
     def _do_layout(self, rect, test_only):

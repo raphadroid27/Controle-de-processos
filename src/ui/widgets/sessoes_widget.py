@@ -2,17 +2,9 @@
 
 import qtawesome as qta
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import (
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QDialog, QHBoxLayout, QLabel, QMessageBox,
+                               QPushButton, QTreeWidget, QTreeWidgetItem,
+                               QVBoxLayout, QWidget)
 
 from src.domain import session_service
 from src.infrastructure.ipc import manager as ipc_manager
@@ -60,15 +52,12 @@ class GerenciarSessoesWidget(QWidget):
 
         self.btn_atualizar_sessoes.clicked.connect(self.carregar_sessoes)
         aplicar_estilo_botao(self.btn_atualizar_sessoes, "azul")
-        self.btn_atualizar_sessoes.setToolTip(
-            "Atualizar a lista de sessões (F5)")
+        self.btn_atualizar_sessoes.setToolTip("Atualizar a lista de sessões (F5)")
         self.btn_atualizar_sessoes.setShortcut(QKeySequence("F5"))
 
-        self.btn_encerrar_sessao.clicked.connect(
-            self.encerrar_sessao_selecionada)
+        self.btn_encerrar_sessao.clicked.connect(self.encerrar_sessao_selecionada)
         aplicar_estilo_botao(self.btn_encerrar_sessao, "vermelho")
-        self.btn_encerrar_sessao.setToolTip(
-            "Encerrar a sessão selecionada (Del)")
+        self.btn_encerrar_sessao.setToolTip("Encerrar a sessão selecionada (Del)")
         self.btn_encerrar_sessao.setShortcut(QKeySequence("Del"))
 
         self.btn_limpar_inativas.clicked.connect(self.limpar_sessoes_inativas)

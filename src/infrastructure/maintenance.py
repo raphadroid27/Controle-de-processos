@@ -11,11 +11,8 @@ from pathlib import Path
 from sqlalchemy import text
 
 from src.data.config import SHARED_DB_PATH
-from src.data.sessions import (
-    get_sessionmaker_for_slug,
-    get_shared_engine,
-    iter_user_databases,
-)
+from src.data.sessions import (get_sessionmaker_for_slug, get_shared_engine,
+                               iter_user_databases)
 
 logger = logging.getLogger(__name__)
 

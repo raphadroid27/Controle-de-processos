@@ -8,7 +8,8 @@ from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout,
+                               QWidget)
 
 from src import __version__  # pylint: disable=import-error
 
