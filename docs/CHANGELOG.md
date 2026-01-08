@@ -2,6 +2,15 @@
 
 Histórico de mudanças do aplicativo  Controle de Pedidos
 
+## 1.3.0 (08/01/2026)
+
+- Modernização da interface com ícones (FontAwesome) em menus, botões e diálogos
+- Flexibilização da digitação de datas no formulário e na tabela (permite edição livre com validação apenas na confirmação)
+- Adição de novas métricas de tempo: "Média tempo corte/dia" e "Tempo corte total"
+- Ajuste na lógica de cálculo de médias para considerar apenas dias com produção
+- Melhorias visuais e de usabilidade em diálogos de login, novos usuários e dashboard
+- Refatoração extensa de código para melhor consistência, formatação e tratamento de erros
+
 ## 1.2.1 (12/11/2025)
 
 - Melhoria na gestão de sessões e usuários, com limpeza de dados excluídos e ajustes de mensagens de feedback
