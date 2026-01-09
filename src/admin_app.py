@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 from typing import Optional
 
-import qtawesome as qta
 from PySide6.QtCore import QFileSystemWatcher, QTimer
 from PySide6.QtWidgets import (QApplication, QDialog, QMessageBox, QTabWidget,
                                QVBoxLayout)
@@ -22,6 +21,7 @@ from src.infrastructure.ipc.config import COMMAND_DIR
 from src.infrastructure.ipc.manager import ensure_ipc_dirs_exist
 from src.infrastructure.logging.config import configurar_logging
 from src.ui.dialogs.login_dialog import LoginDialog
+from src.ui.icons import set_tab_icon, update_icons
 from src.ui.message_utils import show_timed_message_box
 from src.ui.styles import aplicar_icone_padrao
 from src.ui.theme_manager import ThemeManager
@@ -53,12 +53,20 @@ class AdminToolsDialog(ThemedDialog):
         self.usuarios_widget = GerenciarUsuariosWidget(self)
         self.sessoes_widget = GerenciarSessoesWidget(self)
 
-        self.tabs.addTab(self.usuarios_widget, qta.icon("fa5s.users"), "Usuários")
-        self.tabs.addTab(self.sessoes_widget, qta.icon("fa5s.desktop"), "Sessões")
+        self.tabs.addTab(self.usuarios_widget, "Usuários")
+        set_tab_icon(self.tabs, 0, "fa5s.users")
+
+        self.tabs.addTab(self.sessoes_widget, "Sessões")
+        set_tab_icon(self.tabs, 1, "fa5s.desktop")
+
         self.tabs.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(self.tabs)
         self.setLayout(layout)
+
+        # Registrar listener de tema
+        ThemeManager.instance().register_listener(self._on_tema_atualizado)
+        ThemeManager.instance().register_color_listener(self._on_cor_tema_atualizada)
 
         # Timer para heartbeat da sessão administrativa
         self.heartbeat_timer = QTimer(self)
@@ -74,6 +82,20 @@ class AdminToolsDialog(ThemedDialog):
         """Atualiza a aba de sessões sempre que for exibida."""
         if self.tabs.widget(index) is self.sessoes_widget:
             self.sessoes_widget.carregar_sessoes()
+
+    def _on_tema_atualizado(self, _mode: str) -> None:
+        """Callback para atualização de tema."""
+        update_icons(self)
+
+    def _on_cor_tema_atualizada(self, _color: str) -> None:
+        """Callback para atualização de cor de destaque."""
+        update_icons(self)
+
+    def closeEvent(self, event) -> None:  # pylint: disable=invalid-name
+        """Remove listeners ao fechar."""
+        ThemeManager.instance().unregister_listener(self._on_tema_atualizado)
+        ThemeManager.instance().unregister_color_listener(self._on_cor_tema_atualizada)
+        super().closeEvent(event)
 
     def _atualizar_heartbeat(self) -> None:
         """Atualiza o heartbeat da sessão administrativa."""
@@ -140,7 +162,8 @@ def _executar_login_admin() -> Optional[str]:
                 session_service.definir_comando_encerrar_sessao(
                     info_sessao["session_id"]
                 )
-                session_service.remover_sessao_por_id(info_sessao["session_id"])
+                session_service.remover_sessao_por_id(
+                    info_sessao["session_id"])
             else:
                 return None
 
@@ -270,7 +293,7 @@ def _processar_comando_shutdown(app: QApplication, janela: QDialog) -> None:
         show_timed_message_box(
             janela,
             "Sessão Encerrada",
-            "Sua sessão foi encerrada.\n" "A aplicação será fechada.",
+            "Sua sessão foi encerrada.\nA aplicação será fechada.",
             timeout_ms=3000,
         )
         _executar_fechamento()
@@ -292,8 +315,10 @@ def _configurar_monitoramento_shutdown(app: QApplication, janela: QDialog) -> No
     )
     watcher.addPath(str(session_shutdown_path))
 
-    watcher.directoryChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
-    watcher.fileChanged.connect(lambda _: _processar_comando_shutdown(app, janela))
+    watcher.directoryChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
+    watcher.fileChanged.connect(
+        lambda _: _processar_comando_shutdown(app, janela))
 
     _ADMIN_WATCHERS.append(watcher)
 
@@ -329,7 +354,8 @@ def _tratar_instancia_ativa(app: QApplication, logger: logging.Logger) -> bool:
     )
 
     if resposta != QMessageBox.StandardButton.Yes:
-        logger.info("Usuário optou por não encerrar a instância administrativa ativa")
+        logger.info(
+            "Usuário optou por não encerrar a instância administrativa ativa")
         return False
 
     if not _solicitar_encerramento_admin_existente(app):
@@ -382,7 +408,8 @@ def main() -> int:
 
     if not _criar_admin_lock(usuario_admin):
         session_service.remover_sessao()
-        logger.error("Não foi possível criar admin.lock para '%s'", usuario_admin)
+        logger.error(
+            "Não foi possível criar admin.lock para '%s'", usuario_admin)
         return 1
 
     janela = AdminToolsDialog(usuario_admin)
@@ -393,7 +420,8 @@ def main() -> int:
     janela.show()
 
     try:
-        logger.info("Ferramenta administrativa iniciada para '%s'", usuario_admin)
+        logger.info("Ferramenta administrativa iniciada para '%s'",
+                    usuario_admin)
         return app.exec()
     finally:
         _remover_admin_lock()

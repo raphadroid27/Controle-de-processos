@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
-import qtawesome as qta
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
+                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
+                               QWidget)
 
 try:  # pragma: no cover - fallback executado apenas sem pandas instalado
     import pandas as pd  # type: ignore[assignment]
@@ -18,14 +21,11 @@ except ImportError:  # pragma: no cover
 else:
     pass
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
-                               QWidget)
-
 from src.core.formatters import segundos_para_horas
 from src.core.periodo_faturamento import calcular_periodo_faturamento_para_data
 from src.domain.dashboard_service import obter_metricas_dashboard
+from src.ui.icons import set_tab_icon, update_icons
+from src.ui.theme_manager import ThemeManager
 from src.ui.dialogs.dashboard_plotting import DashboardPlotting
 from src.ui.dialogs.dashboard_tables import DashboardTableUpdates
 from src.ui.styles import (METRIC_MAP, aplicar_icone_padrao,
@@ -97,6 +97,9 @@ class DashboardDialog(QDialog):
         self._criar_abas()
         self._atualizar_resumos()
 
+        ThemeManager.instance().register_listener(self._on_tema_atualizado)
+        ThemeManager.instance().register_color_listener(self._on_cor_tema_atualizada)
+
     def _configurar_janela(self) -> None:
         self.setWindowTitle("Dashboard Administrativo")
         self.resize(1200, 700)
@@ -144,7 +147,8 @@ class DashboardDialog(QDialog):
         )
         # Alterado para usar o mês de faturamento em vez do mês calendário
         self.df_registros["mes"] = self.df_registros["data"].apply(
-            lambda d: int(calcular_periodo_faturamento_para_data(d.to_pydatetime())[0])
+            lambda d: int(calcular_periodo_faturamento_para_data(
+                d.to_pydatetime())[0])
         )
         self.df_registros["qtde_itens"] = pd.to_numeric(
             self.df_registros["qtde_itens"], errors="coerce"
@@ -173,7 +177,8 @@ class DashboardDialog(QDialog):
 
     def _criar_abas(self) -> None:
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._criar_tab_resumo(), qta.icon("fa5s.table"), "Resumo")
+        idx = self.tabs.addTab(self._criar_tab_resumo(), "Resumo")
+        set_tab_icon(self.tabs, idx, "fa5s.table")
         if not self.df_registros.empty:
             self._criar_tab_graficos()
 
@@ -188,6 +193,18 @@ class DashboardDialog(QDialog):
         DashboardTableUpdates.atualizar_tabela_horas(self)
         if not self.df_registros.empty:
             DashboardPlotting.atualizar_graficos(self)
+
+    def _on_tema_atualizado(self, _mode: str) -> None:
+        update_icons(self)
+
+    def _on_cor_tema_atualizada(self, _color: str) -> None:
+        update_icons(self)
+
+    def closeEvent(self, event) -> None:  # pylint: disable=invalid-name
+        """Remove listeners ao fechar o diálogo."""
+        ThemeManager.instance().unregister_listener(self._on_tema_atualizado)
+        ThemeManager.instance().unregister_color_listener(self._on_cor_tema_atualizada)
+        super().closeEvent(event)
 
     # ------------------------------------------------------------------
     # Construção das abas
@@ -353,4 +370,5 @@ class DashboardDialog(QDialog):
         )
         layout.addWidget(self.canvas)
 
-        self.tabs.addTab(self.tab_graficos, qta.icon("fa5s.chart-bar"), "Gráficos")
+        idx = self.tabs.addTab(self.tab_graficos, "Gráficos")
+        set_tab_icon(self.tabs, idx, "fa5s.chart-bar")

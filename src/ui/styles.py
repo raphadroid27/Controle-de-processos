@@ -81,7 +81,7 @@ BUTTON_COLORS = {
         "normal": "#ffd93d",
         "hover": "#ffcc02",
         "pressed": "#e6b800",
-        "text": "#333",
+        "text": "black",
     },
     "vermelho": {
         "normal": "#f44336",
@@ -184,7 +184,8 @@ def configurar_widgets_entrada_uniformes(widgets_list):
         widgets_list: Lista de widgets para configurar
     """
     for widget in widgets_list:
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                             QSizePolicy.Policy.Fixed)
 
 
 def aplicar_estilo_botao(botao, cor: str):
@@ -203,6 +204,9 @@ def aplicar_estilo_botao(botao, cor: str):
 
     # Aplicar estilo de cor
     botao.setStyleSheet(obter_estilo_botao(cor))
+
+    # Armazenar a cor do estilo na propriedade para uso do gerenciador de ícones
+    botao.setProperty("qta_style", cor)
 
 
 def obter_estilo_table_widget():

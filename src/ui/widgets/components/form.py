@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
-import qtawesome as qta
 from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QPushButton
 
+from src.ui.icons import set_icon
 from src.ui.styles import (aplicar_estilo_botao,
                            configurar_widgets_entrada_uniformes,
                            obter_data_atual_utc)
@@ -67,7 +67,8 @@ def criar_formulario(
     entry_data_entrada = NavigableDateEdit(frame)
     entry_data_entrada.setDate(obter_data_atual_utc())
     entry_data_entrada.setCalendarPopup(True)
-    entry_data_entrada.setToolTip("Data de entrada do pedido. Não pode ser futura.")
+    entry_data_entrada.setToolTip(
+        "Data de entrada do pedido. Não pode ser futura.")
 
     entry_data_processo = NavigableDateEdit(frame)
     entry_data_processo.setCalendarPopup(True)
@@ -127,7 +128,7 @@ def criar_formulario(
         campos_layout.addLayout(coluna, peso_col)
 
     btn_adicionar = QPushButton("Adicionar", frame)
-    btn_adicionar.setIcon(qta.icon("fa5s.plus"))
+    set_icon(btn_adicionar, "fa5s.plus")
     btn_adicionar.setToolTip("Adicionar novo pedido (Atalho: Enter)")
     aplicar_estilo_botao(btn_adicionar, "verde")
     btn_adicionar.clicked.connect(on_submit)

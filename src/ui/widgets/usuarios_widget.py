@@ -8,7 +8,6 @@ usuários e alteração de senhas próprias.
 
 from datetime import datetime, timezone
 
-import qtawesome as qta
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QHBoxLayout,
                                QVBoxLayout, QWidget)
 
 from src.domain import usuario_service
+from src.ui.icons import set_icon
 from src.ui.styles import aplicar_estilo_botao, aplicar_icone_padrao
 
 
@@ -70,7 +70,8 @@ class GerenciarUsuariosWidget(QWidget):
             "Selecione um usuário para gerenciar ações disponíveis."
         )
         tab_layout.addWidget(self.tree_usuarios)
-        self.tree_usuarios.currentItemChanged.connect(self.atualizar_estado_botoes)
+        self.tree_usuarios.currentItemChanged.connect(
+            self.atualizar_estado_botoes)
 
         self.criar_botoes_acao()
         tab_layout.addLayout(self.botoes_layout)
@@ -97,13 +98,10 @@ Use as teclas de seta para navegar pelos resultados."""
         busca_layout.addWidget(self.entry_busca, 0, 1)
 
         btn_limpar = QPushButton("Limpar")
-        btn_limpar.setIcon(qta.icon("fa5s.eraser"))
-        btn_limpar.clicked.connect(self.limpar_busca)
-        btn_limpar.setToolTip(
-            "Limpa o campo de busca e exibe novamente todos os usuários."
-        )
         # Aplicar estilo cinza padrão
         aplicar_estilo_botao(btn_limpar, "cinza")
+        set_icon(btn_limpar, "fa5s.eraser")
+        btn_limpar.clicked.connect(self.limpar_busca)
         busca_layout.addWidget(btn_limpar, 0, 2)
 
         self.frame_busca.setLayout(busca_layout)
@@ -113,43 +111,44 @@ Use as teclas de seta para navegar pelos resultados."""
         self.botoes_layout = QHBoxLayout()
 
         self.btn_resetar_senha = QPushButton("Resetar Senha")
-        self.btn_resetar_senha.setIcon(qta.icon("fa5s.unlock-alt"))
         self.btn_resetar_senha.clicked.connect(self.resetar_senha)
-        aplicar_estilo_botao(self.btn_resetar_senha, "laranja")
+        aplicar_estilo_botao(self.btn_resetar_senha, "amarelo")
+        set_icon(self.btn_resetar_senha, "fa5s.unlock-alt")
         self.btn_resetar_senha.setToolTip(
             "Resetar a senha do usuário selecionado (Ctrl+Shift+R)"
         )
         self.btn_resetar_senha.setShortcut(QKeySequence("Ctrl+Shift+R"))
 
         self.btn_arquivar = QPushButton("Arquivar")
-        self.btn_arquivar.setIcon(qta.icon("fa5s.archive"))
         self.btn_arquivar.clicked.connect(self.arquivar_usuario)
         aplicar_estilo_botao(self.btn_arquivar, "roxo")
+        set_icon(self.btn_arquivar, "fa5s.archive")
         self.btn_arquivar.setToolTip(
             "Arquivar usuário e revogar acesso imediato (Ctrl+Shift+A)"
         )
         self.btn_arquivar.setShortcut(QKeySequence("Ctrl+Shift+A"))
 
         self.btn_restaurar = QPushButton("Restaurar")
-        self.btn_restaurar.setIcon(qta.icon("fa5s.box-open"))
         self.btn_restaurar.clicked.connect(self.restaurar_usuario)
         aplicar_estilo_botao(self.btn_restaurar, "verde")
-        self.btn_restaurar.setToolTip("Restaurar usuário arquivado (Ctrl+Shift+T)")
+        set_icon(self.btn_restaurar, "fa5s.box-open")
+        self.btn_restaurar.setToolTip(
+            "Restaurar usuário arquivado (Ctrl+Shift+T)")
         self.btn_restaurar.setShortcut(QKeySequence("Ctrl+Shift+T"))
 
         self.btn_excluir = QPushButton("Excluir Usuário")
-        self.btn_excluir.setIcon(qta.icon("fa5s.trash-alt"))
         self.btn_excluir.clicked.connect(self.excluir_usuario)
         aplicar_estilo_botao(self.btn_excluir, "vermelho")
+        set_icon(self.btn_excluir, "fa5s.trash-alt")
         self.btn_excluir.setToolTip(
             "Excluir definitivamente um usuário arquivado (Ctrl+Shift+Del)"
         )
         self.btn_excluir.setShortcut(QKeySequence("Ctrl+Shift+Del"))
 
         self.btn_alterar_senha = QPushButton("Alt. Minha Senha")
-        self.btn_alterar_senha.setIcon(qta.icon("fa5s.key"))
         self.btn_alterar_senha.clicked.connect(self.alterar_senha)
         aplicar_estilo_botao(self.btn_alterar_senha, "azul")
+        set_icon(self.btn_alterar_senha, "fa5s.key")
         # Ajustar fonte especificamente para este botão
         current_style = self.btn_alterar_senha.styleSheet()
         self.btn_alterar_senha.setStyleSheet(
@@ -186,7 +185,8 @@ Use as teclas de seta para navegar pelos resultados."""
                 if isinstance(arquivado_em, datetime):
                     # Garantir conversão correta para local
                     if arquivado_em.tzinfo is None:
-                        arquivado_em = arquivado_em.replace(tzinfo=timezone.utc)
+                        arquivado_em = arquivado_em.replace(
+                            tzinfo=timezone.utc)
                     arquivado_em_local = arquivado_em.astimezone()
                     status = (
                         f"Arquivado em {arquivado_em_local.strftime('%d/%m/%Y %H:%M')}"
@@ -206,7 +206,8 @@ Use as teclas de seta para navegar pelos resultados."""
             self.tree_usuarios.addTopLevelItem(item)
 
         if self.tree_usuarios.topLevelItemCount() > 0:
-            self.tree_usuarios.setCurrentItem(self.tree_usuarios.topLevelItem(0))
+            self.tree_usuarios.setCurrentItem(
+                self.tree_usuarios.topLevelItem(0))
         else:
             self.atualizar_estado_botoes(None, None)
 
@@ -223,11 +224,13 @@ Use as teclas de seta para navegar pelos resultados."""
         if self.btn_resetar_senha is not None:
             self.btn_resetar_senha.setEnabled(possui_usuario and ativo)
         if self.btn_arquivar is not None:
-            self.btn_arquivar.setEnabled(possui_usuario and ativo and not admin)
+            self.btn_arquivar.setEnabled(
+                possui_usuario and ativo and not admin)
         if self.btn_restaurar is not None:
             self.btn_restaurar.setEnabled(possui_usuario and not ativo)
         if self.btn_excluir is not None:
-            self.btn_excluir.setEnabled(possui_usuario and not admin and not ativo)
+            self.btn_excluir.setEnabled(
+                possui_usuario and not admin and not ativo)
 
     def filtrar_usuarios(self):
         """Filtra os usuários baseado no texto de busca."""
@@ -256,7 +259,8 @@ Use as teclas de seta para navegar pelos resultados."""
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(
+                self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if not dados_usuario.get("ativo", False):
@@ -288,12 +292,14 @@ Use as teclas de seta para navegar pelos resultados."""
         """Exclui o usuário selecionado."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(self, "Erro", "Selecione um usuário para excluir.")
+            QMessageBox.warning(
+                self, "Erro", "Selecione um usuário para excluir.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(
+                self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         nome_usuario = dados_usuario["nome"]
@@ -319,12 +325,14 @@ Use as teclas de seta para navegar pelos resultados."""
         """Arquiva o usuário selecionado, mantendo seus dados."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(self, "Erro", "Selecione um usuário para arquivar.")
+            QMessageBox.warning(
+                self, "Erro", "Selecione um usuário para arquivar.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(
+                self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if dados_usuario.get("admin"):
@@ -368,12 +376,14 @@ Use as teclas de seta para navegar pelos resultados."""
         """Restaura um usuário previamente arquivado."""
         item_selecionado = self.tree_usuarios.currentItem()
         if not item_selecionado:
-            QMessageBox.warning(self, "Erro", "Selecione um usuário para restaurar.")
+            QMessageBox.warning(
+                self, "Erro", "Selecione um usuário para restaurar.")
             return
 
         dados_usuario = item_selecionado.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(dados_usuario, dict):
-            QMessageBox.warning(self, "Erro", "Não foi possível identificar o usuário.")
+            QMessageBox.warning(
+                self, "Erro", "Não foi possível identificar o usuário.")
             return
 
         if dados_usuario.get("ativo", False):
@@ -457,7 +467,8 @@ Use as teclas de seta para navegar pelos resultados."""
         )
 
         if "Sucesso" in resultado:
-            QMessageBox.information(self, "Sucesso", "Senha alterada com sucesso!")
+            QMessageBox.information(
+                self, "Sucesso", "Senha alterada com sucesso!")
         else:
             QMessageBox.warning(self, "Erro", resultado)
 

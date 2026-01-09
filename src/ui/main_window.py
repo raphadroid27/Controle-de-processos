@@ -4,7 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-import qtawesome as qta
 from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
                             QTimer, Signal)
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
@@ -14,6 +13,7 @@ from src.domain import session_service
 from src.ui.dialogs.dashboard_dialog import DashboardDialog
 from src.ui.dialogs.manual_dialog import mostrar_manual
 from src.ui.dialogs.sobre_dialog import main as mostrar_sobre
+from src.ui.icons import set_icon, update_icons
 from src.ui.message_utils import show_timed_message_box
 from src.ui.styles import aplicar_icone_padrao
 from src.ui.theme_manager import ThemeManager
@@ -74,7 +74,8 @@ class MainWindow(ThemedMainWindow):
 
         self.criar_menu()
         self._theme_manager.register_listener(self._on_tema_atualizado)
-        self._theme_manager.register_color_listener(self._on_cor_tema_atualizada)
+        self._theme_manager.register_color_listener(
+            self._on_cor_tema_atualizada)
 
         status_text = f"Logado como: {usuario_logado}"
         if is_admin:
@@ -92,11 +93,13 @@ class MainWindow(ThemedMainWindow):
         comando_path = session_service.get_comando_path()
         # Sempre adicionar o caminho, mesmo que o arquivo não exista ainda
         self.command_watcher.addPath(str(comando_path))
-        self.command_watcher.fileChanged.connect(self.verificar_comando_sistema)
+        self.command_watcher.fileChanged.connect(
+            self.verificar_comando_sistema)
 
         comando_dir = session_service.get_comando_dir()
         self.command_watcher.addPath(str(comando_dir))
-        self.command_watcher.directoryChanged.connect(self.verificar_comando_sistema)
+        self.command_watcher.directoryChanged.connect(
+            self.verificar_comando_sistema)
 
         # Timer de backup para verificação periódica (fallback)
         self.command_timer = QTimer()
@@ -123,7 +126,7 @@ class MainWindow(ThemedMainWindow):
                     show_timed_message_box(
                         self,
                         "Sessão Encerrada",
-                        "Sua sessão foi encerrada.\n" "A aplicação será fechada.",
+                        "Sua sessão foi encerrada.\nA aplicação será fechada.",
                         5000,
                     )
                     # Agendar fechamento da aplicação
@@ -185,7 +188,8 @@ class MainWindow(ThemedMainWindow):
         # Desconectar listeners de tema
         try:
             self._theme_manager.unregister_listener(self._on_tema_atualizado)
-            self._theme_manager.unregister_color_listener(self._on_cor_tema_atualizada)
+            self._theme_manager.unregister_color_listener(
+                self._on_cor_tema_atualizada)
             self._theme_manager.unregister_actions()
             self._theme_manager.unregister_color_actions()
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -209,7 +213,7 @@ class MainWindow(ThemedMainWindow):
         arquivo_menu = menubar.addMenu("Arquivo")
 
         logout_action = QAction("Logout", self)
-        logout_action.setIcon(qta.icon("fa5s.sign-out-alt"))
+        set_icon(logout_action, "fa5s.sign-out-alt")
         logout_action.triggered.connect(self.fazer_logout)
         logout_action.setShortcut(QKeySequence("Ctrl+Shift+L"))
         logout_action.setStatusTip("Encerrar sessão atual e retornar ao login")
@@ -219,7 +223,7 @@ class MainWindow(ThemedMainWindow):
         arquivo_menu.addSeparator()
 
         sair_action = QAction("Sair", self)
-        sair_action.setIcon(qta.icon("fa5s.times-circle"))
+        set_icon(sair_action, "fa5s.times-circle")
         sair_action.triggered.connect(self.close)
         sair_action.setShortcut(QKeySequence("Ctrl+Q"))
         sair_action.setStatusTip("Fechar a aplicação")
@@ -230,15 +234,16 @@ class MainWindow(ThemedMainWindow):
             admin_menu = menubar.addMenu("Admin")
 
             usuarios_action = QAction("Ferramenta Administrativa", self)
-            usuarios_action.setIcon(qta.icon("fa5s.users-cog"))
+            set_icon(usuarios_action, "fa5s.users-cog")
             usuarios_action.triggered.connect(self.abrir_gerenciar_usuarios)
             usuarios_action.setShortcut(QKeySequence("Ctrl+G"))
-            usuarios_action.setStatusTip("Abrir gerenciamento de usuários e sessões")
+            usuarios_action.setStatusTip(
+                "Abrir gerenciamento de usuários e sessões")
             usuarios_action.setToolTip("Ferramenta Administrativa (Ctrl+G)")
             admin_menu.addAction(usuarios_action)
 
             dashboard_action = QAction("Dashboard", self)
-            dashboard_action.setIcon(qta.icon("fa5s.chart-line"))
+            set_icon(dashboard_action, "fa5s.chart-line")
             dashboard_action.triggered.connect(self.abrir_dashboard)
             dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
             dashboard_action.setStatusTip("Visualizar indicadores gerenciais")
@@ -246,10 +251,11 @@ class MainWindow(ThemedMainWindow):
             admin_menu.addAction(dashboard_action)
 
             atualizar_action = QAction("Atualizar", self)
-            atualizar_action.setIcon(qta.icon("fa5s.sync"))
+            set_icon(atualizar_action, "fa5s.sync")
             atualizar_action.triggered.connect(self.atualizar_tabela)
             atualizar_action.setShortcut(QKeySequence("F5"))
-            atualizar_action.setStatusTip("Atualizar a tabela com os registros")
+            atualizar_action.setStatusTip(
+                "Atualizar a tabela com os registros")
             atualizar_action.setToolTip("Atualizar tabela (F5)")
             admin_menu.addAction(atualizar_action)
 
@@ -258,7 +264,7 @@ class MainWindow(ThemedMainWindow):
         ajuda_menu = menubar.addMenu("Ajuda")
 
         manual_action = QAction("Manual do Sistema", self)
-        manual_action.setIcon(qta.icon("fa5s.book"))
+        set_icon(manual_action, "fa5s.book")
         manual_action.triggered.connect(self.abrir_manual)
         manual_action.setShortcut(QKeySequence("F1"))
         manual_action.setStatusTip("Consultar o manual do sistema")
@@ -266,7 +272,7 @@ class MainWindow(ThemedMainWindow):
         ajuda_menu.addAction(manual_action)
 
         sobre_action = QAction("Sobre", self)
-        sobre_action.setIcon(qta.icon("fa5s.info-circle"))
+        set_icon(sobre_action, "fa5s.info-circle")
         sobre_action.triggered.connect(self.abrir_sobre)
         sobre_action.setStatusTip("Informações sobre a aplicação")
         sobre_action.setToolTip("Sobre")
@@ -284,7 +290,8 @@ class MainWindow(ThemedMainWindow):
                 if admin_exe.exists():
                     # Executar o executável standalone
                     if not QProcess.startDetached(str(admin_exe), []):
-                        raise RuntimeError(f"Falha ao iniciar {admin_exe.name}.")
+                        raise RuntimeError(
+                            f"Falha ao iniciar {admin_exe.name}.")
                 else:
                     raise FileNotFoundError(
                         f"Executável '{admin_exe.name}' não encontrado em {exe_dir}"
@@ -292,7 +299,8 @@ class MainWindow(ThemedMainWindow):
             else:
                 # Script Python: executar como módulo
                 if not QProcess.startDetached(sys.executable, ["-m", "src.admin_app"]):
-                    raise RuntimeError("Falha ao iniciar processo administrativo.")
+                    raise RuntimeError(
+                        "Falha ao iniciar processo administrativo.")
         except (OSError, RuntimeError, FileNotFoundError) as exc:
             QMessageBox.warning(
                 self,
@@ -442,6 +450,11 @@ class MainWindow(ThemedMainWindow):
 
     def _on_tema_atualizado(self, modo: str) -> None:
         self._marcar_tema(modo)
+        update_icons(self)
+
+    def _on_cor_tema_atualizada(self, cor: str) -> None:
+        self._marcar_cor(cor)
+        update_icons(self)
 
     def _marcar_tema(self, modo: str) -> None:
         for chave, action in self._theme_actions.items():
@@ -457,9 +470,6 @@ class MainWindow(ThemedMainWindow):
             return
         if cor != self._theme_manager.current_color:
             self._theme_manager.apply_color(cor)
-
-    def _on_cor_tema_atualizada(self, cor: str) -> None:
-        self._marcar_cor(cor)
 
     def _marcar_cor(self, cor: str) -> None:
         for chave, action in self._color_actions.items():

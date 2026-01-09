@@ -9,7 +9,6 @@ para gerenciar a autenticação e criação de usuários.
 # A lógica de verificação de sessão duplicada é similar ao app.py
 # mas mantida no dialog para validação durante o login
 
-import qtawesome as qta
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QHBoxLayout,
                                QPushButton, QSizePolicy, QSpacerItem, QWidget)
 
 from src.domain import session_service, usuario_service
+from src.ui.icons import set_icon
 from src.domain.session_service import (HOSTNAME,
                                         definir_comando_encerrar_sessao,
                                         remover_sessao_por_id,
@@ -79,7 +79,8 @@ Use Tab para avançar para o campo de senha."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_usuario, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_usuario, self.entry_senha])
 
         label_usuario = QLabel("Usuário:")
         label_usuario.setObjectName("label_titulo_negrito")
@@ -100,9 +101,9 @@ Use Tab para avançar para o campo de senha."""
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
         self.btn_login = QPushButton("Login")
-        self.btn_login.setIcon(qta.icon("fa5s.sign-in-alt"))
+        set_icon(self.btn_login, "fa5s.sign-in-alt")
         self.btn_novo_usuario = QPushButton("Novo Usuário")
-        self.btn_novo_usuario.setIcon(qta.icon("fa5s.user-plus"))
+        set_icon(self.btn_novo_usuario, "fa5s.user-plus")
 
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_login, "azul")
@@ -111,7 +112,8 @@ Use Tab para avançar para o campo de senha."""
         self.btn_login.setDefault(True)
         self.btn_login.setToolTip("Autenticar no sistema (Enter)")
 
-        self.btn_novo_usuario.setToolTip("Cadastrar um novo usuário (Ctrl+Shift+N)")
+        self.btn_novo_usuario.setToolTip(
+            "Cadastrar um novo usuário (Ctrl+Shift+N)")
         self.btn_novo_usuario.setShortcut(QKeySequence("Ctrl+Shift+N"))
 
         btn_layout.addWidget(self.btn_login)
@@ -172,7 +174,8 @@ Use Tab para avançar para o campo de senha."""
                     nome_autenticado, ignorar_admin_tools=True
                 )
                 if ja_logado and info_sessao:
-                    hostname_destino = info_sessao.get("hostname", "Desconhecido")
+                    hostname_destino = info_sessao.get(
+                        "hostname", "Desconhecido")
                     if hostname_destino == HOSTNAME:
                         destino_texto = (
                             "neste mesmo computador (sessão anterior ainda aberta)."
@@ -194,12 +197,14 @@ Use Tab para avançar para o campo de senha."""
                     )
 
                     if resposta == QMessageBox.StandardButton.Yes:
-                        definir_comando_encerrar_sessao(info_sessao["session_id"])
+                        definir_comando_encerrar_sessao(
+                            info_sessao["session_id"])
                         remover_sessao_por_id(info_sessao["session_id"])
                     else:
                         return
 
-                session_service.registrar_sessao(nome_autenticado, admin_tool=False)
+                session_service.registrar_sessao(
+                    nome_autenticado, admin_tool=False)
 
             self.usuario_logado = nome_autenticado
             self.is_admin = resultado["admin"]
@@ -257,7 +262,8 @@ class NovoUsuarioDialog(QDialog):
         """Inicializa o diálogo de novo usuário."""
         super().__init__()
         self.setWindowTitle("Novo Usuário")
-        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO, ALTURA_DIALOG_NOVO_USUARIO)
+        self.setFixedSize(LARGURA_DIALOG_NOVO_USUARIO,
+                          ALTURA_DIALOG_NOVO_USUARIO)
         self.setModal(True)
 
         # Aplicar ícone padrão
@@ -291,7 +297,8 @@ Deve ser único e sem espaços extras nas extremidades."""
         )
 
         # Aplicar altura uniforme aos campos
-        configurar_widgets_entrada_uniformes([self.entry_nome, self.entry_senha])
+        configurar_widgets_entrada_uniformes(
+            [self.entry_nome, self.entry_senha])
 
         label_nome = QLabel("Nome:")
         label_nome.setObjectName("label_titulo_negrito")
@@ -312,7 +319,8 @@ Deve ser único e sem espaços extras nas extremidades."""
             # Container para alinhar checkbox
             container_admin = QWidget()
             layout_admin = QHBoxLayout(container_admin)
-            layout_admin.setContentsMargins(0, 2, 0, 0)  # Pequeno ajuste vertical
+            layout_admin.setContentsMargins(
+                0, 2, 0, 0)  # Pequeno ajuste vertical
             layout_admin.addWidget(self.check_admin)
             layout_admin.addStretch()
 
@@ -334,15 +342,16 @@ Deve ser único e sem espaços extras nas extremidades."""
         btn_layout.setSpacing(ESPACAMENTO_PADRAO)
 
         self.btn_cancelar = QPushButton("Cancelar")
-        self.btn_cancelar.setIcon(qta.icon("fa5s.times"))
+        set_icon(self.btn_cancelar, "fa5s.times")
         self.btn_salvar = QPushButton("Salvar")
-        self.btn_salvar.setIcon(qta.icon("fa5s.save"))
+        set_icon(self.btn_salvar, "fa5s.save")
 
         # Aplicar estilo padronizado com larguras iguais
         aplicar_estilo_botao(self.btn_cancelar, "vermelho")
         aplicar_estilo_botao(self.btn_salvar, "verde")
 
-        self.btn_cancelar.setToolTip("Fechar o formulário sem criar usuário (Esc)")
+        self.btn_cancelar.setToolTip(
+            "Fechar o formulário sem criar usuário (Esc)")
         self.btn_cancelar.setShortcut(QKeySequence("Esc"))
 
         self.btn_salvar.setToolTip("Salvar novo usuário (Ctrl+S)")
@@ -379,7 +388,8 @@ Deve ser único e sem espaços extras nas extremidades."""
             return
 
         # Verificar se é admin
-        is_admin = hasattr(self, "check_admin") and self.check_admin.isChecked()
+        is_admin = hasattr(
+            self, "check_admin") and self.check_admin.isChecked()
 
         resultado = usuario_service.inserir_usuario(nome, senha, is_admin)
 

@@ -5,11 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-import qtawesome as qta
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QComboBox, QGroupBox, QHBoxLayout, QLineEdit,
                                QPushButton)
 
+from src.ui.icons import set_icon
 from src.ui.styles import (aplicar_estilo_botao,
                            aplicar_estilo_botao_desabilitado,
                            configurar_widgets_entrada_uniformes)
@@ -64,7 +64,8 @@ def criar_filtros(
         combo_usuario.setToolTip(
             "Selecione um usuário específico para visualizar apenas seus registros."
         )
-        coluna_usuario, peso_usuario = criar_coluna_rotulo("Usuário:", combo_usuario, 2)
+        coluna_usuario, peso_usuario = criar_coluna_rotulo(
+            "Usuário:", combo_usuario, 2)
         layout.addLayout(coluna_usuario, peso_usuario)
 
     entry_cliente = NavigableLineEdit(frame)
@@ -78,13 +79,15 @@ O filtro é aplicado automaticamente."""
     timer_cliente.timeout.connect(on_cliente_timeout)
 
     entry_cliente.textChanged.connect(lambda _: timer_cliente.start(500))
-    coluna_cliente, peso_cliente = criar_coluna_rotulo("Cliente:", entry_cliente, 3)
+    coluna_cliente, peso_cliente = criar_coluna_rotulo(
+        "Cliente:", entry_cliente, 3)
     layout.addLayout(coluna_cliente, peso_cliente)
 
     entry_pedido = NavigableLineEdit(frame)
     entry_pedido.setPlaceholderText("Digite o número do pedido")
     entry_pedido.setToolTip("Filtrar por número do pedido, proposta ou OS.")
-    coluna_pedido, peso_pedido = criar_coluna_rotulo("Pedido:", entry_pedido, 3)
+    coluna_pedido, peso_pedido = criar_coluna_rotulo(
+        "Pedido:", entry_pedido, 3)
     layout.addLayout(coluna_pedido, peso_pedido)
 
     timer_pedido = QTimer(frame)
@@ -96,7 +99,8 @@ O filtro é aplicado automaticamente."""
     combo_ano = NavigableComboBox(frame)
     combo_ano.addItem("Todos os anos")
     combo_ano.currentTextChanged.connect(on_ano_changed)
-    combo_ano.setToolTip("Escolha um ano específico para restringir os resultados.")
+    combo_ano.setToolTip(
+        "Escolha um ano específico para restringir os resultados.")
     combo_ano.setFixedWidth(140)
     coluna_ano, peso_ano = criar_coluna_rotulo("Ano:", combo_ano, 2)
     layout.addLayout(coluna_ano, peso_ano)
@@ -108,16 +112,18 @@ O filtro é aplicado automaticamente."""
         "Selecione um intervalo de faturamento (26 a 25) para refinar a busca."
     )
     combo_periodo.setFixedWidth(140)
-    coluna_periodo, peso_periodo = criar_coluna_rotulo("Período:", combo_periodo, 3)
+    coluna_periodo, peso_periodo = criar_coluna_rotulo(
+        "Período:", combo_periodo, 3)
     layout.addLayout(coluna_periodo, peso_periodo)
 
     btn_limpar = QPushButton("Limpar Filtros", frame)
-    btn_limpar.setIcon(qta.icon("fa5s.eraser"))
     btn_limpar.setToolTip("Limpar filtros, mantendo o período corrente")
     aplicar_estilo_botao(btn_limpar, "laranja")
+    set_icon(btn_limpar, "fa5s.eraser")
     btn_limpar.clicked.connect(on_limpar)
     estilo_atual = btn_limpar.styleSheet()
-    btn_limpar.setStyleSheet(estilo_atual + aplicar_estilo_botao_desabilitado())
+    btn_limpar.setStyleSheet(
+        estilo_atual + aplicar_estilo_botao_desabilitado())
     layout.addLayout(criar_layout_botao_padrao(btn_limpar), 1)
 
     layout.addStretch()
