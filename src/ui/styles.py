@@ -13,6 +13,7 @@ Funcionalidades:
 """
 
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -22,19 +23,25 @@ from PySide6.QtWidgets import QHeaderView, QSizePolicy, QTableWidget, QWidget
 
 logger = logging.getLogger(__name__)
 
-ASSETS_DIR = Path(__file__).parent.parent.parent / "assets"
+ASSETS_DIR = Path(
+    getattr(sys, "_MEIPASS", Path(__file__).parents[2])) / "assets"
 
 
 def _get_asset_icon(name: str) -> str | None:
     """Retorna caminho POSIX do ícone em assets, se existir."""
+    path = ASSETS_DIR / name
+    return path.as_posix() if path.exists() else None
 
-    try:
-        candidate = ASSETS_DIR / name
-        if candidate.exists():
-            return candidate.as_posix()
-    except Exception:  # pylint: disable=broad-exception-caught
-        logger.debug("Falha ao resolver ícone %s", name, exc_info=True)
-    return None
+
+def aplicar_icone_padrao(widget: QWidget) -> None:
+    """
+    Aplica o ícone padrão da aplicação a um widget (janela ou diálogo).
+
+    Args:
+        widget: O widget (QMainWindow, QDialog, etc.) ao qual aplicar o ícone.
+    """
+    if icon_path := _get_asset_icon("icone.svg"):
+        widget.setWindowIcon(QIcon(icon_path))
 
 
 # Constantes para padronização de componentes
@@ -249,19 +256,6 @@ def obter_estilo_progress_bar(theme: str = "light") -> str:
             border-radius: 4px;
         }}
     """
-
-
-def aplicar_icone_padrao(widget: QWidget) -> None:
-    """
-    Aplica o ícone padrão da aplicação a um widget (janela ou diálogo).
-
-    Args:
-        widget: O widget (QMainWindow, QDialog, etc.) ao qual aplicar o ícone.
-    """
-    icon_path = Path(__file__).parent.parent.parent / "assets" / "icone.svg"
-    if icon_path.exists():
-        icon = QIcon(str(icon_path))
-        widget.setWindowIcon(icon)
 
 
 def obter_data_atual_utc():
