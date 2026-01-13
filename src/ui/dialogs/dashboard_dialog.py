@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib as mpl
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTabWidget, QVBoxLayout,
-                               QWidget)
+                               QLabel, QPushButton, QTableWidget, QTabWidget,
+                               QVBoxLayout, QWidget)
 
 try:  # pragma: no cover - fallback executado apenas sem pandas instalado
     import pandas as pd  # type: ignore[assignment]
@@ -23,8 +24,9 @@ else:
 
 from src.core.formatters import segundos_para_horas
 from src.core.periodo_faturamento import calcular_periodo_faturamento_para_data
+from src import data as db
 from src.domain.dashboard_service import obter_metricas_dashboard
-from src.ui.icons import set_tab_icon, update_icons
+from src.ui.icons import set_icon, set_tab_icon, update_icons
 from src.ui.theme_manager import ThemeManager
 from src.ui.dialogs.dashboard_plotting import DashboardPlotting
 from src.ui.dialogs.dashboard_tables import DashboardTableUpdates
@@ -182,9 +184,31 @@ class DashboardDialog(QDialog):
         if not self.df_registros.empty:
             self._criar_tab_graficos()
 
+        # Configurar botão de atualizar no canto das abas (economiza espaço vertical)
+        btn_atualizar = QPushButton("Atualizar Dados")
+        set_icon(btn_atualizar, "fa5s.sync-alt")
+        btn_atualizar.setToolTip("Recarregar dados do dashboard (F5)")
+        btn_atualizar.clicked.connect(self.atualizar_dados)
+
+        # Ajustar estilo para caber melhor na barra de abas
+        btn_atualizar.setStyleSheet("margin: 2px; padding: 4px 10px;")
+
+        self.tabs.setCornerWidget(btn_atualizar, Qt.Corner.TopRightCorner)
+
         layout = QVBoxLayout()
         layout.addWidget(self.tabs)
         self.setLayout(layout)
+
+        # Atalho F5
+        self.shortcut_atualizar = QShortcut(QKeySequence("F5"), self)
+        self.shortcut_atualizar.activated.connect(self.atualizar_dados)
+
+    def atualizar_dados(self) -> None:
+        """Recarrega os dados e atualiza a interface."""
+        db.limpar_caches_consultas()
+        self._carregar_metricas()
+        self._preparar_dataframe_registros()
+        self._atualizar_resumos()
 
     def _atualizar_resumos(self) -> None:
         DashboardTableUpdates.atualizar_tabela_totais(self)
