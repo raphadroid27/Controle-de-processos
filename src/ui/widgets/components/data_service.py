@@ -73,8 +73,8 @@ def listar_anos_disponiveis(usuario_filtro: Optional[str]) -> List[str]:
         logger.exception("Erro ao buscar anos únicos: %s", exc)
         anos = []
 
-    data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
-    ano_atual = str(data_inicio_atual.year)
+    _, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+    ano_atual = str(data_fim_atual.year)
     if ano_atual not in anos:
         anos.append(ano_atual)
 
@@ -103,8 +103,8 @@ def listar_periodos_do_ano(
         logger.exception("Erro ao buscar períodos de faturamento: %s", exc)
         return []
 
-    data_inicio_atual, _ = calcular_periodo_faturamento_atual_datas()
-    ano_atual = str(data_inicio_atual.year)
+    _, data_fim_atual = calcular_periodo_faturamento_atual_datas()
+    ano_atual = str(data_fim_atual.year)
 
     if ano == ano_atual:
         db.garantir_periodo_atual(periodos)
@@ -404,7 +404,8 @@ def obter_estatisticas_totais(
     )
     tempo_corte_dia = _formatar_segundos_para_horas(total_segundos_dia)
 
-    total_segundos_total, dias_com_horas = _calcular_metricas_tempo_dashboard(registros)
+    total_segundos_total, dias_com_horas = _calcular_metricas_tempo_dashboard(
+        registros)
     tempo_corte_total = _formatar_segundos_para_horas(total_segundos_total)
 
     media_tempo_corte_dia = None
