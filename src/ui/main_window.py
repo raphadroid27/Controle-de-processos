@@ -349,7 +349,7 @@ class MainWindow(ThemedMainWindow):
         """Atualiza a tabela principal com os registros."""
         widget_central = self.centralWidget()
         if isinstance(widget_central, ProcessosWidget):
-            widget_central.aplicar_filtro()
+            widget_central.atualizar_dados()
 
     def fazer_logout(self):
         """Faz logout e retorna para a tela de login."""
