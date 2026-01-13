@@ -408,6 +408,21 @@ class ProcessosWidget(QWidget):
 
     def atualizar_dados(self):
         """Atualiza dados da tabela e recarrega lista de autocompletar."""
+        if self.is_admin and hasattr(self, "combo_usuario"):
+            usuarios_db = db.buscar_usuarios_unicos()
+            usuarios_combo = {
+                self.combo_usuario.itemText(i)
+                for i in range(self.combo_usuario.count())
+            }
+
+            novos_usuarios = [
+                u for u in usuarios_db if u not in usuarios_combo]
+            if novos_usuarios:
+                self.combo_usuario.blockSignals(True)
+                for user in novos_usuarios:
+                    self.combo_usuario.addItem(user)
+                self.combo_usuario.blockSignals(False)
+
         self.autocomplete_manager.refresh_all()
         self.aplicar_filtro()
 
