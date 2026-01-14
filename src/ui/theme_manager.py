@@ -7,7 +7,7 @@ import logging
 import platform
 from typing import Any, Callable, ClassVar, Dict, List, cast
 
-from PySide6.QtCore import QEvent, QObject, QSettings
+from PySide6.QtCore import QEvent, QObject, QSettings, QTimer
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication, QWidget
 
@@ -132,19 +132,23 @@ class ThemeManager:
                 super().__init__()
                 self._manager = manager
 
-            def eventFilter(
+            def eventFilter(  # pylint: disable=invalid-name
                 self, watched: QObject, event: QEvent
-            ) -> bool:  # pylint: disable=invalid-name,protected-access
-                """Registra janelas top-level exibidas para aplicar dark title bar."""
+            ) -> bool:
+                """Registra janelas top-level para aplicar dark title bar e monitora mudanças."""
                 if event.type() == QEvent.Type.Show and isinstance(watched, QWidget):
                     # Registrar apenas janelas/top-level para evitar registrar cada child widget
                     if getattr(watched, "isWindow", lambda: False)():
                         try:
-                            self._manager.register_window(cast(QWidget, watched))
+                            self._manager.register_window(
+                                cast(QWidget, watched))
                         except Exception:  # pylint: disable=broad-exception-caught
-                            manager_log = getattr(self._manager, "_log_debug", None)
+                            manager_log = getattr(
+                                self._manager, "_log_debug", None)
                             if callable(manager_log):
-                                manager_log("Falha ao registrar janela no filtro")
+                                manager_log(
+                                    "Falha ao registrar janela no filtro")
+
                 return False
 
         self._event_filter = _TitleBarEventFilter(self)
@@ -242,7 +246,8 @@ class ThemeManager:
         palette.setColor(QPalette.ColorRole.Window, QColor(240, 240, 240))
         palette.setColor(QPalette.ColorRole.WindowText, QColor(0, 0, 0))
         palette.setColor(QPalette.ColorRole.Base, QColor(255, 255, 255))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(245, 245, 245))
+        palette.setColor(QPalette.ColorRole.AlternateBase,
+                         QColor(245, 245, 245))
         palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(255, 255, 220))
         palette.setColor(QPalette.ColorRole.ToolTipText, QColor(0, 0, 0))
         palette.setColor(QPalette.ColorRole.Text, QColor(0, 0, 0))
@@ -251,7 +256,8 @@ class ThemeManager:
         palette.setColor(QPalette.ColorRole.BrightText, QColor(255, 255, 255))
         palette.setColor(QPalette.ColorRole.Link, accent_color)
         palette.setColor(QPalette.ColorRole.Highlight, accent_color)
-        palette.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
+        palette.setColor(QPalette.ColorRole.HighlightedText,
+                         QColor(255, 255, 255))
         return palette
 
     def _create_dark_palette(self, accent_color: QColor) -> QPalette:
@@ -292,7 +298,8 @@ class ThemeManager:
         try:
             app.setStyleSheet(get_widgets_styles(resolved))
         except Exception:  # pylint: disable=broad-exception-caught
-            self._logger.debug("Falha ao aplicar stylesheet de widgets", exc_info=True)
+            self._logger.debug(
+                "Falha ao aplicar stylesheet de widgets", exc_info=True)
         for widget in QApplication.allWidgets():
             widget.repaint()
         self._mode = selected
@@ -300,7 +307,9 @@ class ThemeManager:
             self._get_settings().setValue(self._SETTINGS_KEY, selected)
             self._get_settings().sync()
         self._update_actions()
-        self._update_all_title_bars()
+        # Agenda atualização das barras de título para garantir que seja aplicada
+        # após todas as mudanças de estilo do Qt
+        QTimer.singleShot(50, self._update_all_title_bars)
         for callback in list(self._listeners):
             try:
                 callback(selected)
@@ -337,7 +346,8 @@ class ThemeManager:
             try:
                 action.setChecked(tema == self._mode)
             except Exception:  # pylint: disable=broad-exception-caught
-                self._logger.debug("Não foi possível atualizar action de tema %s", tema)
+                self._logger.debug(
+                    "Não foi possível atualizar action de tema %s", tema)
 
     def _get_accent_hex(self) -> str:
         rotulo_hex = self._COLOR_OPTIONS.get(
@@ -370,6 +380,7 @@ class ThemeManager:
             hwnd = int(window.winId())
             value = ctypes.c_int(1 if self._mode == "dark" else 0)
             set_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
+
             # Tenta atributo moderno (20) e fallback (19) para versões mais antigas do Windows
             for attribute in (20, 19):
                 try:
@@ -377,7 +388,8 @@ class ThemeManager:
                 except Exception:  # pylint: disable=broad-exception-caught
                     continue
         except Exception:  # pylint: disable=broad-exception-caught
-            self._logger.debug("Falha ao aplicar dark title bar", exc_info=True)
+            self._logger.debug(
+                "Falha ao aplicar dark title bar", exc_info=True)
 
     def _update_all_title_bars(self) -> None:
         for window in list(self._registered_windows):
