@@ -23,8 +23,21 @@ _user_sessionmakers: Dict[Path, sessionmaker[Session]] = {}
 T = TypeVar("T")
 
 
-def _configure_sqlite_pragmas(dbapi_connection, _connection_record) -> None:
-    """Configura PRAGMAs do SQLite para melhor performance sem WAL."""
+def _py_upper(s: str | None) -> str | None:
+    """Função auxiliar para UPPER case compatível com Unicode (acentos).
+
+    Necessária pois o UPPER nativo do SQLite não lida corretamente com
+    caracteres não-ASCII (ex: 'ç' -> 'ç' e não 'Ç').
+    """
+    return s.upper() if s is not None else None
+
+
+def _configure_sqlite_connection(dbapi_connection, _connection_record) -> None:
+    """Configura conexão SQLite: PRAGMAs e funções customizadas."""
+    # Registrar função UPPER customizada para suportar acentos
+    # deterministic=True é crucial para permitir uso em índices (idx_pedido_upper)
+    dbapi_connection.create_function("UPPER", 1, _py_upper, deterministic=True)
+
     cursor = dbapi_connection.cursor()
 
     # Configurações de performance (modo DELETE)
@@ -63,7 +76,7 @@ def _criar_engine_sqlite(db_path: Path) -> Engine:
     )
 
     # Registrar listener para configurar PRAGMAs em cada conexão
-    event.listen(engine, "connect", _configure_sqlite_pragmas)
+    event.listen(engine, "connect", _configure_sqlite_connection)
 
     return engine
 
@@ -97,7 +110,8 @@ def _ensure_registro_schema(engine: Engine) -> None:
         colunas = {col["name"] for col in inspector.get_columns("registro")}
         if "tempo_corte" not in colunas:
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
+                conn.execute(
+                    text("ALTER TABLE registro ADD COLUMN tempo_corte TEXT"))
     except SQLAlchemyError:
         pass
 
@@ -107,7 +121,8 @@ def _ensure_usuario_schema(engine: Engine) -> None:
     try:
         inspector = inspect(engine)
         if "usuario" not in inspector.get_table_names():
-            logger.debug("Tabela usuario não existe ainda, será criada pelo ORM")
+            logger.debug(
+                "Tabela usuario não existe ainda, será criada pelo ORM")
             return
 
         colunas = {col["name"] for col in inspector.get_columns("usuario")}
@@ -120,7 +135,8 @@ def _ensure_usuario_schema(engine: Engine) -> None:
             logger.info("Adicionando coluna ativo")
 
         if "arquivado_em" not in colunas:
-            statements.append("ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
+            statements.append(
+                "ALTER TABLE usuario ADD COLUMN arquivado_em TEXT")
             logger.info("Adicionando coluna arquivado_em")
 
         if "excluido" not in colunas:
@@ -130,7 +146,8 @@ def _ensure_usuario_schema(engine: Engine) -> None:
             logger.info("Adicionando coluna excluido")
 
         if statements:
-            logger.info("Executando %d alterações no schema usuario", len(statements))
+            logger.info(
+                "Executando %d alterações no schema usuario", len(statements))
             with engine.begin() as conn:
                 for stmt in statements:
                     conn.execute(text(stmt))
@@ -315,7 +332,8 @@ def limpar_usuarios_excluidos() -> None:
             for tentativa in range(3):
                 try:
                     db_path.unlink()
-                    logger.info("Banco de usuário excluido removido: %s", db_path)
+                    logger.info(
+                        "Banco de usuário excluido removido: %s", db_path)
                     break
                 except OSError as e:
                     if tentativa < 2:

@@ -101,10 +101,12 @@ def _montar_condicoes(
     condicoes = []
 
     if cliente:
-        condicoes.append(func.upper(RegistroModel.cliente).like(f"{cliente.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.cliente).like(f"{cliente.upper()}%"))
 
     if pedido:
-        condicoes.append(func.upper(RegistroModel.pedido).like(f"{pedido.upper()}%"))
+        condicoes.append(func.upper(
+            RegistroModel.pedido).like(f"{pedido.upper()}%"))
 
     if data_inicio and data_fim:
         data_inicio_parsed = parse_iso_date(data_inicio)
@@ -325,7 +327,8 @@ def buscar_estatisticas(usuario: Optional[str] = None):
         Resultados são cacheados. Use limpar_caches_consultas() após inserções.
     """
 
-    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(usuario)
+    total_pedidos, total_itens, total_valor = _buscar_estatisticas_cache(
+        usuario)
     return {
         "total_pedidos": total_pedidos,
         "total_itens": total_itens,
@@ -389,12 +392,14 @@ def _buscar_valores_unicos(
     if usuario:
         with closing(get_user_session(usuario)) as session:
             stmt = select(getattr(RegistroModel, campo).distinct())
-            valores.update(value for (value,) in session.execute(stmt) if value)
+            valores.update(value for (value,)
+                           in session.execute(stmt) if value)
     else:
         for slug, _ in iter_user_databases():
             with closing(get_sessionmaker_for_slug(slug)()) as session:
                 stmt = select(getattr(RegistroModel, campo).distinct())
-                valores.update(value for (value,) in session.execute(stmt) if value)
+                valores.update(value for (value,)
+                               in session.execute(stmt) if value)
 
     return sorted(valores)
 
@@ -587,7 +592,8 @@ def _gerar_periodos_faturamento_por_ano(
             )
 
             if eh_periodo_ano:
-                display = _formatar_periodo_exibicao(inicio, fim, com_ano=False)
+                display = _formatar_periodo_exibicao(
+                    inicio, fim, com_ano=False)
                 if display:
                     month = int(inicio[5:7])
                     numero = 1 if month == 12 else month + 1
@@ -620,7 +626,8 @@ def _buscar_periodos_faturamento_por_ano_cache(
 def buscar_periodos_faturamento_por_ano(ano: str, usuario: Optional[str] = None):
     """Produz os períodos de faturamento (26/25) de um ano específico."""
 
-    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(ano, usuario)
+    periodos_congelados = _buscar_periodos_faturamento_por_ano_cache(
+        ano, usuario)
     return [_descongelar_dict(periodo) for periodo in periodos_congelados]
 
 
@@ -708,12 +715,3 @@ def limpar_caches_consultas() -> None:
     _buscar_periodos_faturamento_unicos_cache.cache_clear()
     _buscar_estatisticas_cache.cache_clear()
     _buscar_estatisticas_completas_cache.cache_clear()
-
-    try:
-        # Import adiado para evitar ciclos entre consultas e métricas de dashboard.
-        # pylint: disable=import-outside-toplevel, cyclic-import
-        from src.domain.dashboard_service import \
-            limpar_cache_metricas_dashboard
-    except ImportError:
-        return
-    limpar_cache_metricas_dashboard()

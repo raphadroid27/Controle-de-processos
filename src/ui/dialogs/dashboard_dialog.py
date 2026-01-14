@@ -25,7 +25,8 @@ else:
 from src.core.formatters import segundos_para_horas
 from src.core.periodo_faturamento import calcular_periodo_faturamento_para_data
 from src import data as db
-from src.domain.dashboard_service import obter_metricas_dashboard
+from src.domain.dashboard_service import (limpar_cache_metricas_dashboard,
+                                          obter_metricas_dashboard)
 from src.ui.icons import set_icon, set_tab_icon, update_icons
 from src.ui.theme_manager import ThemeManager
 from src.ui.dialogs.dashboard_plotting import DashboardPlotting
@@ -206,6 +207,7 @@ class DashboardDialog(QDialog):
     def atualizar_dados(self) -> None:
         """Recarrega os dados e atualiza a interface."""
         db.limpar_caches_consultas()
+        limpar_cache_metricas_dashboard()
         self._carregar_metricas()
         self._preparar_dataframe_registros()
         self._atualizar_resumos()
