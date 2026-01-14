@@ -207,7 +207,9 @@ def preencher_tabela(
 ) -> None:
     # pylint: disable=too-many-locals
     """Preenche a tabela com os registros fornecidos."""
+    tabela.setUpdatesEnabled(False)
     tabela.blockSignals(True)
+    tabela.setSortingEnabled(False)
     try:
         tabela.setRowCount(len(registros))
         offset = 1 if is_admin else 0
@@ -283,4 +285,6 @@ def preencher_tabela(
             if item is not None:
                 item.setData(Qt.ItemDataRole.UserRole, registro[0])
     finally:
+        tabela.setSortingEnabled(True)
         tabela.blockSignals(False)
+        tabela.setUpdatesEnabled(True)

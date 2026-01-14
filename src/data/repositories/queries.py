@@ -159,8 +159,12 @@ def _buscar_registros_em_session(
     for cond in condicoes:
         stmt = stmt.where(cond)
 
-    # Ordenar por data de lançamento (usa índice idx_registro_data_lancamento)
-    stmt = stmt.order_by(RegistroModel.data_lancamento.desc())
+    # Ordenar por data efetiva (processo ou entrada)
+    stmt = stmt.order_by(
+        func.coalesce(RegistroModel.data_processo,
+                      RegistroModel.data_entrada).asc(),
+        RegistroModel.data_lancamento.asc()
+    )
 
     if limite is not None:
         stmt = stmt.limit(limite)

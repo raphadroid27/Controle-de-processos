@@ -184,6 +184,11 @@ def buscar_registros_filtrados(
         logger.exception("Erro ao buscar registros filtrados: %s", exc)
         registros = []
 
+    # Se estiver filtrando por um usuário específico, o banco já retorna ordenado
+    # via ORDER BY COALESCE(data_processo, data_entrada)
+    if usuario:
+        return list(registros)
+
     return sorted(registros, key=_ordenacao_chave)
 
 
