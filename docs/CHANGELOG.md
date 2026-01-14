@@ -2,6 +2,14 @@
 
 Histórico de mudanças do aplicativo  Controle de Pedidos
 
+## 1.3.1 (14/01/2026)
+
+- Otimização significativa de desempenho no carregamento e ordenação da tabela de pedidos
+- Correção visual na barra de título do Windows para manter a cor do tema escuro consistente
+- Adição de botão "Atualizar" e atalho F5 no dashboard, com atualização dinâmica de listas
+- Melhorias na ordenação de texto no banco de dados (suporte a acentos em caixa alta)
+- Refatorações gerais de código e melhorias no gerenciamento de ícones e temas
+
 ## 1.3.0 (08/01/2026)
 
 - Modernização da interface com ícones (FontAwesome) em menus, botões e diálogos
