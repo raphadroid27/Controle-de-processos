@@ -289,10 +289,13 @@ class ProcessosWidget(QWidget):
         filtros = filters.criar_filtros(
             parent=self,
             is_admin=self.is_admin,
-            on_cliente_timeout=self.aplicar_filtro,
-            on_pedido_timeout=self.aplicar_filtro,
+            on_cliente_timeout=lambda: self.aplicar_filtro(
+                rolar_para_ultimo=False),
+            on_pedido_timeout=lambda: self.aplicar_filtro(
+                rolar_para_ultimo=False),
             on_ano_changed=self.on_ano_changed,
-            on_periodo_changed=self.aplicar_filtro,
+            on_periodo_changed=lambda _: self.aplicar_filtro(
+                rolar_para_ultimo=False),
             on_usuario_changed=self.on_usuario_changed,
             on_limpar=self.limpar_filtros,
         )
