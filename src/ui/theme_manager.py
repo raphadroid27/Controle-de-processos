@@ -25,8 +25,6 @@ class ThemeManager:
     _DEFAULT_MODE: ClassVar[str] = "dark"
     _COLOR_SETTINGS_KEY: ClassVar[str] = "appearance/theme_accent"
     _DEFAULT_COLOR: ClassVar[str] = "azul"
-    _STYLE_SETTINGS_KEY: ClassVar[str] = "appearance/theme_style"
-    _DEFAULT_STYLE: ClassVar[str] = "Fusion"
 
     _COLOR_OPTIONS: ClassVar[dict[str, tuple[str, str]]] = {
         "cinza": ("Cinza", "#9E9E9E"),
@@ -45,7 +43,7 @@ class ThemeManager:
     def __init__(self) -> None:
         """Inicializa o gerenciador de temas."""
         self._settings: QSettings | None = None
-        self._style = self._DEFAULT_STYLE
+        self._style = "Fusion"
         self._mode = self._DEFAULT_MODE
         self._color = self._DEFAULT_COLOR
         self._listeners: List[Callable[[str], None]] = []
@@ -79,22 +77,9 @@ class ThemeManager:
         """Retorna a cor de destaque atualmente aplicada."""
         return self._color
 
-    @property
-    def current_style(self) -> str:
-        """Retorna o estilo atualmente aplicado."""
-        return self._style
-
     def initialize(self) -> None:
         """Aplica o tema salvo sem sobrescrever a preferência."""
-        saved_style = self._get_settings().value(
-            self._STYLE_SETTINGS_KEY, self._DEFAULT_STYLE
-        )
-        if not isinstance(saved_style, str) or saved_style != self._DEFAULT_STYLE:
-            saved_style = self._DEFAULT_STYLE
-        self._style = saved_style
-        self._get_settings().setValue(self._STYLE_SETTINGS_KEY, self._style)
-        self._get_settings().sync()
-        QApplication.setStyle(self._style)
+        QApplication.setStyle("Fusion")
 
         saved_mode = self._get_settings().value(self._SETTINGS_KEY, self._DEFAULT_MODE)
         self._mode = (
@@ -175,25 +160,6 @@ class ThemeManager:
         self._apply_theme(self._mode, persist=False)
         self._notify_color_listeners()
         self._update_color_actions()
-
-    def apply_style(self, style: str) -> None:
-        """Aplica um novo estilo para a aplicação."""
-        if style == self._style:
-            return
-        self._style = style
-        self._get_settings().setValue(self._STYLE_SETTINGS_KEY, style)
-        self._get_settings().sync()
-        QApplication.setStyle(style)
-        app = QApplication.instance()
-        if app:
-            try:
-                app.setStyleSheet(get_widgets_styles(self._mode))
-            except Exception:  # pylint: disable=broad-exception-caught
-                self._logger.debug(
-                    "Falha ao reaplicar stylesheet após trocar estilo", exc_info=True
-                )
-            for widget in QApplication.allWidgets():
-                widget.repaint()
 
     def refresh_interface(self) -> None:
         """Reaplica tema e força repaint para corrigir artefatos visuais."""

@@ -384,10 +384,8 @@ def main() -> int:
     logger = logging.getLogger(__name__)
     logger.info("Inicializando ferramenta administrativa")
     app = QApplication(sys.argv)
-    app.setApplicationName("Controle de Pedidos")
-    app.setApplicationDisplayName("Controle de Pedidos")
-    app.setOrganizationName("Controle de Pedidos")
-    app.setOrganizationDomain("controle-de-pedidos.local")
+    app.setOrganizationName("raphadroid27")
+    app.setApplicationName("Controle de Pedidos - Admin")
 
     db.inicializar_todas_tabelas()
     ensure_ipc_dirs_exist()

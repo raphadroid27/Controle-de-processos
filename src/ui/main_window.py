@@ -438,16 +438,6 @@ class MainWindow(ThemedMainWindow):
         if modo != self._theme_manager.current_mode:
             self._theme_manager.apply_theme(modo)
 
-    def _on_estilo_selecionado(self) -> None:
-        action = self.sender()
-        if not isinstance(action, QAction):
-            return
-        estilo = action.data()
-        if not isinstance(estilo, str):
-            return
-        if estilo != self._theme_manager.current_style:
-            self._theme_manager.apply_style(estilo)
-
     def _on_tema_atualizado(self, modo: str) -> None:
         self._marcar_tema(modo)
         update_icons(self)
