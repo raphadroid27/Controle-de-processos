@@ -2,6 +2,7 @@
 <p>
   O Dashboard é exclusivo para administradores e permite visualizar métricas consolidadas,
   comparar períodos e acompanhar indicadores operacionais. Acesse pelo menu <b>Admin → Dashboard (Ctrl+D)</b>.
+  <em>O Dashboard abre como uma janela independente e não bloqueia o uso da aplicação principal.</em>
   <br>
   <i>Observação sobre períodos:</i> todo o sistema trabalha com o período de faturamento
   <b>do dia 26 de um mês ao dia 25 do mês seguinte</b> (ex.: 26 de março a 25 de abril).
@@ -66,9 +67,19 @@
   <li><b>Horas/dia</b> considera apenas dias com tempo de corte registrado.</li>
 </ul>
 
-<h4>Horas por dia</h4>
+<h4>Métricas por dia</h4>
 <p>
-  Lista a soma de horas de corte por dia, com uma coluna para cada usuário e o total diário. O seletor <b>Intervalo</b> permite reduzir a janela:
+  Lista métricas agregadas por dia, com uma coluna para cada usuário e o total diário.
+  O seletor <b>Métrica</b> permite escolher o tipo de informação exibida:
+</p>
+<ul>
+  <li><b>Itens</b>: quantidade total de itens processados por dia.</li>
+  <li><b>Valor (R$)</b>: soma dos valores dos pedidos processados por dia.</li>
+  <li><b>Propostas</b>: contagem de pedidos processados por dia.</li>
+  <li><b>Horas</b>: tempo total de corte por dia.</li>
+</ul>
+<p>
+  O seletor <b>Intervalo</b> permite reduzir a janela:
 </p>
 <ul>
   <li><b>Últimos 7/15/30/90 dias</b>: recorte rápido para acompanhamento tático.</li>
