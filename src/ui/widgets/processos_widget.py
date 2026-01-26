@@ -242,6 +242,14 @@ class ProcessosWidget(QWidget):
         if campo is None or nova_data is None:
             return
 
+        # Atualiza o limite máximo para a data atual
+        campo.setMaximumDate(nova_data)
+
+        # Atualiza o valor do campo para a data atual se estiver vazio ou for a data antiga
+        data_atual_campo = campo.date()
+        if data_atual_campo.isNull() or data_atual_campo < nova_data:
+            campo.setDate(nova_data)
+
     def atalho_adicionar_pedido(self):
         """Adiciona pedido via atalho se campos obrigatórios estiverem ok."""
         cliente = self.entry_cliente.text().strip()
@@ -684,7 +692,7 @@ class ProcessosWidget(QWidget):
         self.entry_pedido.clear()
         self.entry_qtde_itens.clear()
         self.entry_data_entrada.setDate(obter_data_atual_utc())
-        self.entry_data_processo.clear()
+        self.entry_data_processo.setDate(obter_data_atual_utc())
         self.entry_tempo_corte.clear()
         self.entry_valor_pedido.clear()
 
