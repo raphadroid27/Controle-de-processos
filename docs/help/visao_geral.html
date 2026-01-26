@@ -3,45 +3,45 @@
 
 <h3>Fluxo de trabalho</h3>
 <ol>
-  <li><b>Cadastrar</b> um novo registro informando Cliente, Pedido/Proposta, Quantidade de Itens, Data de Entrada, Data de Processo, Tempo de Corte e Valor.</li>
-  <li><b>Filtrar</b> por cliente, pedido, ano e <b>período de faturamento</b> (26 → 25) para análises específicas. Administradores podem filtrar por usuário.</li>
-  <li><b>Consultar Totais</b> para métricas agregadas (itens, valor, médias) e o <em>Dashboard</em> (somente administradores) para análises por período e usuário.</li>
+  <li><strong>Cadastrar</strong> um novo registro informando Cliente, Pedido/Proposta, Quantidade de Itens, Data de Entrada, Data de Processo, Tempo de Corte e Valor.</li>
+  <li><strong>Filtrar</strong> por cliente, pedido, ano e <strong>período de faturamento</strong> (26 → 25) para análises específicas. Administradores podem filtrar por usuário.</li>
+  <li><strong>Consultar Totais</strong> para métricas agregadas (itens, valor, médias) e o <em>Dashboard</em> (somente administradores) para análises por período e usuário.</li>
 </ol>
 
 <h3>Conceitos-chave</h3>
 <ul>
-  <li><b>Período de faturamento</b>: do dia 26 de um mês ao dia 25 do mês seguinte (ex.: 26/03 → 25/04). Toda análise mensal segue esse recorte.</li>
-  <li><b>Tempo de corte</b>: duração em HH:MM:SS do corte a laser; opcional, mas essencial para indicadores de horas diárias.</li>
-  <li><b>Data de Entrada vs. Data de Processo</b>: a primeira marca quando o pedido chegou; a segunda, quando foi concluído. A diferença entre elas calcula os "dias de processo". Registros sem "Data de Processo" não entram no cálculo da média de dias.</li>
-  <li><b>Dias úteis</b>: o sistema considera apenas dias úteis (segunda a sexta) para calcular médias diárias e estimativas mensais, excluindo finais de semana automaticamente.</li>
-  <li><b>Edição in-line</b>: clique duas vezes em qualquer célula da tabela para editar diretamente. Campos de data abrem um calendário; valores numéricos validam o formato automaticamente.</li>
-  <li><b>Filtros combinados</b>: todos os filtros (Cliente, Pedido, Ano, Período, Usuário) funcionam em conjunto. Os totais refletem sempre o resultado filtrado.</li>
+  <li><strong>Período de faturamento</strong>: do dia 26 de um mês ao dia 25 do mês seguinte (ex.: 26/03 → 25/04). Toda análise mensal segue esse recorte.</li>
+  <li><strong>Tempo de corte</strong>: duração em HH:MM:SS do corte a laser; opcional, mas essencial para indicadores de horas diárias.</li>
+  <li><strong>Data de Entrada vs. Data de Processo</strong>: a primeira marca quando o pedido chegou; a segunda, quando foi concluído. A diferença entre elas calcula os "dias de processo". Registros sem "Data de Processo" não entram no cálculo da média de dias.</li>
+  <li><strong>Dias úteis</strong>: o sistema considera apenas dias úteis (segunda a sexta) para calcular médias diárias e estimativas mensais, excluindo finais de semana automaticamente.</li>
+  <li><strong>Edição in-line</strong>: clique duas vezes em qualquer célula da tabela para editar diretamente. Campos de data abrem um calendário; valores numéricos validam o formato automaticamente.</li>
+  <li><strong>Filtros combinados</strong>: todos os filtros (Cliente, Pedido, Ano, Período, Usuário) funcionam em conjunto. Os totais refletem sempre o resultado filtrado.</li>
 </ul>
 
 <h3>Interface principal</h3>
 <p>A janela é dividida em três áreas verticais:</p>
 <ol>
-  <li><b>Formulário de entrada</b>: campos para cadastrar novos registros (Cliente, Pedido/Proposta, Quantidade de Itens, Data de Entrada, Data de Processo, Tempo de Corte e Valor). O campo Cliente possui autocompletar. <em>Observação: os campos de data são atualizados automaticamente para a data atual quando o aplicativo é iniciado ou quando o dia muda.</em></li>
-  <li><b>Filtros e Tabela</b>: painel de filtros (Cliente, Pedido, Ano, Período e Usuário se for admin) e tabela com edição in-line. Datas abrem calendário ao clicar duas vezes; exclusão solicita confirmação.</li>
-  <li><b>Painel de Totais</b>: métricas agregadas (pedidos, itens, valores, médias) sempre sincronizadas com os filtros ativos.</li>
+  <li><strong>Formulário de entrada</strong>: campos para cadastrar novos registros (Cliente, Pedido/Proposta, Quantidade de Itens, Data de Entrada, Data de Processo, Tempo de Corte e Valor). O campo Cliente possui autocompletar. <em>Observação: os campos de data são atualizados automaticamente para a data atual quando o aplicativo é iniciado ou quando o dia muda.</em></li>
+  <li><strong>Filtros e Tabela</strong>: painel de filtros (Cliente, Pedido, Ano, Período e Usuário se for admin) e tabela com edição in-line. Datas abrem calendário ao clicar duas vezes; exclusão solicita confirmação.</li>
+  <li><strong>Painel de Totais</strong>: métricas agregadas (pedidos, itens, valores, médias) sempre sincronizadas com os filtros ativos.</li>
 </ol>
 
 <h3>Menus</h3>
 <ul>
-  <li><b>Arquivo</b>: Logout (Ctrl+Shift+L) e Sair (Ctrl+Q).</li>
-  <li><b>Admin</b> (somente administradores): Ferramenta Administrativa (Ctrl+G), Dashboard (Ctrl+D), Atualizar tabela (F5).</li>
-  <li><b>Tema</b>: alternar entre Claro/Escuro, escolher estilo (Fusion/Windows) e cor de destaque.</li>
-  <li><b>Ajuda</b>: Manual do Sistema (F1) e Sobre.</li>
+  <li><strong>Arquivo</strong>: Logout (Ctrl+Shift+L) e Sair (Ctrl+Q).</li>
+  <li><strong>Admin</strong> (somente administradores): Ferramenta Administrativa (Ctrl+G), Dashboard (Ctrl+D), Atualizar tabela (F5).</li>
+  <li><strong>Tema</strong>: alternar entre Claro/Escuro, escolher estilo (Fusion/Windows) e cor de destaque.</li>
+  <li><strong>Ajuda</strong>: Manual do Sistema (F1) e Sobre.</li>
 </ul>
 
-<p><b>Barra de status</b>: exibe o nome do usuário logado e se possui permissões de administrador.</p>
+<p><strong>Barra de status</strong>: exibe o nome do usuário logado e se possui permissões de administrador.</p>
 
 <h3>Atalhos de teclado</h3>
 <ul>
-  <li><b>Ctrl+Q</b>: Sair da aplicação (fecha o sistema completamente).</li>
-  <li><b>Ctrl+Shift+L</b>: Fazer logout (retorna à tela de login sem fechar o sistema).</li>
-  <li><b>F1</b>: Abrir o manual do sistema.</li>
-  <li><b>F5</b>: Atualizar tabela (somente administradores).</li>
-  <li><b>Ctrl+G</b>: Ferramenta Administrativa (somente administradores).</li>
-  <li><b>Ctrl+D</b>: Dashboard (somente administradores).</li>
+  <li><strong>Ctrl+Q</strong>: Sair da aplicação (fecha o sistema completamente).</li>
+  <li><strong>Ctrl+Shift+L</strong>: Fazer logout (retorna à tela de login sem fechar o sistema).</li>
+  <li><strong>F1</strong>: Abrir o manual do sistema.</li>
+  <li><strong>F5</strong>: Atualizar tabela (somente administradores).</li>
+  <li><strong>Ctrl+G</strong>: Ferramenta Administrativa (somente administradores).</li>
+  <li><strong>Ctrl+D</strong>: Dashboard (somente administradores).</li>
 </ul>

@@ -1,109 +1,109 @@
 <h2>Ferramenta Administrativa</h2>
 <p>Disponíveis apenas para administradores. Oferecem gestão de usuários e sessões em abas separadas.</p>
-<p>Acesso através do menu <b>Admin → Ferramenta Administrativa (Ctrl+G)</b> na janela principal. Isso abre uma aplicação independente que exige login administrativo.</p>
+<p>Acesso através do menu <strong>Admin → Ferramenta Administrativa (Ctrl+G)</strong> na janela principal. Isso abre uma aplicação independente que exige login administrativo.</p>
 
 <h3>Estrutura da janela</h3>
 <p>A janela de Ferramenta Administrativa possui duas abas:</p>
 <ul>
-  <li><b>Aba "Usuários"</b>: gerenciamento completo de contas (resetar senha, arquivar, restaurar, excluir).</li>
-  <li><b>Aba "Sessões"</b>: monitoramento de sessões ativas e comando de encerramento global do sistema.</li>
+  <li><strong>Aba "Usuários"</strong>: gerenciamento completo de contas (resetar senha, arquivar, restaurar, excluir).</li>
+  <li><strong>Aba "Sessões"</strong>: monitoramento de sessões ativas e comando de encerramento global do sistema.</li>
 </ul>
 <h3>Aba "Usuários" — botões e funcionamento</h3>
-<p>Use a aba <b>Usuários</b> para localizar e administrar contas. A lista mostra Nome, Tipo (admin/padrão) e Status (ativo/arquivado).</p>
+<p>Use a aba <strong>Usuários</strong> para localizar e administrar contas. A lista mostra Nome, Tipo (admin/padrão) e Status (ativo/arquivado).</p>
 
 <h4>Barra de busca</h4>
 <ul>
-  <li><b>Filtro por texto</b>: digite parte do nome ou status (ex.: "ativo", "arquivado"). A lista atualiza em tempo real.</li>
-  <li><b>Limpar</b>: remove o filtro e exibe todos novamente.</li>
+  <li><strong>Filtro por texto</strong>: digite parte do nome ou status (ex.: "ativo", "arquivado"). A lista atualiza em tempo real.</li>
+  <li><strong>Limpar</strong>: remove o filtro e exibe todos novamente.</li>
 </ul>
 
 <h4>Botões de ação</h4>
 <ul>
   <li>
-    <b>Resetar Senha</b> (<code>Ctrl+Shift+R</code>)<br/>
-    <i>Pré-requisito:</i> selecionar um usuário ativo.<br/>
-    <i>Efeito:</i> redefine a senha do usuário para a senha padrão (armazenada com hash). O usuário deve criar uma nova senha no próximo login.
+    <strong>Resetar Senha</strong> (<code>Ctrl+Shift+R</code>)<br>
+    <em>Pré-requisito:</em> selecionar um usuário ativo.<br>
+    <em>Efeito:</em> redefine a senha do usuário para a senha padrão (armazenada com hash). O usuário deve criar uma nova senha no próximo login.
   </li>
   <li>
-    <b>Arquivar</b> (<code>Ctrl+Shift+A</code>)<br/>
-    <i>Pré-requisitos:</i> usuário não-admin e ativo.<br/>
-    <i>Efeito:</i> desativa o acesso imediatamente, registra a data de arquivamento e encerra sessões ativas do usuário. O histórico é preservado.
+    <strong>Arquivar</strong> (<code>Ctrl+Shift+A</code>)<br>
+    <em>Pré-requisitos:</em> usuário não-admin e ativo.<br>
+    <em>Efeito:</em> desativa o acesso imediatamente, registra a data de arquivamento e encerra sessões ativas do usuário. O histórico é preservado.
   </li>
   <li>
-    <b>Restaurar</b> (<code>Ctrl+Shift+T</code>)<br/>
-    <i>Pré-requisitos:</i> usuário arquivado.<br/>
-    <i>Efeito:</i> reativa o acesso e limpa a data de arquivamento. O banco individual do usuário é garantido/reativado se necessário.
+    <strong>Restaurar</strong> (<code>Ctrl+Shift+T</code>)<br>
+    <em>Pré-requisitos:</em> usuário arquivado.<br>
+    <em>Efeito:</em> reativa o acesso e limpa a data de arquivamento. O banco individual do usuário é garantido/reativado se necessário.
   </li>
   <li>
-    <b>Excluir Usuário</b> (<code>Ctrl+Shift+Del</code>)<br/>
-    <i>Pré-requisitos:</i> usuário arquivado e não-admin.<br/>
-    <i>Efeito:</i> remove o registro permanentemente e apaga o banco individual do usuário. Exige confirmação.<br/>
-    <i>Observação:</i> para excluir, <u>arquive primeiro</u>.
+    <strong>Excluir Usuário</strong> (<code>Ctrl+Shift+Del</code>)<br>
+    <em>Pré-requisitos:</em> usuário arquivado e não-admin.<br>
+    <em>Efeito:</em> remove o registro permanentemente e apaga o banco individual do usuário. Exige confirmação.<br>
+    <em>Observação:</em> para excluir, <u>arquive primeiro</u>.
   </li>
   <li>
-    <b>Alt. Minha Senha</b> (<code>Ctrl+Alt+S</code>)<br/>
-    <i>Contexto:</i> altera a senha do usuário atualmente logado no sistema administrativo.<br/>
-    <i>Fluxo:</i> solicita senha atual, nova senha e confirmação — validações são aplicadas antes de salvar.
+    <strong>Alt. Minha Senha</strong> (<code>Ctrl+Alt+S</code>)<br>
+    <em>Contexto:</em> altera a senha do usuário atualmente logado no sistema administrativo.<br>
+    <em>Fluxo:</em> solicita senha atual, nova senha e confirmação — validações são aplicadas antes de salvar.
   </li>
 </ul>
 
-<p><b>Dicas:</b> selecione um usuário para habilitar/desabilitar automaticamente os botões válidos para aquele status. A exclusão e o arquivamento exibem caixas de confirmação.</p>
+<p><strong>Dicas:</strong> selecione um usuário para habilitar/desabilitar automaticamente os botões válidos para aquele status. A exclusão e o arquivamento exibem caixas de confirmação.</p>
 
 <h3>Sessões e manutenção</h3>
 <ul>
-  <li><b>Listar/encerrar sessões</b> ativas por usuário para liberar acessos.</li>
-  <li><b>Shutdown</b> coordenado para manutenção programada.</li>
+  <li><strong>Listar/encerrar sessões</strong> ativas por usuário para liberar acessos.</li>
+  <li><strong>Shutdown</strong> coordenado para manutenção programada.</li>
 </ul>
 
 <h3>Aba "Sessões" — botões e funcionamento</h3>
-<p>A aba <b>Sessões</b> permite monitorar e controlar sessões ativas do sistema.</p>
+<p>A aba <strong>Sessões</strong> permite monitorar e controlar sessões ativas do sistema.</p>
 
 <h4>Lista de sessões ativas</h4>
 <p>Mostra todas as sessões atualmente conectadas ao sistema com as seguintes informações:</p>
 <ul>
-  <li><b>Usuário</b>: nome do usuário logado.</li>
-  <li><b>Computador</b>: hostname da máquina onde a sessão está ativa.</li>
-  <li><b>Última Atividade</b>: timestamp da última atualização da sessão.</li>
+  <li><strong>Usuário</strong>: nome do usuário logado.</li>
+  <li><strong>Computador</strong>: hostname da máquina onde a sessão está ativa.</li>
+  <li><strong>Última Atividade</strong>: timestamp da última atualização da sessão.</li>
 </ul>
 
 <h4>Botões de controle</h4>
 <ul>
   <li>
-    <b>Atualizar</b> (<code>F5</code>)<br/>
-    <i>Efeito:</i> recarrega a listagem de sessões ativas do sistema.
+    <strong>Atualizar</strong> (<code>F5</code>)<br>
+    <em>Efeito:</em> recarrega a listagem de sessões ativas do sistema.
   </li>
   <li>
-    <b>Encerrar Sessão</b> (<code>Del</code>)<br/>
-    <i>Pré-requisito:</i> selecionar uma sessão na lista.<br/>
-    <i>Efeito:</i> envia comando de encerramento para a sessão selecionada. A aplicação naquele computador será fechada automaticamente em alguns segundos.<br/>
-    <i>Proteção:</i> não é possível encerrar a própria sessão através deste botão. Para sair, use "Logout" ou "Sair" no menu Arquivo.<br/>
-    <i>Uso:</i> útil para liberar acessos de usuários que esqueceram de fazer logout ou para encerrar sessões duplicadas.
+    <strong>Encerrar Sessão</strong> (<code>Del</code>)<br>
+    <em>Pré-requisito:</em> selecionar uma sessão na lista.<br>
+    <em>Efeito:</em> envia comando de encerramento para a sessão selecionada. A aplicação naquele computador será fechada automaticamente em alguns segundos.<br>
+    <em>Proteção:</em> não é possível encerrar a própria sessão através deste botão. Para sair, use "Logout" ou "Sair" no menu Arquivo.<br>
+    <em>Uso:</em> útil para liberar acessos de usuários que esqueceram de fazer logout ou para encerrar sessões duplicadas.
   </li>
   <li>
-    <b>Limpar Inativas</b><br/>
-    <i>Efeito:</i> remove sessões que não foram atualizadas nos últimos 2 minutos (sem heartbeat).<br/>
-    <i>Uso:</i> limpa sessões "fantasmas" de aplicações que crasharam ou foram fechadas incorretamente. Mostra quantas sessões foram removidas.<br/>
-    <i>Automático:</i> a ferramenta administrativa também executa esta limpeza automaticamente a cada 5 minutos em segundo plano.
+    <strong>Limpar Inativas</strong><br>
+    <em>Efeito:</em> remove sessões que não foram atualizadas nos últimos 2 minutos (sem heartbeat).<br>
+    <em>Uso:</em> limpa sessões "fantasmas" de aplicações que crasharam ou foram fechadas incorretamente. Mostra quantas sessões foram removidas.<br>
+    <em>Automático:</em> a ferramenta administrativa também executa esta limpeza automaticamente a cada 5 minutos em segundo plano.
   </li>
   <li>
-    <b>Shutdown Sistema</b> (<code>Ctrl+Shift+Q</code>)<br/>
-    <i>Efeito:</i> envia comando de encerramento para <u>todas</u> as instâncias do sistema. Todas as aplicações ativas exibem aviso e encerram automaticamente.<br/>
-    <i>Uso:</i> ideal para manutenção programada ou atualizações que requerem reinicialização do sistema.
+    <strong>Shutdown Sistema</strong> (<code>Ctrl+Shift+Q</code>)<br>
+    <em>Efeito:</em> envia comando de encerramento para <u>todas</u> as instâncias do sistema. Todas as aplicações ativas exibem aviso e encerram automaticamente.<br>
+    <em>Uso:</em> ideal para manutenção programada ou atualizações que requerem reinicialização do sistema.
   </li>
 </ul>
 
 <h4>Heartbeat e Manutenção Automática</h4>
 <p>O sistema mantém as sessões ativas através de um mecanismo de "heartbeat" (batimento cardíaco):</p>
 <ul>
-  <li><b>Atualização automática</b>: cada aplicação atualiza sua sessão a cada 30 segundos.</li>
-  <li><b>Detecção de crashes</b>: se uma aplicação não atualiza por mais de 2 minutos, é considerada inativa.</li>
-  <li><b>Limpeza automática</b>: a ferramenta administrativa limpa sessões inativas automaticamente a cada 5 minutos.</li>
-  <li><b>Limpeza manual</b>: administradores podem forçar limpeza imediata com o botão "Limpar Inativas".</li>
+  <li><strong>Atualização automática</strong>: cada aplicação atualiza sua sessão a cada 30 segundos.</li>
+  <li><strong>Detecção de crashes</strong>: se uma aplicação não atualiza por mais de 2 minutos, é considerada inativa.</li>
+  <li><strong>Limpeza automática</strong>: a ferramenta administrativa limpa sessões inativas automaticamente a cada 5 minutos.</li>
+  <li><strong>Limpeza manual</strong>: administradores podem forçar limpeza imediata com o botão "Limpar Inativas".</li>
 </ul>
 
 <h4>Diferenças entre Comandos de Encerramento</h4>
 <ul>
-  <li><b>Encerrar Sessão</b>: afeta apenas <u>uma</u> sessão específica selecionada. Outras sessões continuam funcionando normalmente.</li>
-  <li><b>Limpar Inativas</b>: remove apenas sessões <u>inativas</u> (sem heartbeat). Sessões ativas não são afetadas.</li>
-  <li><b>Shutdown Sistema</b>: afeta <u>todas</u> as sessões ativas simultaneamente. Use com cuidado!</li>
+  <li><strong>Encerrar Sessão</strong>: afeta apenas <u>uma</u> sessão específica selecionada. Outras sessões continuam funcionando normalmente.</li>
+  <li><strong>Limpar Inativas</strong>: remove apenas sessões <u>inativas</u> (sem heartbeat). Sessões ativas não são afetadas.</li>
+  <li><strong>Shutdown Sistema</strong>: afeta <u>todas</u> as sessões ativas simultaneamente. Use com cuidado!</li>
 </ul>
