@@ -73,6 +73,7 @@ class DashboardDialog(QDialog):
         self.tabs: QTabWidget | None = None
         self.combo_ano: QComboBox | None = None
         self.combo_metrica: QComboBox | None = None
+        self.combo_metrica_dia: QComboBox | None = None
         self.tabela_mensal: QTableWidget | None = None
         self.tabela_totais: QTableWidget | None = None
         self.tabela_medias: QTableWidget | None = None
@@ -326,7 +327,7 @@ class DashboardDialog(QDialog):
 
     def _adicionar_secao_horas(self, layout: QVBoxLayout) -> None:
         horas_header_layout = QHBoxLayout()
-        horas_header_layout.addWidget(QLabel("Horas de corte por dia"))
+        horas_header_layout.addWidget(QLabel("Métricas por período de dias"))
         horas_header_layout.addStretch()
         layout.addLayout(horas_header_layout)
 
@@ -342,6 +343,23 @@ class DashboardDialog(QDialog):
             lambda: DashboardTableUpdates.atualizar_tabela_horas(self)
         )
         horas_controles_layout.addWidget(self.combo_intervalo)
+
+        horas_controles_layout.addSpacing(16)
+        label_metrica = QLabel("Métrica:")
+        label_metrica.setObjectName("label_titulo_negrito")
+        horas_controles_layout.addWidget(label_metrica)
+
+        self.combo_metrica_dia = QComboBox()
+        # Usar a mesma ordem e nomes da combobox existente
+        self.combo_metrica_dia.addItem("Itens", "itens")
+        self.combo_metrica_dia.addItem("Valor (R$)", "valores")
+        self.combo_metrica_dia.addItem("Propostas", "pedidos")
+        self.combo_metrica_dia.addItem("Horas", "horas")
+        self.combo_metrica_dia.currentIndexChanged.connect(
+            lambda: DashboardTableUpdates.atualizar_tabela_horas(self)
+        )
+        horas_controles_layout.addWidget(self.combo_metrica_dia)
+
         horas_controles_layout.addStretch()
         layout.addLayout(horas_controles_layout)
 

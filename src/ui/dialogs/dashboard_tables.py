@@ -41,7 +41,8 @@ class DashboardTableUpdates:
         DashboardTableUpdates._configurar_estrutura_tabela(dialog)
 
         # Preencher dados
-        DashboardTableUpdates._preencher_dados_tabela(dialog, dados_ano, chave_metrica)
+        DashboardTableUpdates._preencher_dados_tabela(
+            dialog, dados_ano, chave_metrica)
 
     @staticmethod
     def _configurar_periodos(dialog: "DashboardDialog", ano: int) -> None:
@@ -70,14 +71,16 @@ class DashboardTableUpdates:
         """Preenche os dados na tabela mensal."""
         # Preencher dados por usuário
         for row, usuario in enumerate(dialog.usuarios):
-            dialog.tabela_mensal.setVerticalHeaderItem(row, QTableWidgetItem(usuario))
+            dialog.tabela_mensal.setVerticalHeaderItem(
+                row, QTableWidgetItem(usuario))
             DashboardTableUpdates._preencher_linha_usuario(
                 dialog, dados_ano, chave_metrica, row, usuario
             )
 
         # Linha de totais
         total_row = len(dialog.usuarios)
-        dialog.tabela_mensal.setVerticalHeaderItem(total_row, QTableWidgetItem("Total"))
+        dialog.tabela_mensal.setVerticalHeaderItem(
+            total_row, QTableWidgetItem("Total"))
         DashboardTableUpdates._preencher_linha_totais(
             dialog, dados_ano, chave_metrica, total_row
         )
@@ -105,7 +108,8 @@ class DashboardTableUpdates:
                 row,
                 col,
                 DashboardTableUpdates._criar_item_tabela(
-                    DashboardTableUpdates._formatar_valor_metrica(chave_metrica, valor)
+                    DashboardTableUpdates._formatar_valor_metrica(
+                        chave_metrica, valor)
                 ),
             )
 
@@ -145,7 +149,8 @@ class DashboardTableUpdates:
             )
 
         total_geral = sum(
-            dados_ano.get(usuario, {}).get(periodo["numero"], {}).get(chave_metrica, 0)
+            dados_ano.get(usuario, {}).get(
+                periodo["numero"], {}).get(chave_metrica, 0)
             for usuario in dialog.usuarios
             for periodo in dialog.periodos_atuais
         )
@@ -255,7 +260,8 @@ class DashboardTableUpdates:
             valores_total = [
                 "Todos",
                 formatar_numero_decimal(media_geral.get("itens_por_dia", 0.0)),
-                formatar_numero_decimal(media_geral.get("proposta_por_dia", 0.0)),
+                formatar_numero_decimal(
+                    media_geral.get("proposta_por_dia", 0.0)),
                 formatar_segundos(media_geral.get("horas_por_dia", 0)),
             ]
 
@@ -275,20 +281,25 @@ class DashboardTableUpdates:
 
     @staticmethod
     def atualizar_tabela_horas(dialog: "DashboardDialog") -> None:
-        """Atualiza a tabela de horas por dia."""
+        """Atualiza a tabela de métricas por dia."""
         assert dialog.combo_intervalo is not None
+        assert dialog.combo_metrica_dia is not None
         assert dialog.label_total_horas is not None
         assert dialog.tabela_horas is not None
 
-        dados_horas = dialog.metricas.get("horas_por_dia", {})
-        dias_ordenados = list(dados_horas.keys())
-        if not dias_ordenados:
+        metrica_selecionada = dialog.combo_metrica_dia.currentData()
+        chave_metrica = f"{metrica_selecionada}_por_dia"
+        dados_metrica = dialog.metricas.get(chave_metrica, {})
+
+        if not dados_metrica:
             dialog.tabela_horas.setRowCount(0)
             dialog.label_total_horas.setText(
-                "Nenhuma informação de tempo de corte disponível."
+                f"Nenhuma informação de "
+                f"{dialog.combo_metrica_dia.currentText().lower()} disponível."
             )
             return
 
+        dias_ordenados = list(dados_metrica.keys())
         dias_limite = dialog.combo_intervalo.currentData()
         if dias_limite:
             dias_exibidos = dias_ordenados[:dias_limite]
@@ -303,7 +314,7 @@ class DashboardTableUpdates:
         total_periodo = 0
 
         for row, dia in enumerate(dias_exibidos):
-            info = dados_horas[dia]
+            info = dados_metrica[dia]
             total_periodo += info.get("total", 0)
             dialog.tabela_horas.setItem(
                 row,
@@ -314,24 +325,27 @@ class DashboardTableUpdates:
                 ),
             )
             for col, usuario in enumerate(dialog.usuarios, start=1):
-                segundos = info.get("por_usuario", {}).get(usuario, 0)
+                valor = info.get("por_usuario", {}).get(usuario, 0)
                 dialog.tabela_horas.setItem(
                     row,
                     col,
                     DashboardTableUpdates._criar_item_tabela(
-                        formatar_segundos(segundos)
+                        DashboardTableUpdates._formatar_valor_metrica(
+                            metrica_selecionada, valor)
                     ),
                 )
             dialog.tabela_horas.setItem(
                 row,
                 len(colunas) - 1,
                 DashboardTableUpdates._criar_item_tabela(
-                    formatar_segundos(info.get("total", 0))
+                    DashboardTableUpdates._formatar_valor_metrica(
+                        metrica_selecionada, info.get("total", 0))
                 ),
             )
 
         dialog.label_total_horas.setText(
-            f"Total acumulado no período: {formatar_segundos(total_periodo)}"
+            f"Total acumulado no período: "
+            f"{DashboardTableUpdates._formatar_valor_metrica(metrica_selecionada, total_periodo)}"
         )
 
     @staticmethod
@@ -347,8 +361,10 @@ class DashboardTableUpdates:
     @staticmethod
     def _formatar_valor_metrica(chave: str, valor) -> str:
         formatters = {
-            "valor": formatar_valor_monetario,
+            "valores": formatar_valor_monetario,
             "horas": lambda v: formatar_segundos(int(round(v))),
+            "pedidos": lambda v: f"{int(v)}",
+            "itens": lambda v: f"{int(v)}",
         }
         formatter = formatters.get(chave)
         if formatter:

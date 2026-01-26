@@ -67,13 +67,23 @@ class DashboardAccumulator:
         self.horas_por_dia: DefaultDict[str, Dict[str, Any]] = defaultdict(
             lambda: {"total": 0, "por_usuario": defaultdict(int)}
         )
+        self.pedidos_por_dia: DefaultDict[str, Dict[str, Any]] = defaultdict(
+            lambda: {"total": 0, "por_usuario": defaultdict(int)}
+        )
+        self.valores_por_dia: DefaultDict[str, Dict[str, Any]] = defaultdict(
+            lambda: {"total": 0.0, "por_usuario": defaultdict(float)}
+        )
+        self.itens_por_dia: DefaultDict[str, Dict[str, Any]] = defaultdict(
+            lambda: {"total": 0, "por_usuario": defaultdict(int)}
+        )
         self.totais_por_usuario: DefaultDict[str, Dict[str, float]] = defaultdict(
             lambda: {"itens": 0.0, "valor": 0.0, "proposta": 0.0, "horas": 0}
         )
         self.dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
         self.dias_totais: Set[str] = set()
         self.horas_total_por_usuario: DefaultDict[str, int] = defaultdict(int)
-        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(set)
+        self.horas_dias_por_usuario: DefaultDict[str, Set[str]] = defaultdict(
+            set)
         self.usuarios_registrados: Set[str] = set()
         self.registros_raw: List[Dict[str, Any]] = []
 
@@ -120,6 +130,21 @@ class DashboardAccumulator:
             self.horas_total_por_usuario[usuario] += tempo
             self.horas_dias_por_usuario[usuario].add(dia_iso)
 
+        # Acumular pedidos por dia
+        pedidos_info = self.pedidos_por_dia[dia_iso]
+        pedidos_info["total"] += 1
+        pedidos_info["por_usuario"][usuario] += 1
+
+        # Acumular valores por dia
+        valores_info = self.valores_por_dia[dia_iso]
+        valores_info["total"] += registro.valor_pedido
+        valores_info["por_usuario"][usuario] += registro.valor_pedido
+
+        # Acumular itens por dia
+        itens_info = self.itens_por_dia[dia_iso]
+        itens_info["total"] += registro.qtde_itens
+        itens_info["por_usuario"][usuario] += registro.qtde_itens
+
         self.registros_raw.append(
             {
                 "usuario": usuario,
@@ -136,6 +161,11 @@ class DashboardAccumulator:
     def finalizar(self) -> Dict[str, Any]:
         """Compila o pacote de métricas pronto para consumo no dashboard."""
         horas_ordenadas = self._ordenar_horas_por_dia()
+        pedidos_ordenados = self._ordenar_metricas_por_dia(
+            self.pedidos_por_dia)
+        valores_ordenados = self._ordenar_metricas_por_dia(
+            self.valores_por_dia)
+        itens_ordenados = self._ordenar_metricas_por_dia(self.itens_por_dia)
         medias_por_usuario = self._calcular_medias_por_usuario()
         media_geral = self._calcular_media_geral()
 
@@ -148,6 +178,9 @@ class DashboardAccumulator:
             },
             "totais_ano": dict(self.totais_ano),
             "horas_por_dia": horas_ordenadas,
+            "pedidos_por_dia": pedidos_ordenados,
+            "valores_por_dia": valores_ordenados,
+            "itens_por_dia": itens_ordenados,
             "medias_por_usuario": medias_por_usuario,
             "media_geral": media_geral,
             "registros": list(self.registros_raw),
@@ -166,6 +199,23 @@ class DashboardAccumulator:
         }
         return horas_ordenadas
 
+    def _ordenar_metricas_por_dia(
+        self, metricas_por_dia: DefaultDict[str, Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Ordena o dicionário de métricas diárias em ordem decrescente de data."""
+        metricas_ordenadas = {
+            dia: {
+                "total": info["total"],
+                "por_usuario": dict(info["por_usuario"]),
+            }
+            for dia, info in sorted(
+                metricas_por_dia.items(),
+                key=lambda item: item[0],
+                reverse=True
+            )
+        }
+        return metricas_ordenadas
+
     def _calcular_medias_por_usuario(self) -> Dict[str, Dict[str, Any]]:
         """Calcula médias diárias e totais específicos por usuário."""
         medias_por_usuario: Dict[str, Dict[str, Any]] = {}
@@ -174,7 +224,8 @@ class DashboardAccumulator:
             totais_usuario = self.totais_por_usuario.get(usuario, {})
             itens_total = float(totais_usuario.get("itens", 0.0))
             os_total = float(totais_usuario.get("proposta", 0.0))
-            dias_com_horas = len(self.horas_dias_por_usuario.get(usuario, set()))
+            dias_com_horas = len(
+                self.horas_dias_por_usuario.get(usuario, set()))
             horas_total_usuario = self.horas_total_por_usuario.get(usuario, 0)
 
             medias_por_usuario[usuario] = {
@@ -198,7 +249,8 @@ class DashboardAccumulator:
             valor.get("proposta", 0.0) for valor in self.totais_por_usuario.values()
         )
         dias_totais_contagem = len(self.dias_totais)
-        total_horas_geral = sum(info["total"] for info in self.horas_por_dia.values())
+        total_horas_geral = sum(info["total"]
+                                for info in self.horas_por_dia.values())
         dias_com_horas_geral = len(self.horas_por_dia)
 
         media_geral = {
