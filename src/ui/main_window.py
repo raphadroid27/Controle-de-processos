@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import (QFileSystemWatcher, QProcess, QSignalBlocker,
-                            QTimer, Signal)
+                            QTimer, Qt, Signal)
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
 
@@ -315,7 +315,10 @@ class MainWindow(ThemedMainWindow):
         """Abre o dashboard administrativo."""
         try:
             dialog = DashboardDialog(self)
-            dialog.exec()
+            # Configurar para deletar quando fechado e não bloquear a aplicação principal
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+            dialog.setModal(False)
+            dialog.show()
         except (ImportError, AttributeError, RuntimeError) as exc:
             QMessageBox.warning(
                 self,
